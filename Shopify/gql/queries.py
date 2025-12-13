@@ -1,5 +1,4 @@
-from .types import Order, OrderIdentifierInput
-from Shopify.core import Query
+from .core import Query, Order, OrderIdentifierInput
 from typing import Type, Optional
 from pydantic import BaseModel
 

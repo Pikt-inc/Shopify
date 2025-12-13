@@ -3,8 +3,8 @@ from typing import Optional, Dict, Any, Type, List, Union, get_args, get_origin,
 
 from pydantic import BaseModel
 
-from Shopify.types import type_registry
-from Shopify.types.base import connection
+from .types import type_registry
+from .types.base import connection
 from .client import ShopifyClient
 
 class Query:

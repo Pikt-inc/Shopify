@@ -8,7 +8,8 @@ from .gql import (
     Order,
     OrderIdentifierInput,
     OrderReturnStatus,
-    orderByIdentifier
+    orderByIdentifier,
+    client
 )
 
 __all__ = [
@@ -20,5 +21,6 @@ __all__ = [
     "object",
     "Order",
     "OrderIdentifierInput",
-    "orderByIdentifier"
+    "orderByIdentifier",
+    "client"
 ]
