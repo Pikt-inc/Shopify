@@ -73,31 +73,36 @@ class Query:
 
     def _build_model_selection(self, model: Type[BaseModel], indent: int) -> str:
         type_hints = self._get_type_hints(model)
-        field_names = list(getattr(model, "model_fields", {}).keys() or type_hints.keys())
-        lines = [
-            self._build_field_selection(name, type_hints.get(name), indent)
-            for name in field_names
-            if type_hints.get(name) is not None and self._should_include_field(model, name)
-        ]
+        model_fields = getattr(model, "model_fields", {}) or {}
+        field_names = list(model_fields.keys() or type_hints.keys())
+        lines = []
+        for name in field_names:
+            if type_hints.get(name) is None or not self._should_include_field(model, name):
+                continue
+            field_info = model_fields.get(name)
+            alias = getattr(field_info, "alias", None) if field_info else None
+            lines.append(self._build_field_selection(name, type_hints.get(name), indent, alias))
         return "\n".join(lines)
 
-    def _build_field_selection(self, name: str, annotation: Any, indent: int) -> str:
+    def _build_field_selection(self, name: str, annotation: Any, indent: int, graphql_name: str | None = None) -> str:
         resolved = self._unwrap_annotation(annotation)
         spacer = " " * indent
+        field_label = graphql_name or name
 
         if self._is_connection(resolved):
-            return self._build_connection_selection(name, resolved, indent)
+            return self._build_connection_selection(name, resolved, indent, graphql_name=field_label)
 
         if self._is_model(resolved):
             nested = self._build_model_selection(resolved, indent + self._indent)
-            return f"{spacer}{name} {{\n{nested}\n{spacer}}}"
+            return f"{spacer}{field_label} {{\n{nested}\n{spacer}}}"
 
-        return f"{spacer}{name}"
+        return f"{spacer}{field_label}"
 
-    def _build_connection_selection(self, name: str, conn_type: Type[BaseModel], indent: int) -> str:
+    def _build_connection_selection(self, name: str, conn_type: Type[BaseModel], indent: int, graphql_name: str | None = None) -> str:
         spacer = " " * indent
         inner_indent = indent + self._indent
         conn_hints = self._get_type_hints(conn_type)
+        field_label = graphql_name or name
 
         sections = []
 
@@ -118,10 +123,10 @@ class Query:
 
         args_fragment = self._format_connection_args(name, conn_type)
         if not sections:
-            return f"{spacer}{name}{args_fragment}"
+            return f"{spacer}{field_label}{args_fragment}"
 
         section_body = "\n".join(sections)
-        return f"{spacer}{name}{args_fragment} {{\n{section_body}\n{spacer}}}"
+        return f"{spacer}{field_label}{args_fragment} {{\n{section_body}\n{spacer}}}"
 
     def _format_connection_args(self, field_name: str, conn_type: Type[BaseModel]) -> str:
         args = self.connection_arguments.get(field_name)
@@ -181,6 +186,7 @@ class Query:
         type_hints = self._get_type_hints(model)
         payload: Dict[str, Any] = {}
         data_dict = data if isinstance(data, dict) else {}
+        model_fields = getattr(model, "model_fields", {}) or {}
 
         for field_name, annotation in type_hints.items():
             annotation = type_hints.get(field_name)
@@ -189,12 +195,16 @@ class Query:
                 payload[field_name] = self._default_value_for(annotation)
                 continue
 
-            if field_name not in data_dict:
+            field_info = model_fields.get(field_name)
+            alias = getattr(field_info, "alias", None) if field_info else None
+            data_key = alias if alias in data_dict else field_name
+
+            if data_key not in data_dict:
                 payload[field_name] = self._default_value_for(annotation)
                 continue
 
             payload[field_name] = self._build_partial_value(
-                value=data_dict[field_name],
+                value=data_dict[data_key],
                 annotation=annotation,
             )
 

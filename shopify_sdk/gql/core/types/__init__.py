@@ -33,6 +33,7 @@ from .enums import (
     OrderDisplayFulfillmentStatus,
     OrderDisplayFinancialStatus,
     OrderSortKeys,
+    OrderCancelReason,
     ProductVariantInventoryPolicy,
 )
 from .registry import type_registry
@@ -62,6 +63,7 @@ __all__ = [
     "OrderDisplayFulfillmentStatus",
     "OrderDisplayFinancialStatus",
     "OrderSortKeys",
+    "OrderCancelReason",
     "ProductVariantInventoryPolicy",
     "LineItemConnection",
     "OrderConnection",

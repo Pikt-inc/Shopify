@@ -54,3 +54,10 @@ class WeightUnit(enum):
     KILOGRAMS = "KILOGRAMS"
     OUNCES = "OUNCES"
     POUNDS = "POUNDS"
+
+class OrderCancelReason(enum):
+    CUSTOMER = "CUSTOMER"
+    DECLINED = "DECLINED"
+    FRAUD = "FRAUD"
+    INVENTORY = "INVENTORY"
+    OTHER = "OTHER"
