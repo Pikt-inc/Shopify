@@ -70,4 +70,7 @@ class Order(AutoRegisterModel):
     updatedAt: DateTime
 
 class OrderLineItem(AutoRegisterModel):
+    currentQuantity: Int
+    quantity: Int
+    title: String
     id: ID

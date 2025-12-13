@@ -14,5 +14,19 @@ class OrderLineItemConnection(connection):
     pageInfo: "PageInfo"
 
     @property
+    def count(self) -> int:
+        return len(self.edges)
+    
+    @property
     def first(self) -> "OrderLineItem | None":
         return self.nodes[0] if self.nodes else None
+    
+    @property
+    def second(self) -> "OrderLineItem | None":
+        return self.nodes[1] if len(self.nodes) > 1 else None
+    
+    @property
+    def third(self) -> "OrderLineItem | None":
+        return self.nodes[2] if len(self.nodes) > 2 else None
+    
+
