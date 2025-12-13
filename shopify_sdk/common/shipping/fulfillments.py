@@ -1,3 +1,5 @@
+from typing import Optional
+
 from shopify_sdk.gql.core.types import (
     OrderIdentifierInput,
     Order,
@@ -9,8 +11,9 @@ from shopify_sdk.gql.core.types import (
     Boolean,
     String,
     FulfillmentOrderLineItemsInput,
-    FulfillmentOrderLineItemInput
+    FulfillmentOrderLineItemInput,
 )
+from shopify_sdk.gql.core.types.objects import FulfillmentOrder
 from shopify_sdk.gql import fulfillmentCreateV2
 from shopify_sdk.gql import (
     orderByIdentifier
@@ -19,8 +22,8 @@ from shopify_sdk import client
 
 
 def get_fulfillments_by_order_id(
-    order_id: str
-    ) -> list[FulfillmentOrderLineItem]:
+    order_id: ID
+    ) -> list[FulfillmentOrder]:
     identifier = OrderIdentifierInput(id=order_id)
     res: Order = orderByIdentifier(
         identifier=identifier,
@@ -29,10 +32,10 @@ def get_fulfillments_by_order_id(
         },
         field_exclusions={
             "FulfillmentOrder": {"channelId", "createdAt", "fulfillAt", "fulfillBy"},
-            "FulfillmentOrderLineItem": FulfillmentOrderLineItem.fields_except(
-                exclude=["id", "lineItem"]
+            "FulfillmentOrderLineItem": set(
+                FulfillmentOrderLineItem.fields_except(exclude=["id", "lineItem"])
             ),
-            "LineItem": LineItem.fields_except(exclude=["id"]),
+            "LineItem": set(LineItem.fields_except(exclude=["id"])),
         },
         connection_arguments={
             "fulfillmentOrders": {"first": 100},
@@ -48,10 +51,10 @@ def set_order_line_item_tracking(
     tracking_number: String,
     carrier: String,
     quantity: int = 1
-) -> Boolean:
+) -> None:
     fulfillments = get_fulfillments_by_order_id(order_id)
-    valid_fli: FulfillmentOrderLineItem = None
-    fulfillment_id: ID = None
+    valid_fli: Optional[FulfillmentOrderLineItem] = None
+    fulfillment_id: Optional[ID] = None
     for fulfillment in fulfillments:
         for fline_item in fulfillment.lineItems.nodes:
             if fline_item.lineItem.id == line_item_id:
