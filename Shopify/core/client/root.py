@@ -38,7 +38,8 @@ class RootClient(SingletonBase):
             "Content-Type": "application/json",
             f"X-Shopify-Access-Token": f"{self._access_token}"
         }
-        payload = {"query": query}
+        
+        payload: Dict[str, Any] = {"query": query}
         if variables:
             if not isinstance(variables, dict):
                 raise TypeError("variables must be a dictionary.")
