@@ -22,6 +22,9 @@ res: Order = orderByIdentifier(
     field_inclusions={
         "Order": {"lineItems"}
     },
+    field_exclusions={
+        "LineItem": {"variant"}
+    },
     connection_arguments = {
         "lineItems": {"first": 100},
     }

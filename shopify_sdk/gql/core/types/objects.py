@@ -8,14 +8,17 @@ from .base import (
     DateTime,
     UnsignedInt64,
     Int,
+    Float,
     URL,
+    connection,
     AutoRegisterModel,
 )
 from .enums import (
     OrderReturnStatus,
     OrderDisplayFulfillmentStatus,
     OrderDisplayFinancialStatus,
-    FulfillmentOrderStatus
+    FulfillmentOrderStatus,
+    ProductVariantInventoryPolicy,
 )
 
 if TYPE_CHECKING:
@@ -30,13 +33,244 @@ class input_object(AutoRegisterModel):
 class object(AutoRegisterModel):
     pass
 
+
 class MoneyV2(AutoRegisterModel):
     amount: String
     currencyCode: String
 
+
 class MoneyBag(AutoRegisterModel):
     presentmentMoney: MoneyV2
     shopMoney: MoneyV2
+
+
+# Shopify's deprecated Money scalar; keep as string to avoid invalid sub-selections.
+Money = String
+
+
+class Attribute(AutoRegisterModel):
+    key: String
+    value: String
+
+
+class DiscountApplication(AutoRegisterModel):
+    allocationMethod: String
+    targetSelection: String
+    targetType: String
+
+
+class DiscountAllocation(AutoRegisterModel):
+    allocatedAmountSet: MoneyBag
+    discountApplication: DiscountApplication
+
+
+class TaxLine(AutoRegisterModel):
+    priceSet: MoneyBag
+    rate: Float
+    ratePercentage: Float
+    title: String
+
+
+class Duty(AutoRegisterModel):
+    countryCodeOfOrigin: String
+    harmonizedSystemCode: String
+    id: ID
+    price: MoneyBag
+    taxLines: List[TaxLine]
+
+
+class Image(AutoRegisterModel):
+    altText: String
+    id: ID
+    originalSrc: URL
+    transformedSrc: URL
+
+
+class SelectedOption(AutoRegisterModel):
+    name: String
+    value: String
+
+
+class ProductVariantContextualPricing(AutoRegisterModel):
+    compareAtPrice: MoneyV2
+    price: MoneyV2
+
+
+class DeliveryProfile(AutoRegisterModel):
+    id: ID
+
+
+class Event(AutoRegisterModel):
+    id: ID
+
+
+class EventEdge(AutoRegisterModel):
+    cursor: String
+    node: Event
+
+
+class EventConnection(connection):
+    edges: List[EventEdge]
+    nodes: List[Event]
+    pageInfo: "PageInfo"
+
+
+class InventoryItem(AutoRegisterModel):
+    id: ID
+    sku: String
+
+
+class LineItemGroup(AutoRegisterModel):
+    id: ID
+
+
+class LineItemSellingPlan(AutoRegisterModel):
+    name: String
+    sellingPlanId: ID
+
+
+class Product(AutoRegisterModel):
+    handle: String
+    id: ID
+    title: String
+    vendor: String
+
+
+class Media(AutoRegisterModel):
+    id: ID
+    mediaContentType: String
+
+
+class MediaEdge(AutoRegisterModel):
+    cursor: String
+    node: Media
+
+
+class MediaConnection(connection):
+    edges: List[MediaEdge]
+    nodes: List[Media]
+    pageInfo: "PageInfo"
+
+
+class Metafield(AutoRegisterModel):
+    id: ID
+    key: String
+    namespace: String
+    type: String
+    value: String
+
+
+class MetafieldEdge(AutoRegisterModel):
+    cursor: String
+    node: Metafield
+
+
+class MetafieldConnection(connection):
+    edges: List[MetafieldEdge]
+    nodes: List[Metafield]
+    pageInfo: "PageInfo"
+
+
+class Count(AutoRegisterModel):
+    count: Int
+
+
+class Translation(AutoRegisterModel):
+    key: String
+    locale: String
+    value: String
+
+
+class UnitPriceMeasurement(AutoRegisterModel):
+    measuredType: String
+    quantityUnit: String
+    quantityValue: Float
+    referenceUnit: String
+    referenceValue: Float
+
+
+class ProductEdge(AutoRegisterModel):
+    cursor: String
+    node: Product
+
+
+class ProductConnection(connection):
+    edges: List[ProductEdge]
+    nodes: List[Product]
+    pageInfo: "PageInfo"
+
+
+class ProductVariantComponent(AutoRegisterModel):
+    id: ID
+
+
+class ProductVariantComponentEdge(AutoRegisterModel):
+    cursor: String
+    node: ProductVariantComponent
+
+
+class ProductVariantComponentConnection(connection):
+    edges: List[ProductVariantComponentEdge]
+    nodes: List[ProductVariantComponent]
+    pageInfo: "PageInfo"
+
+
+class SellingPlanGroup(AutoRegisterModel):
+    id: ID
+    name: String
+
+
+class SellingPlanGroupEdge(AutoRegisterModel):
+    cursor: String
+    node: SellingPlanGroup
+
+
+class SellingPlanGroupConnection(connection):
+    edges: List[SellingPlanGroupEdge]
+    nodes: List[SellingPlanGroup]
+    pageInfo: "PageInfo"
+
+
+class ProductVariant(AutoRegisterModel):
+    availableForSale: Boolean
+    barcode: String
+    compareAtPrice: Money
+    createdAt: DateTime
+    defaultCursor: String
+    deliveryProfile: DeliveryProfile
+    displayName: String
+    events: EventConnection
+    id: ID
+    inventoryItem: InventoryItem
+    inventoryPolicy: ProductVariantInventoryPolicy
+    inventoryQuantity: Int
+    image: Image
+    legacyResourceId: UnsignedInt64
+    media: MediaConnection
+    metafields: MetafieldConnection
+    position: Int
+    price: Money
+    product: Product
+    productParents: ProductConnection
+    productVariantComponents: ProductVariantComponentConnection
+    requiresComponents: Boolean
+    selectedOptions: List[SelectedOption]
+    sellableOnlineQuantity: Int
+    sellingPlanGroups: SellingPlanGroupConnection
+    sellingPlanGroupsCount: Count
+    showUnitPrice: Boolean
+    sku: String
+    taxable: Boolean
+    title: String
+    unitPrice: MoneyV2
+    unitPriceMeasurement: UnitPriceMeasurement
+    updatedAt: DateTime
+
+
+class FulfillmentService(AutoRegisterModel):
+    handle: String
+    id: ID
+    serviceName: String
 
 
 class PageInfo(AutoRegisterModel):
@@ -86,14 +320,42 @@ class Order(AutoRegisterModel):
     unpaid: Boolean
     updatedAt: DateTime
 
+
 class LineItem(AutoRegisterModel):
     currentQuantity: Int
-    quantity: Int
-    title: String
+    customAttributes: List[Attribute]
+    discountAllocations: List[DiscountAllocation]
+    discountedTotalSet: MoneyBag
+    discountedUnitPriceAfterAllDiscountsSet: MoneyBag
+    discountedUnitPriceSet: MoneyBag
+    duties: List[Duty]
     id: ID
-    sku: String
+    image: Image
+    isGiftCard: Boolean
+    lineItemGroup: LineItemGroup
+    merchantEditable: Boolean
+    name: String
+    nonFulfillableQuantity: Int
     originalTotalSet: MoneyBag
     originalUnitPriceSet: MoneyBag
+    product: Product
+    quantity: Int
+    refundableQuantity: Int
+    requiresShipping: Boolean
+    restockable: Boolean
+    sellingPlan: LineItemSellingPlan
+    sku: String
+    taxable: Boolean
+    taxLines: List[TaxLine]
+    title: String
+    totalDiscountSet: MoneyBag
+    unfulfilledDiscountedTotalSet: MoneyBag
+    unfulfilledOriginalTotalSet: MoneyBag
+    unfulfilledQuantity: Int
+    variant: ProductVariant
+    variantTitle: String
+    vendor: String
+
 
 class FulfillmentOrder(AutoRegisterModel):
     channelId: ID

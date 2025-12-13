@@ -37,6 +37,10 @@ class FulfillmentOrderStatus(enum):
     OPEN = "OPEN"
     SCHEDULED = "SCHEDULED"
 
+class ProductVariantInventoryPolicy(enum):
+    CONTINUE = "CONTINUE"
+    DENY = "DENY"
+
 class OrderSortKeys(enum):
     CREATED_AT = "CREATED_AT"
     ID = "ID"

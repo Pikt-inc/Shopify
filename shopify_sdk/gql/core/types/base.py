@@ -48,6 +48,7 @@ ID = Optional[str]
 UnsignedInt64 = Optional[int]
 String = Optional[str]
 Int = Optional[int]
+Float = Optional[float]
 URL = Optional[str]
 DateTime = Optional[datetime]
 

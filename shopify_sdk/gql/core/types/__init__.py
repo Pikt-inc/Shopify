@@ -5,6 +5,7 @@ from .base import (
     DateTime,
     UnsignedInt64,
     Int,
+    Float,
     URL,
 )
 from .objects import (
@@ -12,6 +13,7 @@ from .objects import (
     input_object,
     Order,
     LineItem,
+    ProductVariant,
     PageInfo,
 )
 from .connections import OrderConnection, LineItemConnection, FulfillmentOrderConnection
@@ -29,6 +31,7 @@ from .enums import (
     OrderDisplayFulfillmentStatus,
     OrderDisplayFinancialStatus,
     OrderSortKeys,
+    ProductVariantInventoryPolicy,
 )
 from .registry import type_registry
 
@@ -44,21 +47,24 @@ __all__ = [
     "DateTime",
     "UnsignedInt64",
     "Int",
+    "Float",
     "URL",
     "input_object",
     "object",
-    "OrderLineItem",
+    "LineItem",
     "PageInfo",
     "Order",
+    "ProductVariant",
     "OrderIdentifierInput",
     "OrderReturnStatus",
     "OrderDisplayFulfillmentStatus",
     "OrderDisplayFinancialStatus",
     "OrderSortKeys",
+    "ProductVariantInventoryPolicy",
     "LineItemConnection",
     "OrderConnection",
     "FulfillmentOrderConnection",
-    "OrderLineItemEdge",
+    "LineItemEdge",
     "OrderEdge",
     "FulfillmentOrderEdge",
     "type_registry",
