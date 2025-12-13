@@ -61,7 +61,7 @@ class Mutation(Query):
             return {k: self._serialize_value(v) for k, v in value.items()}
         return value
 
-    def execute(self, client: ShopifyClient) -> None:
+    def execute(self, client: ShopifyClient) -> Dict[str, Any]:
         variables = {
             name: self._serialize_value(value)
             for name, value in self._input_arguments.items()
@@ -72,7 +72,11 @@ class Mutation(Query):
         payload = response.data.get(self.class_name) if response.data else None
         if payload is None:
             raise ValueError("Response data is None.")
+        if not isinstance(payload, dict):
+            raise TypeError(f"Expected mutation payload to be a dict, got {type(payload).__name__}.")
 
         user_errors = payload.get("userErrors", [])
         if user_errors:
             raise MutationExecutionError(user_errors)
+        
+        return payload

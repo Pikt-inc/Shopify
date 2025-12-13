@@ -1,5 +1,5 @@
 import sys
-from typing import Optional, Dict, Any, Type, List, Union, get_args, get_origin, get_type_hints
+from typing import Optional, Dict, Any, Type, List, Tuple, Union, get_args, get_origin, get_type_hints
 
 from pydantic import BaseModel
 
@@ -180,7 +180,7 @@ class Query:
         hints.pop("self", None)
         return hints
 
-    def _graphql_type_for_argument(self, annotation: Any, value: Any) -> (str, bool):
+    def _graphql_type_for_argument(self, annotation: Any, value: Any) -> Tuple[str, bool]:
         """Return (GraphQL type name, is_nullable)."""
         nullable = False
         resolved = annotation

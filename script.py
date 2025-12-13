@@ -15,6 +15,6 @@ print()
 print(type(res))
 print(res.id)
 print(res.returnStatus)
-print(res.fulfillmentOrders.first)
+print(res.fulfillmentOrders.nodes)
 
 
