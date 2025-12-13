@@ -11,11 +11,11 @@ from .objects import (
     object,
     input_object,
     Order,
-    OrderLineItem,
+    LineItem,
     PageInfo,
 )
-from .connections import OrderConnection, OrderLineItemConnection, FulfillmentOrderConnection
-from .edges import OrderEdge, OrderLineItemEdge, FulfillmentOrderEdge
+from .connections import OrderConnection, LineItemConnection, FulfillmentOrderConnection
+from .edges import OrderEdge, LineItemEdge, FulfillmentOrderEdge
 from .input_objects import (
     OrderIdentifierInput,
     FulfillmentV2Input,
@@ -55,7 +55,7 @@ __all__ = [
     "OrderDisplayFulfillmentStatus",
     "OrderDisplayFinancialStatus",
     "OrderSortKeys",
-    "OrderLineItemConnection",
+    "LineItemConnection",
     "OrderConnection",
     "FulfillmentOrderConnection",
     "OrderLineItemEdge",

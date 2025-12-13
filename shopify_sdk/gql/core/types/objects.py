@@ -19,7 +19,7 @@ from .enums import (
 )
 
 if TYPE_CHECKING:
-    from .connections import OrderLineItemConnection, FulfillmentOrderConnection
+    from .connections import LineItemConnection, FulfillmentOrderConnection
 
 
 class input_object(AutoRegisterModel):
@@ -29,6 +29,14 @@ class input_object(AutoRegisterModel):
 
 class object(AutoRegisterModel):
     pass
+
+class MoneyV2(AutoRegisterModel):
+    amount: String
+    currencyCode: String
+
+class MoneyBag(AutoRegisterModel):
+    presentmentMoney: MoneyV2
+    shopMoney: MoneyV2
 
 
 class PageInfo(AutoRegisterModel):
@@ -54,7 +62,7 @@ class Order(AutoRegisterModel):
     fulfillable: Boolean
     fulfillmentOrders: FulfillmentOrderConnection
     id: ID
-    lineItems: OrderLineItemConnection
+    lineItems: LineItemConnection
     legacyResourceId: String
     merchantEditable: Boolean
     phone: String
@@ -78,11 +86,14 @@ class Order(AutoRegisterModel):
     unpaid: Boolean
     updatedAt: DateTime
 
-class OrderLineItem(AutoRegisterModel):
+class LineItem(AutoRegisterModel):
     currentQuantity: Int
     quantity: Int
     title: String
     id: ID
+    sku: String
+    originalTotalSet: MoneyBag
+    originalUnitPriceSet: MoneyBag
 
 class FulfillmentOrder(AutoRegisterModel):
     channelId: ID

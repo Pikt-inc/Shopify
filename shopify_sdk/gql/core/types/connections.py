@@ -6,12 +6,12 @@ from .base import connection
 if TYPE_CHECKING:
     from .edges import (
         OrderEdge,
-        OrderLineItemEdge,
+        LineItemEdge,
         FulfillmentOrderEdge
     )
     from .objects import (
         Order,
-        OrderLineItem,
+        LineItem,
         PageInfo,
         FulfillmentOrder
     )
@@ -23,9 +23,9 @@ class OrderConnection(connection):
     pageInfo: "PageInfo"
 
 
-class OrderLineItemConnection(connection):
-    edges: list["OrderLineItemEdge"]
-    nodes: list["OrderLineItem"]
+class LineItemConnection(connection):
+    edges: list["LineItemEdge"]
+    nodes: list["LineItem"]
     pageInfo: "PageInfo"
 
 

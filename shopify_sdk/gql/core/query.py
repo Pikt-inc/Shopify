@@ -240,7 +240,7 @@ class Query:
         ])
     
     def execute(self, client: ShopifyClient):
-        variables = {}
+        variables: Dict[str, Any] = {}
         for name, value in self._input_arguments.items():
             if value is None:
                 variables[name] = None
