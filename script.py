@@ -1,8 +1,8 @@
-from Shopify.core.client import client
 from Shopify import (
     OrderIdentifierInput,
     orderByIdentifier,
-    Order
+    Order,
+    client
 )
 
 

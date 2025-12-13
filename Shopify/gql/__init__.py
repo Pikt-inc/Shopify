@@ -1,4 +1,4 @@
-from .gql import (
+from .types import (
     ID,
     String,
     Boolean,
@@ -7,7 +7,9 @@ from .gql import (
     object,
     Order,
     OrderIdentifierInput,
-    OrderReturnStatus,
+    OrderReturnStatus
+)
+from .queries import (
     orderByIdentifier
 )
 
