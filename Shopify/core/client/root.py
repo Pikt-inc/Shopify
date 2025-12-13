@@ -57,7 +57,7 @@ class RootClient(SingletonBase):
         response_json = response.json()
 
         if "errors" in response_json:
-            raise ValueError("GraphQL errors occurred.")
+            raise ValueError(f"GraphQL errors occurred: {response_json.get('errors')}")
 
         _response = GQLResponse(**response_json)
         return _response

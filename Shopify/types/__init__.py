@@ -17,7 +17,11 @@ from .objects import (
 from .connections import OrderLineItemConnection
 from .edges import OrderLineItemEdge
 from .input_objects import OrderIdentifierInput
-from .enums import OrderReturnStatus
+from .enums import (
+    OrderReturnStatus,
+    OrderDisplayFulfillmentStatus,
+    OrderDisplayFinancialStatus,
+)
 from .registry import type_registry
 
 # Resolve forward references for interdependent Pydantic models using the shared registry.
@@ -40,6 +44,8 @@ __all__ = [
     "Order",
     "OrderIdentifierInput",
     "OrderReturnStatus",
+    "OrderDisplayFulfillmentStatus",
+    "OrderDisplayFinancialStatus",
     "OrderLineItemConnection",
     "OrderLineItemEdge",
     "type_registry",

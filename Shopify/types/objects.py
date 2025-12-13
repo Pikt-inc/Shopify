@@ -11,10 +11,15 @@ from .base import (
     URL,
     AutoRegisterModel,
 )
-from .enums import OrderReturnStatus
+from .enums import (
+    OrderReturnStatus,
+    OrderDisplayFulfillmentStatus,
+    OrderDisplayFinancialStatus,
+    FulfillmentOrderStatus
+)
 
 if TYPE_CHECKING:
-    from .connections import OrderLineItemConnection
+    from .connections import OrderLineItemConnection, FulfillmentOrderConnection
 
 
 class input_object(AutoRegisterModel):
@@ -44,6 +49,10 @@ class Order(AutoRegisterModel):
     confirmationNumber: String
     confirmed: Boolean
     createdAt: DateTime
+    displayFulfillmentStatus: OrderDisplayFulfillmentStatus
+    displayFinancialStatus: OrderDisplayFinancialStatus
+    fulfillable: Boolean
+    fulfillmentOrders: FulfillmentOrderConnection
     id: ID
     lineItems: OrderLineItemConnection
     legacyResourceId: String
@@ -74,3 +83,11 @@ class OrderLineItem(AutoRegisterModel):
     quantity: Int
     title: String
     id: ID
+
+class FulfillmentOrder(AutoRegisterModel):
+    channelId: ID
+    id: ID
+    createdAt: DateTime
+    fulfillAt: DateTime
+    fulfillBy: DateTime
+    status: FulfillmentOrderStatus
