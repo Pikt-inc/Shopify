@@ -182,7 +182,6 @@ class Query:
             query=self.body,
             variables=variables
         )
-        
         if response.data is None:
             raise ValueError("Response data is None.")
         order_data = response.data.get(self.class_name)

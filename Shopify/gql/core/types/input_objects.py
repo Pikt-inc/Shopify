@@ -5,8 +5,10 @@ from .base import (
     String,
     URL,
     Int,
+    DateTime
 )
-from typing import List
+from typing import List, Optional
+from pydantic import Field
 
 
 class OrderIdentifierInput(input_object):
@@ -16,9 +18,9 @@ class OrderIdentifierInput(input_object):
 class FulfillmentTrackingInput(input_object):
     company: String
     number: String
-    numbers: List[String]
+    numbers: List[String] = Field(default_factory=list)
     url: URL
-    urls: List[URL]
+    urls: List[URL] = Field(default_factory=list)
 
 
 class FulfillmentOriginAddressInput(input_object):
@@ -37,11 +39,61 @@ class FulfillmentOrderLineItemInput(input_object):
 
 class FulfillmentOrderLineItemsInput(input_object):
     fulfillmentOrderId: ID
-    fulfillmentOrderLineItems: List[FulfillmentOrderLineItemInput]
+    fulfillmentOrderLineItems: List[FulfillmentOrderLineItemInput] = Field(default_factory=list)
 
 
 class FulfillmentV2Input(input_object):
-    lineItemsByFulfillmentOrder: List[FulfillmentOrderLineItemsInput]
+    lineItemsByFulfillmentOrder: List[FulfillmentOrderLineItemsInput] = Field(default_factory=list)
     notifyCustomer: Boolean
     originAddress: FulfillmentOriginAddressInput
     trackingInfo: FulfillmentTrackingInput
+
+class ProductPublicationInput(input_object):
+    publicationId: ID
+    publishDate: DateTime
+
+
+class ProductUnpublishInput(input_object):
+    id: ID
+    productPublications: ProductPublicationInput
+
+
+class MailingAddressInput(input_object):
+    address1: String
+    address2: String
+    city: String
+    company: String
+    countryCode: String
+    firstName: String
+    lastName: String
+    phone: String
+    provinceCode: String
+    zip: String
+
+class MetafieldInput(input_object):
+    id: ID
+    key: String
+    namespace: String
+    type: String
+    value: String
+
+
+class LocalizedFieldInput(input_object):
+    key: String
+    value: String
+
+
+class AttributeInput(input_object):
+    key: String
+    value: String
+
+
+class OrderInput(input_object):
+    customAttributes: Optional[AttributeInput] = Field(default=None)
+    email: Optional[String] = Field(default=None)
+    id: ID
+    localizedFields: Optional[LocalizedFieldInput] = Field(default=None)
+    metafields: Optional[MetafieldInput] = Field(default=None)
+    note: Optional[String] = Field(default=None)
+    shippingAddress: Optional[MailingAddressInput] = Field(default=None)
+    tags: List[String] = Field(default_factory=list)

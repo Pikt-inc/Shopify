@@ -1,6 +1,9 @@
 from .queries import (
     orderByIdentifier
 )
+from .mutations import (
+    orderUpdate
+)
 from .core import (
     ID,
     String,
@@ -23,5 +26,6 @@ __all__ = [
     "Order",
     "OrderIdentifierInput",
     "OrderReturnStatus",
-    "client"
+    "client",
+    "orderUpdate"
 ]

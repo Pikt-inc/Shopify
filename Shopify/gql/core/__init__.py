@@ -1,4 +1,5 @@
 from .query import Query
+from .mutation import Mutation
 from .types import (
     ID,
     String,
@@ -8,7 +9,9 @@ from .types import (
     object,
     Order,
     OrderIdentifierInput,
-    OrderReturnStatus
+    OrderReturnStatus,
+    ProductUnpublishInput,
+    OrderInput
 )
 from .client import client
 
@@ -22,5 +25,9 @@ __all__ = [
     "Order",
     "OrderIdentifierInput",
     "Query",
-    "client"
+    "Mutation",
+    "client",
+    "OrderReturnStatus",
+    "ProductUnpublishInput"
+    "OrderInput"
 ]
