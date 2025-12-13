@@ -1,7 +1,5 @@
-from .factory import ShopifyResourceFactory
-from .types import ShopifyResource
+from .query import Query
 
 __all__ = [
-    "ShopifyResourceFactory",
-    "ShopifyResource",
+    "Query"
 ]

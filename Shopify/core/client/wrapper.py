@@ -1,14 +1,19 @@
+import os
 from .root import RootClient
+from .types import GQLResponse
 
 
 class ShopifyClientWrapper:
     def __init__(
         self,
         shop_domain: str,
-        access_token: str
+        access_token: str,
+        api_version: str | None = None
     ):
         self._shop_domain = shop_domain
         self._access_token = access_token
+        # Prefer explicit version, then env, then a modern default that supports newer fields.
+        self._api_version = api_version or os.getenv("SHOPIFY_API_VERSION") or "2025-10"
         self._client = None
 
     @property
@@ -17,7 +22,7 @@ class ShopifyClientWrapper:
             self._client = self._generate_client()
         return self._client
     
-    def request(self, query: str, variables: dict = None) -> dict:
+    def request(self, query: str, variables: dict = None) -> GQLResponse:
         res = self.client.request(query=query, variables=variables)
         return res
     
@@ -26,7 +31,7 @@ class ShopifyClientWrapper:
             client_instance = RootClient(
                 shop_domain=self._shop_domain,
                 access_token=self._access_token,
-                api_version="2025-01"
+                api_version=self._api_version
             )
             return client_instance
         except Exception as e:

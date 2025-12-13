@@ -97,6 +97,11 @@ class Customer(ShopifyResource):
     defaultAddress: Optional[Address]
     metafields: Optional[List[Metafield]]
 
+
+
+
+
+
 class Order(ShopifyResource):
     name: str
     email: Optional[str]
@@ -112,3 +117,39 @@ class Order(ShopifyResource):
     billingAddress: Optional[Address]
     tags: List[str]
     metafields: Optional[List[Metafield]]
+
+    @property
+    def hydrate(self):
+
+class Mutation:
+    pass
+
+class Query:
+    pass
+
+
+class OrderIdentifierInput(input_object):
+    id: ID. # The ID of the order.
+
+class orderByIdentifier(Query):
+
+    def __init__(
+        self,
+        identifier: OrderIdentifierInput,
+    ) -> Order:
+        self.identifier = identifier
+
+    @property
+    def body(self) -> str:
+        return f'''
+        query {{
+            orderByIdentifier(identifier: {{id: "{self.identifier.id}"}}) {{
+            }}
+        }}
+        '''
+    
+    def execute(self, client) -> Order:
+        response = client.request(query=self.body)
+        print(response)
+        order_data = response.get('orderByIdentifier', {})
+        return Order(**order_data)

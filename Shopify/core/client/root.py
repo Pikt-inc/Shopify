@@ -29,7 +29,7 @@ class RootClient(SingletonBase):
         if time_since_last_request < 0.5:  # 0.5 seconds = 2 requests per second
             time.sleep(0.5 - time_since_last_request)
 
-    def request(self, query: str, variables: dict = None) -> dict:
+    def request(self, query: str, variables: dict = None) -> GQLResponse:
         self.check_limit()  # Ensure rate limit is respected
         _params = GQLRequestParams(query=query, variables=variables)
 

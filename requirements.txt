@@ -3,3 +3,4 @@ pydantic>=2.6.0,<3.0.0
 mypy>=1.11.0
 types-requests>=2.32.0.20240622
 types-urllib3>=1.26.25.14
+strawberry-graphql
