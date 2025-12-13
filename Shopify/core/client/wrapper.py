@@ -24,7 +24,6 @@ class ShopifyClientWrapper:
         return self._client
 
     def request(self, query: str, variables: Optional[Dict[Any, Any]] = None) -> GQLResponse:
-        print(query)
         res = self.client.request(query=query, variables=variables)
         return res
 

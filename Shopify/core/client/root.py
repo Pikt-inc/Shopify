@@ -39,10 +39,6 @@ class RootClient(SingletonBase):
             f"X-Shopify-Access-Token": f"{self._access_token}"
         }
         payload = {"query": query}
-        # The GraphQL API expects `variables` to be a JSON object. Keep `variables`
-        # as a dict so `requests` can serialize it to proper JSON. Previously we
-        # converted variables to a Python string which produced invalid JSON
-        # (single quotes) and triggered "Invalid variables parameter." errors.
         if variables:
             if not isinstance(variables, dict):
                 raise TypeError("variables must be a dictionary.")
@@ -56,9 +52,9 @@ class RootClient(SingletonBase):
             json=payload
         )
 
-        self._last_request_time = int(time.time())  # Ensure the last request time is an integer
+        self._last_request_time = int(time.time())
         response_json = response.json()
-        print("DEBUG: Response JSON:", response_json)
+
         if "errors" in response_json:
             raise ValueError("GraphQL errors occurred.")
 
