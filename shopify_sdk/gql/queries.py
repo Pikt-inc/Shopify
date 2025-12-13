@@ -1,4 +1,5 @@
-from .core import Query, Order, OrderIdentifierInput
+from .core import Query
+from .core.types import Order, OrderIdentifierInput
 from typing import Type, Optional
 from pydantic import BaseModel
 

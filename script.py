@@ -1,9 +1,11 @@
-from shopify_sdk import (
+from shopify_sdk.gql.core.types import (
     OrderIdentifierInput,
-    orderByIdentifier,
-    Order,
-    client
+    Order
 )
+from shopify_sdk.gql import (
+    orderByIdentifier
+)
+from shopify_sdk import client
 
 
 identifier = OrderIdentifierInput(id="gid://shopify/Order/6753283801339")
