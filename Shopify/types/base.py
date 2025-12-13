@@ -1,16 +1,15 @@
-from typing import NewType
+from typing import Optional
 from datetime import datetime
-from typing import Union
 from enum import Enum
 
 class enum(str, Enum):
     pass
 
-Boolean = Union[NewType('Boolean', bool), None]
-ID = Union[NewType('ID', str), None]
-UnsignedInt64 = Union[NewType('UnsignedInt64', int), None]
-String = Union[NewType('String', str), None]
-Int = Union[NewType('Int', int), None]
-URL = Union[NewType('URL', str), None]
-DateTime = Union[datetime, None]
+Boolean = Optional[bool]
+ID = Optional[str]
+UnsignedInt64 = Optional[int]
+String = Optional[str]
+Int = Optional[int]
+URL = Optional[str]
+DateTime = Optional[datetime]
 
