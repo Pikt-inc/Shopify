@@ -2,6 +2,7 @@ from typing import Any, Dict
 
 from .query import Query
 from .client import ShopifyClient
+from .exceptions import MutationExecutionError
 
 
 class Mutation(Query):
@@ -60,7 +61,7 @@ class Mutation(Query):
             return {k: self._serialize_value(v) for k, v in value.items()}
         return value
 
-    def execute(self, client: ShopifyClient):
+    def execute(self, client: ShopifyClient) -> None:
         variables = {
             name: self._serialize_value(value)
             for name, value in self._input_arguments.items()
@@ -73,4 +74,5 @@ class Mutation(Query):
             raise ValueError("Response data is None.")
 
         user_errors = payload.get("userErrors", [])
-        return user_errors
+        if user_errors:
+            raise MutationExecutionError(user_errors)

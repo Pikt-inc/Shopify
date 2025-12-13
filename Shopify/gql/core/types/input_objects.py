@@ -19,7 +19,7 @@ class FulfillmentTrackingInput(input_object):
     company: String
     number: String
     numbers: List[String] = Field(default_factory=list)
-    url: URL
+    url: URL = Field(default=None)
     urls: List[URL] = Field(default_factory=list)
 
 
@@ -43,10 +43,10 @@ class FulfillmentOrderLineItemsInput(input_object):
 
 
 class FulfillmentV2Input(input_object):
-    lineItemsByFulfillmentOrder: List[FulfillmentOrderLineItemsInput] = Field(default_factory=list)
-    notifyCustomer: Boolean
-    originAddress: FulfillmentOriginAddressInput
-    trackingInfo: FulfillmentTrackingInput
+    lineItemsByFulfillmentOrder: List[FulfillmentOrderLineItemsInput]
+    notifyCustomer: Boolean = Field(default=None)
+    originAddress: Optional[FulfillmentOriginAddressInput] = Field(default=None)
+    trackingInfo: Optional[FulfillmentTrackingInput] = Field(default=None)
 
 class ProductPublicationInput(input_object):
     publicationId: ID

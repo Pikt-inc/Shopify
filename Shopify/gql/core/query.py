@@ -30,10 +30,18 @@ class Query:
     @property
     def arguments(self):
         inputs = self._input_arguments
-        return ", ".join(
-            f"${name}: {type(value).__name__}!"
-            for name, value in inputs.items()
-        )
+        annotations = self._get_argument_annotations()
+
+        parts = []
+        for name, value in inputs.items():
+            gql_type, nullable = self._graphql_type_for_argument(
+                annotation=annotations.get(name),
+                value=value,
+            )
+            required_marker = "" if nullable else "!"
+            parts.append(f"${name}: {gql_type}{required_marker}")
+
+        return ", ".join(parts)
 
     @property
     def _input_arguments(self) -> Dict[str, Any]:
@@ -156,6 +164,66 @@ class Query:
                 else:
                     resolved[key] = value
             return resolved
+
+    def _get_argument_annotations(self) -> Dict[str, Any]:
+        init_method = self.__class__.__init__
+        try:
+            module = sys.modules.get(init_method.__module__)
+            globalns: Dict[str, Any] = type_registry.types
+            if module:
+                globalns = {**module.__dict__, **globalns}
+            hints = get_type_hints(init_method, globalns=globalns, localns=globalns)
+        except Exception:
+            hints = getattr(init_method, "__annotations__", {}) or {}
+
+        hints.pop("return", None)
+        hints.pop("self", None)
+        return hints
+
+    def _graphql_type_for_argument(self, annotation: Any, value: Any) -> (str, bool):
+        """Return (GraphQL type name, is_nullable)."""
+        nullable = False
+        resolved = annotation
+
+        if resolved is not None:
+            origin = get_origin(resolved)
+            if origin is Union:
+                union_args = [arg for arg in get_args(resolved) if arg is not type(None)]
+                resolved = union_args[0] if union_args else Any
+                nullable = True
+                origin = get_origin(resolved)
+
+            if origin is list or origin is List:
+                inner = get_args(resolved)
+                inner_type, _ = self._graphql_type_for_argument(inner[0] if inner else Any, None)
+                return f"[{inner_type}]", nullable
+
+            scalar_map = {
+                str: "String",
+                int: "Int",
+                bool: "Boolean",
+                float: "Float",
+            }
+            if resolved in scalar_map:
+                return scalar_map[resolved], nullable
+            if isinstance(resolved, type):
+                return resolved.__name__, nullable
+
+        return self._graphql_type_from_value(value), nullable
+
+    def _graphql_type_from_value(self, value: Any) -> str:
+        scalar_map = {
+            str: "String",
+            int: "Int",
+            bool: "Boolean",
+            float: "Float",
+        }
+        if isinstance(value, list) and value:
+            inner_type = self._graphql_type_from_value(value[0])
+            return f"[{inner_type}]"
+
+        value_type = type(value)
+        return scalar_map.get(value_type, value_type.__name__)
 
     @property
     def body(self) -> str:

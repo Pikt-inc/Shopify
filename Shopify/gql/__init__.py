@@ -2,7 +2,8 @@ from .queries import (
     orderByIdentifier
 )
 from .mutations import (
-    orderUpdate
+    orderUpdate,
+    fulfillmentCreateV2
 )
 from .core import (
     ID,
@@ -27,5 +28,6 @@ __all__ = [
     "OrderIdentifierInput",
     "OrderReturnStatus",
     "client",
-    "orderUpdate"
+    "orderUpdate",
+    "fulfillmentCreateV2"
 ]

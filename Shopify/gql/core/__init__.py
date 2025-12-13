@@ -11,7 +11,8 @@ from .types import (
     OrderIdentifierInput,
     OrderReturnStatus,
     ProductUnpublishInput,
-    OrderInput
+    OrderInput,
+    FulfillmentV2Input
 )
 from .client import client
 
@@ -28,6 +29,7 @@ __all__ = [
     "Mutation",
     "client",
     "OrderReturnStatus",
-    "ProductUnpublishInput"
-    "OrderInput"
+    "ProductUnpublishInput",
+    "OrderInput",
+    "FulfillmentV2Input"
 ]

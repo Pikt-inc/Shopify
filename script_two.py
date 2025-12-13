@@ -3,28 +3,33 @@ from Shopify import (
     orderUpdate,
     OrderIdentifierInput,
     orderByIdentifier,
-    Order
+    Order,
+    
 )
+from Shopify.gql.core.types import FulfillmentV2Input, FulfillmentTrackingInput, FulfillmentOrderLineItemsInput
+from Shopify.gql import fulfillmentCreateV2
+
 from Shopify.gql.core.types.input_objects import OrderInput
 
-oi = OrderInput(
-    id="gid://shopify/Order/6753695596795",
-    email="pkww31@gmail.com"
+
+
+
+
+
+
+f = FulfillmentOrderLineItemsInput(
+    fulfillmentOrderId="gid://shopify/FulfillmentOrder/7823840084219",
+
 )
-
-res = orderUpdate(
-    input=oi
+tracking = FulfillmentTrackingInput(
+    company="UPS",
+    number="1Z999AA10123456784"
+)
+fulfillment_input = FulfillmentV2Input(
+    lineItemsByFulfillmentOrder=[f],
+    trackingInfo=tracking
+)
+mutation = fulfillmentCreateV2(
+    fulfillment=fulfillment_input
 ).execute(client=client)
 
-print("User errors:", res, type(res))
-
-identifier = OrderIdentifierInput(id="gid://shopify/Order/6753695596795")
-res: Order = orderByIdentifier(
-    identifier=identifier
-).execute(client=client)
-
-print()
-print(type(res))
-print(res.id)
-print(res.returnStatus)
-print(res.fulfillmentOrders.first)

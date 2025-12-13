@@ -20,7 +20,9 @@ from .input_objects import (
     OrderIdentifierInput,
     FulfillmentV2Input,
     ProductUnpublishInput,
-    OrderInput
+    OrderInput,
+    FulfillmentTrackingInput,
+    FulfillmentOrderLineItemsInput
 )
 from .enums import (
     OrderReturnStatus,
@@ -57,5 +59,7 @@ __all__ = [
     "TYPES_NAMESPACE",
     "FulfillmentV2Input",
     "ProductUnpublishInput",
-    "OrderInput"
+    "OrderInput",
+    "FulfillmentTrackingInput",
+    "FulfillmentOrderLineItemsInput",
 ]
