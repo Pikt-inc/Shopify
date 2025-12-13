@@ -1,4 +1,5 @@
 import sys
+from enum import Enum
 from typing import Optional, Dict, Any, Type, List, Tuple, Union, get_args, get_origin, get_type_hints
 
 from pydantic import BaseModel
@@ -11,7 +12,7 @@ class Query:
     return_type: Optional[Type[BaseModel]] = None
     _connection_arguments: Dict[str, Dict[str, Any]] = {}
     _indent: int = 2
-    default_connection_first: Optional[int] = 10
+    default_connection_first: Optional[int] = 100
 
     def __init__(
         self
@@ -241,8 +242,12 @@ class Query:
     def execute(self, client: ShopifyClient):
         variables = {}
         for name, value in self._input_arguments.items():
-            if hasattr(value, "to_graphql"):
+            if value is None:
+                variables[name] = None
+            elif hasattr(value, "to_graphql"):
                 variables[name] = value.to_graphql()
+            elif isinstance(value, Enum):
+                variables[name] = value.value
             else:
                 variables[name] = value
 

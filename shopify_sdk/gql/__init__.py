@@ -1,5 +1,6 @@
 from .queries import (
-    orderByIdentifier
+    orderByIdentifier,
+    orders,
 )
 from .mutations import (
     orderUpdate,
@@ -10,6 +11,7 @@ from .core import client
 
 __all__ = [
     "orderByIdentifier",
+    "orders",
     "orderUpdate",
     "fulfillmentCreateV2",
     "client",

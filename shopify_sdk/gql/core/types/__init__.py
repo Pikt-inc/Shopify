@@ -14,8 +14,8 @@ from .objects import (
     OrderLineItem,
     PageInfo,
 )
-from .connections import OrderLineItemConnection
-from .edges import OrderLineItemEdge
+from .connections import OrderConnection, OrderLineItemConnection, FulfillmentOrderConnection
+from .edges import OrderEdge, OrderLineItemEdge, FulfillmentOrderEdge
 from .input_objects import (
     OrderIdentifierInput,
     FulfillmentV2Input,
@@ -28,6 +28,7 @@ from .enums import (
     OrderReturnStatus,
     OrderDisplayFulfillmentStatus,
     OrderDisplayFinancialStatus,
+    OrderSortKeys,
 )
 from .registry import type_registry
 
@@ -53,8 +54,13 @@ __all__ = [
     "OrderReturnStatus",
     "OrderDisplayFulfillmentStatus",
     "OrderDisplayFinancialStatus",
+    "OrderSortKeys",
     "OrderLineItemConnection",
+    "OrderConnection",
+    "FulfillmentOrderConnection",
     "OrderLineItemEdge",
+    "OrderEdge",
+    "FulfillmentOrderEdge",
     "type_registry",
     "TYPES_NAMESPACE",
     "FulfillmentV2Input",

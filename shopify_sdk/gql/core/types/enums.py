@@ -36,3 +36,10 @@ class FulfillmentOrderStatus(enum):
     ON_HOLD = "ON_HOLD"
     OPEN = "OPEN"
     SCHEDULED = "SCHEDULED"
+
+class OrderSortKeys(enum):
+    CREATED_AT = "CREATED_AT"
+    ID = "ID"
+    PROCESSED_AT = "PROCESSED_AT"
+    TOTAL_PRICE = "TOTAL_PRICE"
+    UPDATED_AT = "UPDATED_AT"
