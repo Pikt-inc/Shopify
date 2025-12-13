@@ -18,7 +18,7 @@ res = orderUpdate(
 
 print("User errors:", res, type(res))
 
-identifier = OrderIdentifierInput(id="gid://shopify/Order/675395596795")
+identifier = OrderIdentifierInput(id="gid://shopify/Order/6753695596795")
 res: Order = orderByIdentifier(
     identifier=identifier
 ).execute(client=client)

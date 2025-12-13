@@ -182,11 +182,14 @@ class Query:
             query=self.body,
             variables=variables
         )
+        
         if response.data is None:
             raise ValueError("Response data is None.")
         order_data = response.data.get(self.class_name)
+        if order_data is None:
+            return None
         if not isinstance(order_data, dict):
-            raise TypeError("Response data for the class must be a dictionary.")
+            raise TypeError(f"Response data for the class must be a dictionary, got {type(order_data).__name__}.")
         if self.return_type is None:
             raise ValueError("return_type must be defined to cast the response.")
         if not isinstance(self.return_type, type):
