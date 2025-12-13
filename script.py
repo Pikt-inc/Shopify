@@ -14,5 +14,6 @@ print()
 print(type(res))
 print(res.id)
 print(res.returnStatus)
+print(type(res.lineItems.first))
 
 

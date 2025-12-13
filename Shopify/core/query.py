@@ -1,9 +1,17 @@
+import sys
+from typing import Optional, Dict, Any, Type, List, Union, get_args, get_origin, get_type_hints
+
 from pydantic import BaseModel
+
+from Shopify.types import type_registry
+from Shopify.types.base import connection
 from .client import ShopifyClient
-from typing import Optional, Dict, Any, Type
 
 class Query:
     return_type: Optional[Type[BaseModel]] = None
+    _connection_arguments: Dict[str, Dict[str, Any]] = {}
+    _indent: int = 2
+    default_connection_first: Optional[int] = 10
 
     def __init__(
         self
@@ -11,37 +19,165 @@ class Query:
         pass
 
     @property
+    def connection_arguments(self) -> Dict[str, Dict[str, Any]]:
+        # class-level default allows subclasses to override without polluting __dict__
+        return getattr(self, "_connection_arguments", self.__class__._connection_arguments)
+
+    @property
     def class_name(self):
         return self.__class__.__name__ 
 
     @property
     def arguments(self):
+        inputs = self._input_arguments
         return ", ".join(
-            f"${name}: {type(getattr(self, name)).__name__}!"
-            for name in self.__dict__.keys()
+            f"${name}: {type(value).__name__}!"
+            for name, value in inputs.items()
         )
+
+    @property
+    def _input_arguments(self) -> Dict[str, Any]:
+        # filters out internal/private attributes (e.g., _connection_arguments)
+        return {
+            name: value
+            for name, value in self.__dict__.items()
+            if not name.startswith("_")
+        }
     
     @property
     def fields(self):
         if self.return_type is None:
             raise ValueError("return_type must be defined to access fields.")
-        return ", ".join(self.return_type.model_fields.keys()) 
+        return self._build_model_selection(self.return_type, indent=self._indent * 2)
+
+    def _build_model_selection(self, model: Type[BaseModel], indent: int) -> str:
+        type_hints = self._get_type_hints(model)
+        field_names = list(getattr(model, "model_fields", {}).keys() or type_hints.keys())
+        lines = [
+            self._build_field_selection(name, type_hints.get(name), indent)
+            for name in field_names
+            if type_hints.get(name) is not None
+        ]
+        return "\n".join(lines)
+
+    def _build_field_selection(self, name: str, annotation: Any, indent: int) -> str:
+        resolved = self._unwrap_annotation(annotation)
+        spacer = " " * indent
+
+        if self._is_connection(resolved):
+            return self._build_connection_selection(name, resolved, indent)
+
+        if self._is_model(resolved):
+            nested = self._build_model_selection(resolved, indent + self._indent)
+            return f"{spacer}{name} {{\n{nested}\n{spacer}}}"
+
+        return f"{spacer}{name}"
+
+    def _build_connection_selection(self, name: str, conn_type: Type[BaseModel], indent: int) -> str:
+        spacer = " " * indent
+        inner_indent = indent + self._indent
+        conn_hints = self._get_type_hints(conn_type)
+
+        sections = []
+
+        edges_type = self._unwrap_annotation(conn_hints.get("edges"))
+        if self._is_model(edges_type):
+            edges_body = self._build_model_selection(edges_type, inner_indent + self._indent)
+            sections.append(f"{' ' * inner_indent}edges {{\n{edges_body}\n{' ' * inner_indent}}}")
+
+        nodes_type = self._unwrap_annotation(conn_hints.get("nodes"))
+        if self._is_model(nodes_type):
+            nodes_body = self._build_model_selection(nodes_type, inner_indent + self._indent)
+            sections.append(f"{' ' * inner_indent}nodes {{\n{nodes_body}\n{' ' * inner_indent}}}")
+
+        page_info_type = self._unwrap_annotation(conn_hints.get("pageInfo"))
+        if self._is_model(page_info_type):
+            page_info_body = self._build_model_selection(page_info_type, inner_indent + self._indent)
+            sections.append(f"{' ' * inner_indent}pageInfo {{\n{page_info_body}\n{' ' * inner_indent}}}")
+
+        args_fragment = self._format_connection_args(name, conn_type)
+        if not sections:
+            return f"{spacer}{name}{args_fragment}"
+
+        section_body = "\n".join(sections)
+        return f"{spacer}{name}{args_fragment} {{\n{section_body}\n{spacer}}}"
+
+    def _format_connection_args(self, field_name: str, conn_type: Type[BaseModel]) -> str:
+        args = self.connection_arguments.get(field_name)
+        if not args:
+            if self.default_connection_first is None:
+                return ""
+            args = {"first": self.default_connection_first}
+        formatted = ", ".join(f"{key}: {self._format_literal(value)}" for key, value in args.items())
+        return f"({formatted})"
+
+    def _format_literal(self, value: Any) -> str:
+        if isinstance(value, str):
+            return f'"{value}"'
+        if isinstance(value, bool):
+            return str(value).lower()
+        if value is None:
+            return "null"
+        return str(value)
+
+    def _unwrap_annotation(self, annotation: Any) -> Any:
+        if annotation is None:
+            return None
+        origin = get_origin(annotation)
+        if origin is None:
+            return annotation
+        if origin is list or origin is List:
+            list_args = get_args(annotation)
+            return self._unwrap_annotation(list_args[0]) if list_args else Any
+        if origin is Union:
+            union_args = [arg for arg in get_args(annotation) if arg is not type(None)]
+            return self._unwrap_annotation(union_args[0]) if union_args else Any
+        return annotation
+
+    def _is_model(self, annotation: Any) -> bool:
+        return isinstance(annotation, type) and issubclass(annotation, BaseModel)
+
+    def _is_connection(self, annotation: Any) -> bool:
+        return isinstance(annotation, type) and issubclass(annotation, connection)
+
+    def _get_type_hints(self, model: Type[BaseModel]) -> Dict[str, Any]:
+        try:
+            module = sys.modules.get(model.__module__)
+            globalns: Dict[str, Any] = type_registry.types
+            if module:
+                globalns.update(module.__dict__)
+            return get_type_hints(model, globalns=globalns, localns=globalns)
+        except Exception:
+            annotations = getattr(model, "__annotations__", {}) or {}
+            resolved = {}
+            for key, value in annotations.items():
+                if isinstance(value, str) and value in type_registry.types:
+                    resolved[key] = type_registry.types[value]
+                else:
+                    resolved[key] = value
+            return resolved
 
     @property
     def body(self) -> str:
-        return f'''
-        query {self.class_name}({self.arguments}) {{
-            {self.class_name}({', '.join(f'{name}: ${name}' for name in self.__dict__.keys())}) {{
-                {self.fields}
-            }}
-        }}
-        '''
+        args_list = self._input_arguments
+        args_string = ", ".join(f"{name}: ${name}" for name in args_list.keys())
+
+        return "\n".join([
+            f"query {self.class_name}({self.arguments}) {{",
+            f"{' ' * self._indent}{self.class_name}({args_string}) {{",
+            f"{self.fields}",
+            f"{' ' * self._indent}}}",
+            "}",
+        ])
     
     def execute(self, client: ShopifyClient):
-        variables = {
-            name: getattr(self, name).to_graphql()
-            for name in self.__dict__.keys()
-        }
+        variables = {}
+        for name, value in self._input_arguments.items():
+            if hasattr(value, "to_graphql"):
+                variables[name] = value.to_graphql()
+            else:
+                variables[name] = value
+
         response = client.request(
             query=self.body,
             variables=variables

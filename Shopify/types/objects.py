@@ -1,5 +1,6 @@
-from pydantic import BaseModel
-from typing import List
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, List
 from .base import (
     Boolean,
     ID,
@@ -7,22 +8,32 @@ from .base import (
     DateTime,
     UnsignedInt64,
     Int,
-    URL
+    URL,
+    AutoRegisterModel,
 )
 from .enums import OrderReturnStatus
 
+if TYPE_CHECKING:
+    from .connections import OrderLineItemConnection
 
-class input_object(BaseModel):
 
+class input_object(AutoRegisterModel):
     def to_graphql(self) -> dict:
         return self.model_dump(exclude_none=True)
 
 
-class object(BaseModel):
+class object(AutoRegisterModel):
     pass
 
 
-class Order(object):
+class PageInfo(AutoRegisterModel):
+    endCursor: String
+    hasNextPage: Boolean
+    hasPreviousPage: Boolean
+    startCursor: String
+
+
+class Order(AutoRegisterModel):
     billingAddressMatchesShippingAddress: Boolean
     canMarkAsPaid: Boolean
     canNotifyCustomer: Boolean
@@ -34,6 +45,7 @@ class Order(object):
     confirmed: Boolean
     createdAt: DateTime
     id: ID
+    lineItems: OrderLineItemConnection
     legacyResourceId: String
     merchantEditable: Boolean
     phone: String
@@ -56,3 +68,6 @@ class Order(object):
     totalWeight: UnsignedInt64
     unpaid: Boolean
     updatedAt: DateTime
+
+class OrderLineItem(AutoRegisterModel):
+    id: ID

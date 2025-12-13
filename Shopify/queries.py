@@ -4,7 +4,7 @@ from typing import Type, Optional
 from pydantic import BaseModel
 
 class orderByIdentifier(Query):
-    return_type: Type[BaseModel] = Order  # Reference the class directly
+    return_type: Type[BaseModel] = Order
 
     def __init__(
         self,
