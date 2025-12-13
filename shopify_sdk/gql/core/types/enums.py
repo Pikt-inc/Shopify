@@ -47,3 +47,10 @@ class OrderSortKeys(enum):
     PROCESSED_AT = "PROCESSED_AT"
     TOTAL_PRICE = "TOTAL_PRICE"
     UPDATED_AT = "UPDATED_AT"
+
+
+class WeightUnit(enum):
+    GRAMS = "GRAMS"
+    KILOGRAMS = "KILOGRAMS"
+    OUNCES = "OUNCES"
+    POUNDS = "POUNDS"

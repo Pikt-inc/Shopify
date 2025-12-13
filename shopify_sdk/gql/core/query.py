@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import Optional, Dict, Any, Type, List, Tuple, Union, Set, get_args, get_origin, get_type_hints
+from typing import Optional, Dict, Any, Type, List, Tuple, Union, Set, get_args, get_origin, get_type_hints, cast
 
 from pydantic import BaseModel
 
@@ -208,15 +208,17 @@ class Query:
             list_args = get_args(annotation)
             inner = self._unwrap_annotation(list_args[0]) if list_args else Any
             if self._is_model(inner) or self._is_connection(inner):
+                inner_model: Type[BaseModel] = cast(Type[BaseModel], inner)
                 return [
-                    self._build_partial_model(item, inner) if isinstance(item, dict) else item
+                    self._build_partial_model(item, inner_model) if isinstance(item, dict) else item
                     for item in value or []
                 ]
             return value
 
         if self._is_model(resolved) or self._is_connection(resolved):
+            model_type: Type[BaseModel] = cast(Type[BaseModel], resolved)
             if isinstance(value, dict):
-                return self._build_partial_model(value, resolved)
+                return self._build_partial_model(value, model_type)
             return value
 
         return value
@@ -343,7 +345,6 @@ class Query:
             query=self.body,
             variables=variables
         )
-        print(response.extensions)
         
         if response.data is None:
             raise ValueError("Response data is None.")

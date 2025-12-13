@@ -12,6 +12,7 @@ from .base import (
     URL,
     connection,
     AutoRegisterModel,
+    Weight,
 )
 from .enums import (
     OrderReturnStatus,
@@ -22,7 +23,11 @@ from .enums import (
 )
 
 if TYPE_CHECKING:
-    from .connections import LineItemConnection, FulfillmentOrderConnection
+    from .connections import (
+        LineItemConnection,
+        FulfillmentOrderConnection,
+        FulfillmentOrderLineItemConnection
+    )
 
 
 class input_object(AutoRegisterModel):
@@ -316,7 +321,7 @@ class Order(AutoRegisterModel):
     taxesIncluded: Boolean
     taxExempt: Boolean
     test: Boolean
-    totalWeight: UnsignedInt64
+    totalWeight: Weight
     unpaid: Boolean
     updatedAt: DateTime
 
@@ -357,6 +362,22 @@ class LineItem(AutoRegisterModel):
     vendor: String
 
 
+class FulfillmentOrderLineItem(AutoRegisterModel):
+    id: ID
+    image: Image
+    inventoryItemId: ID
+    lineItem: LineItem
+    productTitle: String
+    remainingQuantity: Int
+    requiresShipping: Boolean
+    sku: String
+    totalQuantity: Int
+    variant: ProductVariant
+    variantTitle: String
+    vendor: String
+    weight: Weight
+
+
 class FulfillmentOrder(AutoRegisterModel):
     channelId: ID
     id: ID
@@ -364,3 +385,5 @@ class FulfillmentOrder(AutoRegisterModel):
     fulfillAt: DateTime
     fulfillBy: DateTime
     status: FulfillmentOrderStatus
+    lineItems: FulfillmentOrderLineItemConnection
+

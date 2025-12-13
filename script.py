@@ -1,35 +1,8 @@
-from shopify_sdk.gql.core.types import (
-    OrderIdentifierInput,
-    Order
+from shopify_sdk.common import set_order_line_item_tracking
+set_order_line_item_tracking(
+    order_id="gid://shopify/Order/6756039033083",
+    line_item_id="gid://shopify/LineItem/16550326337787",
+    tracking_number="1234567890",
+    carrier="UPS",
+    quantity=1
 )
-from shopify_sdk.gql import (
-    orderByIdentifier
-)
-from shopify_sdk import client
-
-# identifier = OrderIdentifierInput(id="gid://shopify/Order/6753283801339")
-# res: Order = orderByIdentifier(
-#     identifier=identifier,
-#     field_inclusions={
-#         "Order": {"lineItems"}
-#     }
-
-# ).execute(client=client)
-
-identifier = OrderIdentifierInput(id="gid://shopify/Order/6753283801339")
-res: Order = orderByIdentifier(
-    identifier=identifier,
-    field_inclusions={
-        "Order": {"lineItems"}
-    },
-    field_exclusions={
-        "LineItem": {"variant"}
-    },
-    connection_arguments = {
-        "lineItems": {"first": 100},
-    }
-
-).execute(client=client)
-
-print(type(res))
-print(len(res.lineItems.edges))

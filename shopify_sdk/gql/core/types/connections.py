@@ -7,13 +7,15 @@ if TYPE_CHECKING:
     from .edges import (
         OrderEdge,
         LineItemEdge,
-        FulfillmentOrderEdge
+        FulfillmentOrderEdge,
+        FulfillmentOrderLineItemEdge
     )
     from .objects import (
         Order,
         LineItem,
         PageInfo,
-        FulfillmentOrder
+        FulfillmentOrder,
+        FulfillmentOrderLineItem
     )
 
 
@@ -32,4 +34,10 @@ class LineItemConnection(connection):
 class FulfillmentOrderConnection(connection):
     edges: list["FulfillmentOrderEdge"]
     nodes: list["FulfillmentOrder"]
+    pageInfo: "PageInfo"
+
+
+class FulfillmentOrderLineItemConnection(connection):
+    edges: list["FulfillmentOrderLineItemEdge"]
+    nodes: list["FulfillmentOrderLineItem"]
     pageInfo: "PageInfo"

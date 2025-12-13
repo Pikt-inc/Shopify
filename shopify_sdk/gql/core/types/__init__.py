@@ -15,6 +15,7 @@ from .objects import (
     LineItem,
     ProductVariant,
     PageInfo,
+    FulfillmentOrderLineItem
 )
 from .connections import OrderConnection, LineItemConnection, FulfillmentOrderConnection
 from .edges import OrderEdge, LineItemEdge, FulfillmentOrderEdge
@@ -24,7 +25,8 @@ from .input_objects import (
     ProductUnpublishInput,
     OrderInput,
     FulfillmentTrackingInput,
-    FulfillmentOrderLineItemsInput
+    FulfillmentOrderLineItemsInput,
+    FulfillmentOrderLineItemInput
 )
 from .enums import (
     OrderReturnStatus,
@@ -74,4 +76,6 @@ __all__ = [
     "OrderInput",
     "FulfillmentTrackingInput",
     "FulfillmentOrderLineItemsInput",
+    "FulfillmentOrderLineItem",
+    "FulfillmentOrderLineItemInput"
 ]

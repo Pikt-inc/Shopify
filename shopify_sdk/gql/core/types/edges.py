@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from .base import edge
 
 if TYPE_CHECKING:
-    from .objects import Order, LineItem, FulfillmentOrder
+    from .objects import Order, LineItem, FulfillmentOrder, FulfillmentOrderLineItem
 
 
 class OrderEdge(edge):
@@ -15,3 +15,6 @@ class LineItemEdge(edge):
 
 class FulfillmentOrderEdge(edge):
     node: "FulfillmentOrder"
+
+class FulfillmentOrderLineItemEdge(edge):
+    node: "FulfillmentOrderLineItem"

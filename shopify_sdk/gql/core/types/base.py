@@ -1,7 +1,10 @@
-from typing import Optional, Any
+from typing import Optional, Any, TYPE_CHECKING, Iterable, List, Set
 from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from .enums import WeightUnit
 
 from .registry import type_registry
 
@@ -16,6 +19,28 @@ class AutoRegisterModel(BaseModel):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         type_registry.register(cls)
+
+    @classmethod
+    def fields_except(cls, exclude: Iterable[str] = (), ordered: bool = False) -> "List[str] | Set[str]":
+        """Return the model's field names excluding those in `exclude`.
+
+        - `exclude` may be any iterable of field names to remove.
+        - If `ordered` is True, returns a list preserving the declaration order
+          (uses `model_fields` when available, otherwise `__annotations__`).
+        - If `ordered` is False, returns a set of remaining field names.
+        """
+        exclude_set = set(exclude or ())
+        model_fields = getattr(cls, "model_fields", None)
+        if model_fields:
+            names = list(model_fields.keys())
+        else:
+            names = list(getattr(cls, "__annotations__", {}).keys())
+
+        if ordered:
+            return [n for n in names if n not in exclude_set]
+        return set(names) - exclude_set
+
+    
 
 
 class connection(AutoRegisterModel):
@@ -56,3 +81,7 @@ DateTime = Optional[datetime]
 class edge(AutoRegisterModel):
     cursor: String
     node: Any
+
+class Weight(AutoRegisterModel):
+    unit: "WeightUnit"
+    value: Float
