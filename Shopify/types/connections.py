@@ -29,4 +29,8 @@ class OrderLineItemConnection(connection):
     def third(self) -> "OrderLineItem | None":
         return self.nodes[2] if len(self.nodes) > 2 else None
     
+    @property
+    def last(self) -> "OrderLineItem | None":
+        return self.nodes[-1] if self.nodes else None
+    
 
