@@ -176,6 +176,67 @@ class Query:
             return False
         return self._is_field_included(model, field_name)
 
+    def _build_partial_model(self, data: Any, model: Type[BaseModel]) -> BaseModel:
+        """Construct a model instance without requiring excluded/missing fields."""
+        type_hints = self._get_type_hints(model)
+        payload: Dict[str, Any] = {}
+        data_dict = data if isinstance(data, dict) else {}
+
+        for field_name, annotation in type_hints.items():
+            annotation = type_hints.get(field_name)
+
+            if not self._should_include_field(model, field_name):
+                payload[field_name] = self._default_value_for(annotation)
+                continue
+
+            if field_name not in data_dict:
+                payload[field_name] = self._default_value_for(annotation)
+                continue
+
+            payload[field_name] = self._build_partial_value(
+                value=data_dict[field_name],
+                annotation=annotation,
+            )
+
+        return model.model_construct(**payload)
+
+    def _build_partial_value(self, value: Any, annotation: Any) -> Any:
+        resolved = self._unwrap_annotation(annotation)
+        origin = get_origin(annotation)
+
+        if origin is list or origin is List:
+            list_args = get_args(annotation)
+            inner = self._unwrap_annotation(list_args[0]) if list_args else Any
+            if self._is_model(inner) or self._is_connection(inner):
+                return [
+                    self._build_partial_model(item, inner) if isinstance(item, dict) else item
+                    for item in value or []
+                ]
+            return value
+
+        if self._is_model(resolved) or self._is_connection(resolved):
+            if isinstance(value, dict):
+                return self._build_partial_model(value, resolved)
+            return value
+
+        return value
+
+    def _default_value_for(self, annotation: Any) -> Any:
+        if annotation is None:
+            return None
+        origin = get_origin(annotation)
+        if origin is list or origin is List:
+            return []
+        resolved = self._unwrap_annotation(annotation)
+        if self._is_connection(resolved):
+            try:
+                return resolved.model_construct(edges=[], nodes=[], pageInfo=None)
+            except Exception:
+                return resolved.model_construct()
+        if self._is_model(resolved):
+            return resolved.model_construct()
+        return None
+
     def _get_type_hints(self, model: Type[BaseModel]) -> Dict[str, Any]:
         try:
             module = sys.modules.get(model.__module__)
@@ -282,6 +343,7 @@ class Query:
             query=self.body,
             variables=variables
         )
+        print(response.extensions)
         
         if response.data is None:
             raise ValueError("Response data is None.")
@@ -294,5 +356,10 @@ class Query:
             raise ValueError("return_type must be defined to cast the response.")
         if not isinstance(self.return_type, type):
             raise TypeError("return_type must be a class type derived from BaseModel.")
-        cast_obj = self.return_type(**order_data)
+        # When fields were excluded/included, construct a partial model so missing
+        # fields default to None instead of raising validation errors.
+        if self.field_exclusions or self.field_inclusions:
+            cast_obj = self._build_partial_model(order_data, self.return_type)
+        else:
+            cast_obj = self.return_type(**order_data)
         return cast_obj

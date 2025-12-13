@@ -1,6 +1,6 @@
 from .core import Query
 from .core.types import Order, OrderConnection, OrderIdentifierInput, OrderSortKeys
-from typing import Type, Optional, Dict, Set
+from typing import Type, Optional, Dict, Set, Any
 from pydantic import BaseModel
 
 class orderByIdentifier(Query):
@@ -11,19 +11,21 @@ class orderByIdentifier(Query):
         identifier: OrderIdentifierInput,
         field_exclusions: Optional[Dict[str, Set[str]]] = None,
         field_inclusions: Optional[Dict[str, Set[str]]] = None,
+        connection_arguments: Optional[Dict[str, Dict[str, Any]]] = None,
     ):
         self.identifier: OrderIdentifierInput = identifier
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
+        self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)
 
 
 class orders(Query):
     return_type: Type[BaseModel] = OrderConnection
-    _connection_arguments = {
-        # Keep nested connections small so the latest orders payload stays lean.
-        "fulfillmentOrders": {"first": 5},
-        "lineItems": {"first": 5},
-    }
+    # _connection_arguments = {
+    #     # Keep nested connections small so the latest orders payload stays lean.
+    #     "fulfillmentOrders": {"first": 5},
+    #     "lineItems": {"first": 5},
+    # }
 
     def __init__(
         self,
@@ -34,6 +36,7 @@ class orders(Query):
         after: Optional[str] = None,
         field_exclusions: Optional[Dict[str, Set[str]]] = None,
         field_inclusions: Optional[Dict[str, Set[str]]] = None,
+        connection_arguments: Optional[Dict[str, Dict[str, Any]]] = None,
     ):
         self.first: int = first
         self.sortKey: OrderSortKeys = sortKey
@@ -42,3 +45,4 @@ class orders(Query):
         self.after: Optional[str] = after
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
+        self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)

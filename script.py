@@ -7,18 +7,26 @@ from shopify_sdk.gql import (
 )
 from shopify_sdk import client
 
+# identifier = OrderIdentifierInput(id="gid://shopify/Order/6753283801339")
+# res: Order = orderByIdentifier(
+#     identifier=identifier,
+#     field_inclusions={
+#         "Order": {"lineItems"}
+#     }
+
+# ).execute(client=client)
 
 identifier = OrderIdentifierInput(id="gid://shopify/Order/6753283801339")
 res: Order = orderByIdentifier(
-    identifier=identifier
+    identifier=identifier,
+    field_inclusions={
+        "Order": {"lineItems"}
+    },
+    connection_arguments = {
+        "lineItems": {"first": 100},
+    }
+
 ).execute(client=client)
 
-print()
 print(type(res))
-print(res.id)
-print(res.returnStatus)
-print()
-print(res.lineItems.nodes[0].originalUnitPriceSet.presentmentMoney.amount)
-print(type(res.lineItems.nodes[0].originalUnitPriceSet))
-
-
+print(len(res.lineItems.edges))
