@@ -1,4 +1,4 @@
-from Shopify import (
+from shopify_sdk import (
     OrderIdentifierInput,
     orderByIdentifier,
     Order,
@@ -6,7 +6,7 @@ from Shopify import (
 )
 
 
-identifier = OrderIdentifierInput(id="gid://shopify/Order/6753695596795")
+identifier = OrderIdentifierInput(id="gid://shopify/Order/6753283801339")
 res: Order = orderByIdentifier(
     identifier=identifier
 ).execute(client=client)

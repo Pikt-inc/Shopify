@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name='Shopify',
+    name='shopify_sdk',
     version='0.0.1',
     author='Pk whiting',
     author_email='patten.whiting@gmail.com',

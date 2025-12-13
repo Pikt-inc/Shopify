@@ -1,16 +1,16 @@
 from typing import Optional
 
 from .gql import ID
-from Shopify import (
+from shopify_sdk import (
         OrderIdentifierInput,
         orderByIdentifier,
         Order,
         client
     )
-from Shopify.gql.core.types import FulfillmentV2Input, FulfillmentTrackingInput, FulfillmentOrderLineItemsInput
-from Shopify.gql import fulfillmentCreateV2
+from shopify_sdk.gql.core.types import FulfillmentV2Input, FulfillmentTrackingInput, FulfillmentOrderLineItemsInput
+from shopify_sdk.gql import fulfillmentCreateV2
 
-from Shopify.gql.core.types.input_objects import OrderInput
+from shopify_sdk.gql.core.types.input_objects import OrderInput
 import logging
 
 logger = logging.getLogger(__name__)
