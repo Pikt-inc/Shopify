@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import Optional, Dict, Any, Type, List, Tuple, Union, get_args, get_origin, get_type_hints
+from typing import Optional, Dict, Any, Type, List, Tuple, Union, Set, get_args, get_origin, get_type_hints
 
 from pydantic import BaseModel
 
@@ -11,6 +11,8 @@ from .client import ShopifyClient
 class Query:
     return_type: Optional[Type[BaseModel]] = None
     _connection_arguments: Dict[str, Dict[str, Any]] = {}
+    _field_exclusions: Dict[str, Set[str]] = {}
+    _field_inclusions: Dict[str, Set[str]] = {}
     _indent: int = 2
     default_connection_first: Optional[int] = 100
 
@@ -23,6 +25,16 @@ class Query:
     def connection_arguments(self) -> Dict[str, Dict[str, Any]]:
         # class-level default allows subclasses to override without polluting __dict__
         return getattr(self, "_connection_arguments", self.__class__._connection_arguments)
+
+    @property
+    def field_exclusions(self) -> Dict[str, Set[str]]:
+        # class-level default allows subclasses to override without polluting __dict__
+        return getattr(self, "_field_exclusions", self.__class__._field_exclusions)
+
+    @property
+    def field_inclusions(self) -> Dict[str, Set[str]]:
+        # class-level default allows subclasses to override without polluting __dict__
+        return getattr(self, "_field_inclusions", self.__class__._field_inclusions)
 
     @property
     def class_name(self):
@@ -65,7 +77,7 @@ class Query:
         lines = [
             self._build_field_selection(name, type_hints.get(name), indent)
             for name in field_names
-            if type_hints.get(name) is not None
+            if type_hints.get(name) is not None and self._should_include_field(model, name)
         ]
         return "\n".join(lines)
 
@@ -148,6 +160,21 @@ class Query:
 
     def _is_connection(self, annotation: Any) -> bool:
         return isinstance(annotation, type) and issubclass(annotation, connection)
+
+    def _is_field_excluded(self, model: Type[BaseModel], field_name: str) -> bool:
+        exclusions = self.field_exclusions.get(model.__name__)
+        return exclusions is not None and field_name in exclusions
+
+    def _is_field_included(self, model: Type[BaseModel], field_name: str) -> bool:
+        inclusions = self.field_inclusions.get(model.__name__)
+        if inclusions is None:
+            return True
+        return field_name in inclusions
+
+    def _should_include_field(self, model: Type[BaseModel], field_name: str) -> bool:
+        if self._is_field_excluded(model, field_name):
+            return False
+        return self._is_field_included(model, field_name)
 
     def _get_type_hints(self, model: Type[BaseModel]) -> Dict[str, Any]:
         try:
