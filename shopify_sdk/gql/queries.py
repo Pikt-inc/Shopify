@@ -21,11 +21,6 @@ class orderByIdentifier(Query):
 
 class orders(Query):
     return_type: Type[BaseModel] = OrderConnection
-    _connection_arguments = {
-        # Keep nested connections small so the latest orders payload stays lean.
-        "fulfillmentOrders": {"first": 5},
-        "lineItems": {"first": 5},
-    }
 
     def __init__(
         self,

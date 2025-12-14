@@ -1,10 +1,11 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from .base import edge
+from .base import edge, String
 
 if TYPE_CHECKING:
     from .objects import Order, LineItem, FulfillmentOrder, FulfillmentOrderLineItem
+    from .objects import SalesAgreement
 
 
 class OrderEdge(edge):
@@ -18,3 +19,7 @@ class FulfillmentOrderEdge(edge):
 
 class FulfillmentOrderLineItemEdge(edge):
     node: "FulfillmentOrderLineItem"
+
+
+class SalesAgreementEdge(edge):
+    node: "SalesAgreement"

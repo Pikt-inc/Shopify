@@ -350,7 +350,7 @@ class Query:
                 variables[name] = value.value
             else:
                 variables[name] = value
-
+                
         response = client.request(
             query=self.body,
             variables=variables

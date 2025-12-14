@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='shopify_sdk',
-    version='0.0.9',
+    version='0.1.0',
     author='Pk whiting',
     author_email='patten.whiting@gmail.com',
     description='An updated OO Sdk for Shopify GQL',

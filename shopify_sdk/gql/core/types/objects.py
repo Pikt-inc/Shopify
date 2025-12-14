@@ -28,7 +28,8 @@ if TYPE_CHECKING:
     from .connections import (
         LineItemConnection,
         FulfillmentOrderConnection,
-        FulfillmentOrderLineItemConnection
+        FulfillmentOrderLineItemConnection,
+        SalesAgreementConnection
     )
 
 
@@ -304,34 +305,19 @@ class MailingAddress(AutoRegisterModel):
 
 
 class AdditionalFee(AutoRegisterModel):
-    priceSet: MoneyBag
+    id: ID
+    name: String
+    price: MoneyBag
     taxLines: List[TaxLine]
-    title: String
-    type: String
 
 
 class SalesAgreement(AutoRegisterModel):
+    happenedAt: DateTime
     id: ID
-    name: String
-    status: String
-    type: String
-
-
-class SalesAgreementEdge(AutoRegisterModel):
-    cursor: String
-    node: SalesAgreement
-
-
-class SalesAgreementConnection(connection):
-    edges: List[SalesAgreementEdge]
-    nodes: List[SalesAgreement]
-    pageInfo: "PageInfo"
+    
 
 
 class ResourceAlert(AutoRegisterModel):
-    action: String
-    description: String
-    severity: String
     title: String
 
 
@@ -341,17 +327,13 @@ class OrderApp(AutoRegisterModel):
 
 
 class OrderCancellation(AutoRegisterModel):
-    cancelledAt: DateTime
-    note: String
-    reason: OrderCancelReason
-    staffMember: "StaffMember"
+    staffNote: String
 
 
 class ChannelInformation(AutoRegisterModel):
     channelId: ID
-    channelName: String
-    channelType: String
-    source: String
+    displayName: String
+    id: ID
 
 
 class Customer(AutoRegisterModel):
@@ -412,10 +394,7 @@ class Fulfillment(AutoRegisterModel):
     createdAt: DateTime
     id: ID
     status: String
-    trackingCompany: String
     trackingInfo: List[FulfillmentTrackingInfo]
-    trackingNumbers: List[String]
-    trackingUrls: List[URL]
 
 
 class LocalizedField(AutoRegisterModel):
@@ -513,13 +492,14 @@ class OrderRiskSummary(AutoRegisterModel):
 class ShippingLine(AutoRegisterModel):
     carrierIdentifier: String
     code: String
-    customAttributes: List[Attribute]
-    discountAllocations: List[DiscountAllocation]
+    currentDiscountedPriceSet: MoneyBag
+    custom: Boolean
+    deliveryCategory: String
+    discountedPriceSet: MoneyBag
     id: ID
+    isRemoved: Boolean
     originalPriceSet: MoneyBag
     phone: String
-    priceSet: MoneyBag
-    requestedFulfillmentService: FulfillmentService
     shippingRateHandle: String
     source: String
     taxLines: List[TaxLine]
@@ -563,15 +543,14 @@ class CashRoundingAdjustment(AutoRegisterModel):
 
 
 class OrderTransaction(AutoRegisterModel):
+    accountNumber: String
+    amountRoundingSet: MoneyBag
     amountSet: MoneyBag
-    errorCode: String
+    authorizationCode: String
+    authorizationExpiresAt: DateTime
+    createdAt: DateTime
     gateway: String
     id: ID
-    kind: String
-    message: String
-    processedAt: DateTime
-    status: String
-    test: Boolean
 
 
 class Order(AutoRegisterModel):

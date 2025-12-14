@@ -9,6 +9,8 @@ if TYPE_CHECKING:
         LineItemEdge,
         FulfillmentOrderEdge,
         FulfillmentOrderLineItemEdge
+        ,
+        SalesAgreementEdge
     )
     from .objects import (
         Order,
@@ -16,6 +18,8 @@ if TYPE_CHECKING:
         PageInfo,
         FulfillmentOrder,
         FulfillmentOrderLineItem
+        ,
+        SalesAgreement
     )
 
 
@@ -40,4 +44,10 @@ class FulfillmentOrderConnection(connection):
 class FulfillmentOrderLineItemConnection(connection):
     edges: list["FulfillmentOrderLineItemEdge"]
     nodes: list["FulfillmentOrderLineItem"]
+    pageInfo: "PageInfo"
+
+
+class SalesAgreementConnection(connection):
+    edges: list["SalesAgreementEdge"]
+    nodes: list["SalesAgreement"]
     pageInfo: "PageInfo"

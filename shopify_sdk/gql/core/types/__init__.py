@@ -15,7 +15,9 @@ from .objects import (
     LineItem,
     ProductVariant,
     PageInfo,
-    FulfillmentOrderLineItem
+    FulfillmentOrderLineItem,
+    ShippingLine,
+    Fulfillment
 )
 from .connections import OrderConnection, LineItemConnection, FulfillmentOrderConnection
 from .edges import OrderEdge, LineItemEdge, FulfillmentOrderEdge
@@ -79,5 +81,7 @@ __all__ = [
     "FulfillmentTrackingInput",
     "FulfillmentOrderLineItemsInput",
     "FulfillmentOrderLineItem",
-    "FulfillmentOrderLineItemInput"
+    "FulfillmentOrderLineItemInput",
+    "ShippingLine",
+    "Fulfillment",
 ]
