@@ -10,7 +10,9 @@ from .registry import type_registry
 
 
 class enum(str, Enum):
-    pass
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        type_registry.register(cls)
 
 
 class AutoRegisterModel(BaseModel):

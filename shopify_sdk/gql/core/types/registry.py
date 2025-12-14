@@ -1,19 +1,21 @@
-from typing import Dict, Type
+from enum import Enum as PyEnum
+from typing import Any, Dict, Type
+
 from pydantic import BaseModel
 
 
 class TypeRegistry:
     def __init__(self) -> None:
-        self._types: Dict[str, Type[BaseModel]] = {}
+        self._types: Dict[str, Type[Any]] = {}
 
-    def register(self, cls: Type[BaseModel]) -> Type[BaseModel]:
-        """Register a Pydantic model class by name for forward-ref resolution."""
-        if isinstance(cls, type) and issubclass(cls, BaseModel):
+    def register(self, cls: Type[Any]) -> Type[Any]:
+        """Register a Pydantic model or enum class by name for forward-ref resolution."""
+        if isinstance(cls, type) and (issubclass(cls, BaseModel) or issubclass(cls, PyEnum)):
             self._types[cls.__name__] = cls
         return cls
 
     @property
-    def types(self) -> Dict[str, Type[BaseModel]]:
+    def types(self) -> Dict[str, Type[Any]]:
         # Return a shallow copy to avoid accidental external mutation.
         return dict(self._types)
 
