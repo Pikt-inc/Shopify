@@ -103,10 +103,10 @@ class SelectedOption(AutoRegisterModel):
 
 
 class ProductOption(AutoRegisterModel):
-    id: Optional[ID] = Field(default=None)
-    name: String = Field(default=None)
-    position: Int = Field(default=None)
-    values: List[String] = Field(default_factory=list)
+    id: ID
+    name: String
+    position: Int
+    values: List[String]
 
 
 class ProductVariantContextualPricing(AutoRegisterModel):
@@ -149,19 +149,24 @@ class LineItemSellingPlan(AutoRegisterModel):
     name: String
     sellingPlanId: ID
 
+class SEO(AutoRegisterModel):
+    description: String
+    title: String
+
 
 class Product(AutoRegisterModel):
-    handle: String = Field(default=None)
+    handle: String
     id: ID
-    resourcePublications: Optional["ResourcePublicationConnection"] = Field(default=None)
-    descriptionHtml: String = Field(default=None)
-    productType: String = Field(default=None)
-    status: ProductStatus | None = Field(default=None)
-    tags: List[String] = Field(default_factory=list)
-    title: String = Field(default=None)
-    vendor: String = Field(default=None)
-    options: List[ProductOption] = Field(default_factory=list)
+    descriptionHtml: String
+    productType: String
+    status: ProductStatus
+    tags: List[String]
+    title: String
+    options: List[ProductOption]
+    updatedAt: DateTime
     variants: "ProductVariantConnection"
+    variantsCount: Count
+    vendor: String
 
 
 class Media(AutoRegisterModel):
@@ -466,7 +471,7 @@ class Publication(AutoRegisterModel):
 
 
 class ResourcePublication(AutoRegisterModel):
-    id: ID
+    isPublished: Boolean
     publication: Publication
     publishDate: DateTime
 

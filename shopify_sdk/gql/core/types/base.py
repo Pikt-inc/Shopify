@@ -23,7 +23,7 @@ class AutoRegisterModel(BaseModel):
         type_registry.register(cls)
 
     @classmethod
-    def fields_except(cls, exclude: Iterable[str] = (), ordered: bool = False) -> "List[str] | Set[str]":
+    def fields_except(cls, exclude: Iterable[str] = (), ordered: bool = False) -> "Set[str]":
         """Return the model's field names excluding those in `exclude`.
 
         - `exclude` may be any iterable of field names to remove.
@@ -39,7 +39,7 @@ class AutoRegisterModel(BaseModel):
             names = list(getattr(cls, "__annotations__", {}).keys())
 
         if ordered:
-            return [n for n in names if n not in exclude_set]
+            return set([n for n in names if n not in exclude_set])
         return set(names) - exclude_set
 
     

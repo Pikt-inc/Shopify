@@ -18,7 +18,7 @@ class OrderIdentifierInput(input_object):
 
 
 class ProductIdentifierInput(input_object):
-    handle: String | None
+    handle: Optional[String]
     id: Optional[ID]
     
 
