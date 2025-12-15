@@ -136,14 +136,6 @@ class ProductInput(input_object):
     tags: List[String] = Field(default_factory=list)
     vendor: String = Field(default=None)
 
-    def to_graphql(self) -> dict:
-        data = super().to_graphql()
-        # The current Shopify ProductInput schema does not accept variants; strip if present.
-        data.pop("variants", None)
-        # Options are not supported in this schema; strip if present.
-        data.pop("options", None)
-        return data
-
 
 class InventoryItemInput(input_object):
     sku: String = Field(default=None)
