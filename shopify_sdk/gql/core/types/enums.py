@@ -61,3 +61,18 @@ class OrderCancelReason(enum):
     FRAUD = "FRAUD"
     INVENTORY = "INVENTORY"
     OTHER = "OTHER"
+
+
+class ProductVariantSortKeys(enum):
+    ID = "ID"
+    NAME = "NAME"
+    POSITION = "POSITION"
+    RELEVANCE = "RELEVANCE"
+    SKU = "SKU"
+    INVENTORY_TOTAL = "INVENTORY_TOTAL"
+
+
+class ProductStatus(enum):
+    ACTIVE = "ACTIVE"
+    ARCHIVED = "ARCHIVED"
+    DRAFT = "DRAFT"

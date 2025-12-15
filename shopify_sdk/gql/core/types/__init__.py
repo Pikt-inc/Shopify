@@ -13,18 +13,29 @@ from .objects import (
     input_object,
     Order,
     LineItem,
+    Product,
     ProductVariant,
     PageInfo,
     FulfillmentOrderLineItem,
     ShippingLine,
-    Fulfillment
+    Fulfillment,
+    Publication,
+    ResourcePublication,
 )
-from .connections import OrderConnection, LineItemConnection, FulfillmentOrderConnection
-from .edges import OrderEdge, LineItemEdge, FulfillmentOrderEdge
+from .connections import (
+    OrderConnection,
+    LineItemConnection,
+    FulfillmentOrderConnection,
+    ProductVariantConnection,
+    ResourcePublicationConnection,
+)
+from .edges import OrderEdge, LineItemEdge, FulfillmentOrderEdge, ProductVariantEdge, ResourcePublicationEdge
 from .input_objects import (
     OrderIdentifierInput,
     FulfillmentV2Input,
+    ProductPublicationInput,
     ProductUnpublishInput,
+    ProductInput,
     OrderInput,
     FulfillmentTrackingInput,
     FulfillmentOrderLineItemsInput,
@@ -37,6 +48,8 @@ from .enums import (
     OrderSortKeys,
     OrderCancelReason,
     ProductVariantInventoryPolicy,
+    ProductVariantSortKeys,
+    ProductStatus,
 )
 from .registry import type_registry
 
@@ -59,7 +72,10 @@ __all__ = [
     "LineItem",
     "PageInfo",
     "Order",
+    "Product",
     "ProductVariant",
+    "Publication",
+    "ResourcePublication",
     "OrderIdentifierInput",
     "OrderReturnStatus",
     "OrderDisplayFulfillmentStatus",
@@ -67,16 +83,24 @@ __all__ = [
     "OrderSortKeys",
     "OrderCancelReason",
     "ProductVariantInventoryPolicy",
+    "ProductVariantSortKeys",
+    "ProductStatus",
     "LineItemConnection",
     "OrderConnection",
     "FulfillmentOrderConnection",
+    "ProductVariantConnection",
+    "ResourcePublicationConnection",
     "LineItemEdge",
     "OrderEdge",
     "FulfillmentOrderEdge",
+    "ProductVariantEdge",
+    "ResourcePublicationEdge",
     "type_registry",
     "TYPES_NAMESPACE",
     "FulfillmentV2Input",
+    "ProductPublicationInput",
     "ProductUnpublishInput",
+    "ProductInput",
     "OrderInput",
     "FulfillmentTrackingInput",
     "FulfillmentOrderLineItemsInput",

@@ -1,4 +1,5 @@
 from .objects import input_object
+from .enums import ProductStatus
 from .base import (
     ID,
     Boolean,
@@ -50,12 +51,17 @@ class FulfillmentV2Input(input_object):
 
 class ProductPublicationInput(input_object):
     publicationId: ID
-    publishDate: DateTime
+    publishDate: DateTime = Field(default=None)
 
 
 class ProductUnpublishInput(input_object):
     id: ID
-    productPublications: ProductPublicationInput
+    productPublications: List[ProductPublicationInput]
+
+
+class ProductInput(input_object):
+    id: ID
+    status: Optional["ProductStatus"] = Field(default=None)
 
 
 class MailingAddressInput(input_object):
