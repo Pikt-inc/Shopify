@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 from pydantic import Field
 from .base import (
     Boolean,
@@ -22,6 +22,7 @@ from .enums import (
     OrderCancelReason,
     FulfillmentOrderStatus,
     ProductVariantInventoryPolicy,
+    ProductStatus,
 )
 
 if TYPE_CHECKING:
@@ -30,7 +31,8 @@ if TYPE_CHECKING:
         FulfillmentOrderConnection,
         FulfillmentOrderLineItemConnection,
         SalesAgreementConnection,
-        ResourcePublicationConnection
+        ResourcePublicationConnection,
+        ProductVariantConnection,
     )
 
 
@@ -100,6 +102,13 @@ class SelectedOption(AutoRegisterModel):
     value: String
 
 
+class ProductOption(AutoRegisterModel):
+    id: Optional[ID] = Field(default=None)
+    name: String = Field(default=None)
+    position: Int = Field(default=None)
+    values: List[String] = Field(default_factory=list)
+
+
 class ProductVariantContextualPricing(AutoRegisterModel):
     compareAtPrice: MoneyV2
     price: MoneyV2
@@ -125,8 +134,11 @@ class EventConnection(connection):
 
 
 class InventoryItem(AutoRegisterModel):
-    id: ID
-    sku: String
+    id: Optional[ID] = Field(default=None)
+    sku: String = Field(default=None)
+    tracked: Boolean = Field(default=None)
+    requiresShipping: Boolean = Field(default=None)
+    unitCost: MoneyV2 | None = Field(default=None)
 
 
 class LineItemGroup(AutoRegisterModel):
@@ -139,11 +151,17 @@ class LineItemSellingPlan(AutoRegisterModel):
 
 
 class Product(AutoRegisterModel):
-    handle: String
+    handle: String = Field(default=None)
     id: ID
-    resourcePublications: "ResourcePublicationConnection"
-    title: String
-    vendor: String
+    resourcePublications: Optional["ResourcePublicationConnection"] = Field(default=None)
+    descriptionHtml: String = Field(default=None)
+    productType: String = Field(default=None)
+    status: ProductStatus | None = Field(default=None)
+    tags: List[String] = Field(default_factory=list)
+    title: String = Field(default=None)
+    vendor: String = Field(default=None)
+    options: List[ProductOption] = Field(default_factory=list)
+    variants: "ProductVariantConnection"
 
 
 class Media(AutoRegisterModel):
@@ -242,39 +260,41 @@ class SellingPlanGroupConnection(connection):
 
 
 class ProductVariant(AutoRegisterModel):
-    availableForSale: Boolean
-    barcode: String
-    compareAtPrice: Money
-    createdAt: DateTime
-    defaultCursor: String
-    deliveryProfile: DeliveryProfile
-    displayName: String
-    events: EventConnection
-    id: ID
-    inventoryItem: InventoryItem
-    inventoryPolicy: ProductVariantInventoryPolicy
-    inventoryQuantity: Int
-    image: Image
-    legacyResourceId: UnsignedInt64
-    media: MediaConnection
-    metafields: MetafieldConnection
-    position: Int
-    price: Money
+    availableForSale: Boolean = Field(default=None)
+    barcode: String = Field(default=None)
+    compareAtPrice: Money = Field(default=None)
+    createdAt: DateTime = Field(default=None)
+    defaultCursor: String = Field(default=None)
+    deliveryProfile: Optional[DeliveryProfile] = Field(default=None)
+    displayName: String = Field(default=None)
+    events: Optional[EventConnection] = Field(default=None)
+    id: Optional[ID] = Field(default=None)
+    inventoryItem: InventoryItem | None = Field(default=None)
+    inventoryPolicy: Optional[ProductVariantInventoryPolicy] = Field(default=None)
+    inventoryQuantity: Int = Field(default=None)
+    image: Optional[Image] = Field(default=None)
+    legacyResourceId: UnsignedInt64 = Field(default=None)
+    media: Optional[MediaConnection] = Field(default=None)
+    metafields: Optional[MetafieldConnection] = Field(default=None)
+    position: Int = Field(default=None)
+    price: Money = Field(default=None)
     product: Product
-    productParents: ProductConnection
-    productVariantComponents: ProductVariantComponentConnection
-    requiresComponents: Boolean
-    selectedOptions: List[SelectedOption]
-    sellableOnlineQuantity: Int
-    sellingPlanGroups: SellingPlanGroupConnection
-    sellingPlanGroupsCount: Count
-    showUnitPrice: Boolean
-    sku: String
-    taxable: Boolean
-    title: String
-    unitPrice: MoneyV2
-    unitPriceMeasurement: UnitPriceMeasurement
-    updatedAt: DateTime
+    productParents: Optional[ProductConnection] = Field(default=None)
+    productVariantComponents: Optional[ProductVariantComponentConnection] = Field(default=None)
+    requiresComponents: Boolean = Field(default=None)
+    requiresShipping: Boolean = Field(default=None)
+    selectedOptions: List[SelectedOption] = Field(default_factory=list)
+    sellableOnlineQuantity: Int = Field(default=None)
+    sellingPlanGroups: Optional[SellingPlanGroupConnection] = Field(default=None)
+    sellingPlanGroupsCount: Optional[Count] = Field(default=None)
+    showUnitPrice: Boolean = Field(default=None)
+    sku: String = Field(default=None)
+    taxCode: String = Field(default=None)
+    taxable: Boolean = Field(default=None)
+    title: String = Field(default=None)
+    unitPrice: Optional[MoneyV2] = Field(default=None)
+    unitPriceMeasurement: Optional[UnitPriceMeasurement] = Field(default=None)
+    updatedAt: DateTime = Field(default=None)
 
 
 class FulfillmentService(AutoRegisterModel):

@@ -76,3 +76,9 @@ class ProductStatus(enum):
     ACTIVE = "ACTIVE"
     ARCHIVED = "ARCHIVED"
     DRAFT = "DRAFT"
+
+
+class CombinedListingsRole(enum):
+    NONE = "NONE"
+    PRIMARY = "PRIMARY"
+    SECONDARY = "SECONDARY"

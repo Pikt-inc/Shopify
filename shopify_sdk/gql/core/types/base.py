@@ -50,28 +50,33 @@ class connection(AutoRegisterModel):
     nodes: list[Any]
 
     @property
+    def validated_nodes(self) -> list[Any]:
+        if len(self.nodes) != 0:
+            return self.nodes
+        return [edge.node for edge in self.edges]
+
+    @property
     def count(self) -> int:
-        return len(self.edges)
+        return len(self.validated_nodes)
     
     @property
     def first(self) -> "Any | None":
-        return self.nodes[0] if self.nodes else None
+        return self.validated_nodes[0] if self.validated_nodes else None
     
     @property
     def second(self) -> "Any | None":
-        return self.nodes[1] if len(self.nodes) > 1 else None
+        return self.validated_nodes[1] if len(self.validated_nodes) > 1 else None
     
     @property
     def third(self) -> "Any | None":
-        return self.nodes[2] if len(self.nodes) > 2 else None
+        return self.validated_nodes[2] if len(self.validated_nodes) > 2 else None
     
     @property
     def last(self) -> "Any | None":
-        return self.nodes[-1] if self.nodes else None
-
+        return self.validated_nodes[-1] if self.validated_nodes else None
 
 Boolean = Optional[bool]
-ID = Optional[str]
+ID = str
 UnsignedInt64 = Optional[int]
 String = Optional[str]
 Int = Optional[int]
