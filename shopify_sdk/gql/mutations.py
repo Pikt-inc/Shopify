@@ -3,6 +3,7 @@ from .core import (
 )
 from .core.types import (
     ProductUnpublishInput,
+    ProductInput,
     OrderInput,
     String,
     FulfillmentV2Input
@@ -15,6 +16,14 @@ class productUnpublish(Mutation):
         input: ProductUnpublishInput,
     ):
         self.input: ProductUnpublishInput = input
+
+
+class productUpdate(Mutation):
+    def __init__(
+        self,
+        input: ProductInput,
+    ):
+        self.input: ProductInput = input
 
 
 class orderUpdate(Mutation):

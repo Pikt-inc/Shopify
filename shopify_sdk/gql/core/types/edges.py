@@ -5,7 +5,7 @@ from .base import edge, String
 
 if TYPE_CHECKING:
     from .objects import Order, LineItem, FulfillmentOrder, FulfillmentOrderLineItem
-    from .objects import SalesAgreement
+    from .objects import SalesAgreement, ProductVariant, ResourcePublication
 
 
 class OrderEdge(edge):
@@ -23,3 +23,11 @@ class FulfillmentOrderLineItemEdge(edge):
 
 class SalesAgreementEdge(edge):
     node: "SalesAgreement"
+
+
+class ProductVariantEdge(edge):
+    node: "ProductVariant"
+
+
+class ResourcePublicationEdge(edge):
+    node: "ResourcePublication"

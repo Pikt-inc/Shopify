@@ -29,7 +29,8 @@ if TYPE_CHECKING:
         LineItemConnection,
         FulfillmentOrderConnection,
         FulfillmentOrderLineItemConnection,
-        SalesAgreementConnection
+        SalesAgreementConnection,
+        ResourcePublicationConnection
     )
 
 
@@ -140,6 +141,7 @@ class LineItemSellingPlan(AutoRegisterModel):
 class Product(AutoRegisterModel):
     handle: String
     id: ID
+    resourcePublications: "ResourcePublicationConnection"
     title: String
     vendor: String
 
@@ -441,6 +443,12 @@ class PaymentTerms(AutoRegisterModel):
 class Publication(AutoRegisterModel):
     id: ID
     name: String
+
+
+class ResourcePublication(AutoRegisterModel):
+    id: ID
+    publication: Publication
+    publishDate: DateTime
 
 
 class Location(AutoRegisterModel):
