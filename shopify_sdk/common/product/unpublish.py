@@ -9,6 +9,7 @@ def _lookup_product_publications_by_sku(
     sku: str,
     publication_page_size: int,
 ) -> tuple[str, list[str], str | None]:
+    """Return (product_id, publication_ids, product_title) for the first variant matching sku."""
     search_query = f"sku:{sku}"
     variant_connection = productVariants(
         first=1,
@@ -36,8 +37,6 @@ def _lookup_product_publications_by_sku(
         raise ValueError(f"Product lookup for SKU '{sku}' returned no product id.")
 
     product_id = product.id
-    if not product_id:
-        raise ValueError(f"Product lookup for SKU '{sku}' returned no product id.")
 
     publication_ids: list[str] = []
     resource_pubs = getattr(product, "resourcePublications", None)

@@ -8,6 +8,7 @@ from shopify_sdk.gql.core.types import ProductInput, ProductStatus
 def _lookup_product_by_sku(
     sku: str,
 ) -> tuple[str, str | None]:
+    """Return (product_id, product_title) for the first variant matching sku."""
     variant_connection = productVariants(
         first=1,
         query=f"sku:{sku}",

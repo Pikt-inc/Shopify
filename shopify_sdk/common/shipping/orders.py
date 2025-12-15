@@ -43,7 +43,7 @@ def iter_orders_from_last_n_days(
                 "LineItemConnection": {"edges"},
                 "Order": set(Order.fields_except(
                     exclude={
-                        "id", "shippingLines" , "lineItems", "fulfillments", "legacyResourceId",
+                        "id", "shippingLines", "lineItems", "fulfillments", "legacyResourceId",
                         "name", "tags", "note", "sourceName", "presentmentCurrencyCode", "currencyCode",
                         "processedAt", "createdAt", "updatedAt", "cancelledAt", "cancelReason", "confirmed",
                         "displayFinancialStatus", "displayFulfillmentStatus", "subtotalPriceSet",
