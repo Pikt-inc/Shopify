@@ -10,9 +10,11 @@ def iter_orders() -> Iterable[Order]:
         sortKey=OrderSortKeys.PROCESSED_AT,
         reverse=True,
         field_exclusions={
-            "Order": Order.fields_except(
-                        exclude=["id", "shippingAddress", "displayAddress"]
-                    )
+            "Order": set(
+                Order.fields_except(
+                    exclude=["id", "shippingAddress", "displayAddress"]
+                )
+            )
         }
     ).execute(client=client)
     for order in latest.nodes:

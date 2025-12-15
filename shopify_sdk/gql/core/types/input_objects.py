@@ -1,4 +1,5 @@
 from .objects import input_object
+from .enums import ProductStatus
 from .base import (
     ID,
     Boolean,

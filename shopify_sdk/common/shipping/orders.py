@@ -41,7 +41,7 @@ def iter_orders_from_last_n_days(
             field_exclusions={
                 "OrderConnection": {"edges"},
                 "LineItemConnection": {"edges"},
-                "Order": Order.fields_except(
+                "Order": set(Order.fields_except(
                     exclude={
                         "id", "shippingLines" , "lineItems", "fulfillments", "legacyResourceId",
                         "name", "tags", "note", "sourceName", "presentmentCurrencyCode", "currencyCode",
@@ -50,24 +50,24 @@ def iter_orders_from_last_n_days(
                         "totalPriceSet", "totalShippingPriceSet", "totalTaxSet", "totalDiscountsSet",
                         "transactions", "refunds"
                     }
-                ),
-                "LineItem": LineItem.fields_except(
+                )),
+                "LineItem": set(LineItem.fields_except(
                     exclude={
                         "id", "sku", "name", "title", "quantity",
                         "fulfillableQuantity", "fulfillmentStatus", "variantTitle",
                         "customAttributes", "discountedTotalSet", "originalUnitPriceSet",
                         "discountedUnitPriceSet", "variant", "taxLines"
                     }
-                ),
-                "ProductVariant": ProductVariant.fields_except(
+                )),
+                "ProductVariant": set(ProductVariant.fields_except(
                     exclude={"id", "sku"}
-                ),
-                "Fulfillment": Fulfillment.fields_except(
+                )),
+                "Fulfillment": set(Fulfillment.fields_except(
                     exclude={"id", "trackingInfo", "fulfillmentLineItems"}
-                ),
-                "ShippingLine": ShippingLine.fields_except(
+                )),
+                "ShippingLine": set(ShippingLine.fields_except(
                     exclude={"title", "code", "originalPriceSet"}
-                ),
+                )),
             },
         ).execute(client=client)
 
