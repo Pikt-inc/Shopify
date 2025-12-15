@@ -3,6 +3,7 @@ from typing import Any
 from shopify_sdk import client
 from shopify_sdk.gql import productUpdate, productVariants
 from shopify_sdk.gql.core.types import ProductInput, ProductStatus
+from .types import ProductActionResponse
 
 
 def _lookup_product_by_sku(
@@ -29,17 +30,25 @@ def _lookup_product_by_sku(
     return product.id, getattr(product, "title", None)
 
 
-def archive_product_by_sku(sku: str) -> dict[str, Any]:
+def archive_product_by_sku(sku: str) -> ProductActionResponse:
     """
     Archive a product by SKU using Shopify's productUpdate mutation (status=ARCHIVED).
     Shopify docs: https://shopify.dev/docs/api/admin-graphql/2025-10/mutations/productUpdate
     """
-    product_id, product_title = _lookup_product_by_sku(sku)
-    update_input = ProductInput(id=product_id, status=ProductStatus.ARCHIVED)
-    result = productUpdate(input=update_input).execute(client=client)
-    return {
-        "productId": product_id,
-        "sku": sku,
-        "productTitle": product_title,
-        "result": result,
-    }
+    success = False
+    message: str | None = None
+    try:
+        product_id, product_title = _lookup_product_by_sku(sku)
+        update_input = ProductInput(id=product_id, status=ProductStatus.ARCHIVED)
+        result = productUpdate(input=update_input).execute(client=client)
+        success = bool(result and getattr(result, "product", None))
+        if not success:
+            message = "Failed to archive product."
+    except Exception as e:
+        success = False
+        message = str(e)
+    return ProductActionResponse(
+        action="archive",
+        success=success,
+        message=message,
+    )

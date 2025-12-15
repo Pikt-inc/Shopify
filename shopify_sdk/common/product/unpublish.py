@@ -3,6 +3,7 @@ from typing import Any, Sequence
 from shopify_sdk import client
 from shopify_sdk.gql import productUnpublish, productVariants
 from shopify_sdk.gql.core.types import ProductPublicationInput, ProductUnpublishInput
+from .types import ProductActionResponse
 
 
 def _lookup_product_publications_by_sku(
@@ -55,7 +56,7 @@ def unpublish_product_by_sku(
     *,
     publication_ids: Sequence[str] | None = None,
     publication_page_size: int = 20,
-) -> dict[str, Any]:
+) -> ProductActionResponse:
     """
     Unpublish a product by SKU using Shopify's productUnpublish mutation.
 
@@ -63,27 +64,35 @@ def unpublish_product_by_sku(
     publication currently attached to it (fetched via resourcePublications).
     Shopify docs: https://shopify.dev/docs/api/admin-graphql/2025-10/mutations/productUnpublish
     """
-    if publication_page_size < 1:
-        raise ValueError("publication_page_size must be at least 1.")
+    success = False
+    message: str | None = None
+    try:
+        if publication_page_size < 1:
+            raise ValueError("publication_page_size must be at least 1.")
 
-    product_id, existing_publications, product_title = _lookup_product_publications_by_sku(
-        sku=sku,
-        publication_page_size=publication_page_size,
+        product_id, existing_publications, product_title = _lookup_product_publications_by_sku(
+            sku=sku,
+            publication_page_size=publication_page_size,
+        )
+        target_publications = list(publication_ids) if publication_ids is not None else existing_publications
+
+        if not target_publications:
+            label = product_title or product_id
+            raise ValueError(f"No publications found for product '{label}' tied to SKU '{sku}'.")
+
+        unpublish_input = ProductUnpublishInput(
+            id=product_id,
+            productPublications=[ProductPublicationInput(publicationId=pub_id) for pub_id in target_publications],
+        )
+        result = productUnpublish(input=unpublish_input).execute(client=client)
+        success = bool(result and getattr(result, "product", None))
+        if not success:
+            message = "Failed to unpublish product."
+    except Exception as e:
+        success = False
+        message = str(e)
+    return ProductActionResponse(
+        action="unpublish",
+        success=success,
+        message=message,
     )
-    target_publications = list(publication_ids) if publication_ids is not None else existing_publications
-
-    if not target_publications:
-        label = product_title or product_id
-        raise ValueError(f"No publications found for product '{label}' tied to SKU '{sku}'.")
-
-    unpublish_input = ProductUnpublishInput(
-        id=product_id,
-        productPublications=[ProductPublicationInput(publicationId=pub_id) for pub_id in target_publications],
-    )
-    result = productUnpublish(input=unpublish_input).execute(client=client)
-    return {
-        "productId": product_id,
-        "sku": sku,
-        "publicationIds": target_publications,
-        "result": result,
-    }
