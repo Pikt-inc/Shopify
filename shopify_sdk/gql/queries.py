@@ -65,7 +65,7 @@ class productVariants(Query):
         connection_arguments: Optional[Dict[str, Dict[str, Any]]] = None,
     ):
         self.first: int = first
-        self.sortKey: OrderSortKeys = sortKey
+        self.sortKey: Optional[ProductVariantSortKeys] = sortKey
         self.reverse: bool = reverse
         self.query: Optional[str] = query
         self.after: Optional[str] = after
