@@ -15,4 +15,5 @@ __all__ = [
     "get_orders_from_last_n_days",
     "unpublish_product_by_sku",
     "archive_product_by_sku",
+    "ProductActionResponse",
 ]

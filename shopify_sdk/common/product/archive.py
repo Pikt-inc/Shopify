@@ -1,5 +1,3 @@
-from typing import Any
-
 from shopify_sdk import client
 from shopify_sdk.gql import productUpdate, productVariants
 from shopify_sdk.gql.core.types import ProductInput, ProductStatus
@@ -43,7 +41,8 @@ def archive_product_by_sku(sku: str) -> ProductActionResponse:
         result = productUpdate(input=update_input).execute(client=client)
         success = bool(result and getattr(result, "product", None))
         if not success:
-            message = "Failed to archive product."
+            label = product_title or product_id
+            message = f"Failed to archive product '{label}' for SKU '{sku}'."
     except Exception as e:
         success = False
         message = str(e)
@@ -51,4 +50,5 @@ def archive_product_by_sku(sku: str) -> ProductActionResponse:
         action="archive",
         success=success,
         message=message,
+        sku=sku,
     )

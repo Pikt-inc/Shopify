@@ -1,4 +1,4 @@
-from typing import Any, Sequence
+from typing import Sequence
 
 from shopify_sdk import client
 from shopify_sdk.gql import productUnpublish, productVariants
@@ -87,7 +87,8 @@ def unpublish_product_by_sku(
         result = productUnpublish(input=unpublish_input).execute(client=client)
         success = bool(result and getattr(result, "product", None))
         if not success:
-            message = "Failed to unpublish product."
+            label = product_title or product_id
+            message = f"Failed to unpublish product '{label}' for SKU '{sku}'."
     except Exception as e:
         success = False
         message = str(e)
@@ -95,4 +96,5 @@ def unpublish_product_by_sku(
         action="unpublish",
         success=success,
         message=message,
+        sku=sku,
     )
