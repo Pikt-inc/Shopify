@@ -237,3 +237,14 @@ class OrderInput(input_object):
     note: Optional[String] = Field(default=None)
     shippingAddress: Optional[MailingAddressInput] = Field(default=None)
     tags: List[String] = Field(default_factory=list)
+
+
+class CreateMediaInput(input_object):
+    alt: Optional[String] = Field(default=None)
+    mediaContentType: String
+    originalSource: String
+
+
+class ProductCreateMediaInput(input_object):
+    media: List[CreateMediaInput]
+    productId: ID

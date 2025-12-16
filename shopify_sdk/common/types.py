@@ -15,6 +15,7 @@ class ProxyProduct(BaseModel):
     seo_title: Optional[str] = Field(default=None)
     seo_description: Optional[str] = Field(default=None)
     quantity: Optional[int] = Field(default=0)
+    images: Optional[list[str]] = Field(default=None)
 
     def save(self) -> Optional[str]:
         if self.id:
@@ -79,6 +80,16 @@ class ProxyProduct(BaseModel):
             self.sku = first_variant.sku
             self.price = first_variant.price
             self.quantity = first_variant.inventoryQuantity
+            
+            # Load images from product media
+            if hasattr(product, 'media') and product.media and hasattr(product.media, 'nodes'):
+                image_urls = []
+                for media_node in product.media.nodes:
+                    if hasattr(media_node, 'image') and media_node.image:
+                        if hasattr(media_node.image, 'originalSrc'):
+                            image_urls.append(str(media_node.image.originalSrc))
+                if image_urls:
+                    self.images = image_urls
         except Exception:
             return self
 

@@ -117,3 +117,26 @@ class inventoryAdjustQuantities(Mutation):
         input: InventoryAdjustQuantitiesInput,
     ):
         self.input: InventoryAdjustQuantitiesInput = input
+
+
+class productCreateMedia(Mutation):
+    def __init__(
+        self,
+        media: list[CreateMediaInput],
+        productId: ID,
+    ):
+        self.media: list[CreateMediaInput] = media
+        self.productId: ID = productId
+    
+    @property
+    def fields(self) -> str:
+        spacer = " " * (self._indent * 2)
+        inner = " " * (self._indent * 3)
+        media_block = "\n".join(
+            [
+                f"{spacer}media {{",
+                f"{inner}id",
+                f"{spacer}}}",
+            ]
+        )
+        return "\n".join([media_block, self._user_errors_block])

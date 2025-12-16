@@ -13,7 +13,8 @@ from .mutations import (
     productVariantsBulkCreate,
     productUpdate,
     orderUpdate,
-    fulfillmentCreateV2
+    fulfillmentCreateV2,
+    productCreateMedia
 )
 from .core import client
 
@@ -31,6 +32,7 @@ __all__ = [
     "productUpdate",
     "orderUpdate",
     "fulfillmentCreateV2",
+    "productCreateMedia",
     "client",
     "locations"
 ]
