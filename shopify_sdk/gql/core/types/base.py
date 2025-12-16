@@ -75,14 +75,15 @@ class connection(AutoRegisterModel):
     def last(self) -> "Any | None":
         return self.validated_nodes[-1] if self.validated_nodes else None
 
-Boolean = Optional[bool]
+Boolean = bool
 ID = str
-UnsignedInt64 = Optional[int]
-String = Optional[str]
-Int = Optional[int]
-Float = Optional[float]
-URL = Optional[str]
-DateTime = Optional[datetime]
+UnsignedInt64 = int
+String = str
+Int = int
+Float = float
+URL = str
+DateTime = datetime
+Money = String  # Scalar
 
 
 class edge(AutoRegisterModel):

@@ -1,37 +1,52 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
 
 from .base import edge, String
 
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from .objects import Order, LineItem, FulfillmentOrder, FulfillmentOrderLineItem
-    from .objects import SalesAgreement, ProductVariant, Publication, ResourcePublication
+    from .objects import *
+    from .base import *
 
 
 class OrderEdge(edge):
-    node: "Order"
+    node: Order
 
 class LineItemEdge(edge):
-    node: "LineItem"
+    node: LineItem
+
 
 class FulfillmentOrderEdge(edge):
-    node: "FulfillmentOrder"
+    node: FulfillmentOrder
+
 
 class FulfillmentOrderLineItemEdge(edge):
-    node: "FulfillmentOrderLineItem"
+    node: FulfillmentOrderLineItem
 
 
 class SalesAgreementEdge(edge):
-    node: "SalesAgreement"
+    node: SalesAgreement
 
 
 class ProductVariantEdge(edge):
-    node: "ProductVariant"
+    node: ProductVariant
 
 
 class ResourcePublicationEdge(edge):
-    node: "ResourcePublication"
+    node: ResourcePublication
 
 
 class PublicationEdge(edge):
-    node: "Publication"
+    node: Publication
+
+
+class ProductBundleComponentEdge(edge):
+    node: ProductBundleComponent
+
+
+class ProductBundleComponentEdge(edge):
+    node: ProductBundleComponent
+
+
+class CollectionEdge(edge):
+    node: Collection
