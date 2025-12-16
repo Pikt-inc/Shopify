@@ -1,8 +1,30 @@
 from copy import deepcopy
-from typing import Any, Optional
+from enum import Enum
+from typing import Any, ClassVar, Optional, Type, Union
 
 from pydantic import BaseModel, Field, PrivateAttr
 from shopify_sdk.gql.core.types import Product, MetafieldInput
+
+
+class MetafieldType(str, Enum):
+    BOOLEAN = "boolean"
+    COLOR = "color"
+    DATE = "date"
+    DATE_TIME = "date_time"
+    DIMENSION = "dimension"
+    ID = "id"
+    JSON = "json"
+    LINK = "link"
+    MONEY = "money"
+    MULTI_LINE_TEXT_FIELD = "multi_line_text_field"
+    NUMBER_DECIMAL = "number_decimal"
+    NUMBER_INTEGER = "number_integer"
+    RATING = "rating"
+    RICH_TEXT_FIELD = "rich_text_field"
+    SINGLE_LINE_TEXT_FIELD = "single_line_text_field"
+    URL = "url"
+    VOLUME = "volume"
+    WEIGHT = "weight"
 
 
 class ProxyProduct(BaseModel):
@@ -24,6 +46,7 @@ class ProxyProduct(BaseModel):
         exclude=True,
     )
     _metafields: list[MetafieldInput] = PrivateAttr(default_factory=list)
+    metafield_type: ClassVar[Type[MetafieldType]] = MetafieldType
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
@@ -33,8 +56,26 @@ class ProxyProduct(BaseModel):
 
     @property
     def metafields(self) -> list[MetafieldInput]:
-        """Return a deep copy of metafields to prevent accidental mutation."""
+        """Return a deep copy of metafields to prevent accidental mutation.
+
+        The returned list and its `MetafieldInput` objects are defensive copies,
+        so modifying them will not affect the proxy product. To persist new values,
+        call `clear_metafields()` and `add_metafield()` to rebuild the cache.
+        Because every access clones the cache, this property has a measurable cost
+        in hot paths; use `get_metafields_raw()` when mutation protection is not
+        required and you can accept the risk of mutating internal state.
+        """
         return deepcopy(self._metafields)
+
+    def get_metafields_raw(self) -> list[MetafieldInput]:
+        """Return the internal metafield cache directly, without copying.
+
+        Warning:
+            Mutating the returned list or its contents will change this object's
+            state, so only use this in performance sensitive code that can safely
+            handle the side effects.
+        """
+        return self._metafields
 
     def clear_metafields(self) -> None:
         self._metafields.clear()
@@ -44,7 +85,7 @@ class ProxyProduct(BaseModel):
         *,
         namespace: str,
         key: str,
-        type: str,
+        type: Union[MetafieldType, str],
         value: str,
         id: Optional[str] = None,
     ) -> MetafieldInput:
@@ -53,7 +94,7 @@ class ProxyProduct(BaseModel):
             id=id,
             key=key,
             namespace=namespace,
-            type=type,
+            type=self._normalize_metafield_type(type),
             value=value,
         )
         self._metafields.append(metafield)
@@ -92,6 +133,7 @@ class ProxyProduct(BaseModel):
     
     @classmethod
     def get(cls, sku: str) -> Optional["ProxyProduct"]:
+        """Return a hydrated product for the SKU or an empty proxy if lookup fails."""
         from shopify_sdk.common.product import product_by_sku
         product = product_by_sku(sku)
         if not product:
@@ -155,3 +197,9 @@ class ProxyProduct(BaseModel):
     def _set_metafields(self, metafields: list[MetafieldInput]) -> None:
         """Overwrite internal metafield cache with defensive copies."""
         self._metafields = [mf.model_copy(deep=True) for mf in metafields]
+
+    @staticmethod
+    def _normalize_metafield_type(metafield_type: Union[MetafieldType, str]) -> str:
+        if isinstance(metafield_type, MetafieldType):
+            return metafield_type.value
+        return str(metafield_type)

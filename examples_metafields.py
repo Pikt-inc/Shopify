@@ -8,6 +8,7 @@ This script shows how to:
 """
 
 from shopify_sdk.common import ProxyProduct
+from shopify_sdk.common.product import product_details
 
 
 # Example 1: Create a new product with metafields
@@ -30,19 +31,19 @@ def example_create_with_metafields():
     product.add_metafield(
         namespace='custom',
         key='material',
-        type='single_line_text_field',
+        type=ProxyProduct.metafield_type.SINGLE_LINE_TEXT_FIELD,
         value='100% Cotton'
     )
     product.add_metafield(
         namespace='custom',
         key='care_instructions',
-        type='multi_line_text_field',
+        type=ProxyProduct.metafield_type.MULTI_LINE_TEXT_FIELD,
         value='Machine wash cold. Tumble dry low.'
     )
     product.add_metafield(
         namespace='inventory',
         key='warehouse_location',
-        type='single_line_text_field',
+        type=ProxyProduct.metafield_type.SINGLE_LINE_TEXT_FIELD,
         value='Aisle 3, Shelf B'
     )
     
@@ -65,7 +66,7 @@ def example_update_metafields():
     product.add_metafield(
         namespace='custom',
         key='material',
-        type='single_line_text_field',
+        type=ProxyProduct.metafield_type.SINGLE_LINE_TEXT_FIELD,
         value='100% Cotton'
     )
     
@@ -73,12 +74,12 @@ def example_update_metafields():
     product.add_metafield(
         namespace='custom',
         key='size_chart',
-        type='url',
+        type=ProxyProduct.metafield_type.URL,
         value='https://example.com/size-chart'
     )
     
     # Update existing metafield by replacing the list
-    existing_metafields = list(product.metafields or [])
+    existing_metafields = list(product.metafields)
     product.clear_metafields()
     for mf in existing_metafields:
         if mf.key == 'material':
@@ -162,25 +163,30 @@ def example_update_or_create_with_metafields():
     product.add_metafield(
         namespace='sustainability',
         key='recycled_content',
-        type='number_decimal',
+        type=ProxyProduct.metafield_type.NUMBER_DECIMAL,
         value='95.5'
     )
     product.add_metafield(
         namespace='sustainability',
         key='carbon_neutral',
-        type='boolean',
+        type=ProxyProduct.metafield_type.BOOLEAN,
         value='true'
     )
     product.add_metafield(
         namespace='custom',
         key='material',
-        type='single_line_text_field',
+        type=ProxyProduct.metafield_type.SINGLE_LINE_TEXT_FIELD,
         value='Recycled Polyester'
     )
     
     # This will create if new, or update if exists (based on SKU)
     product.update_or_create()
-    product.hydrate()
+    if product.id:
+        details = product_details(product.id)
+        product.hydrate(details)
+    else:
+        # Fallback to hydrate via SKU if the ID lookup failed
+        product.hydrate()
     print(product.metafields)
     
     return product
