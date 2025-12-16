@@ -25,7 +25,10 @@ def example_create_with_metafields():
         price='29.99',
         quantity=100,
         seo_title='Blue T-Shirt - Comfortable Cotton',
-        seo_description='Premium quality blue t-shirt made from 100% cotton'
+        seo_description='Premium quality blue t-shirt made from 100% cotton',
+        images=[
+            'https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/640px-PNG_transparency_demonstration_1.png'
+        ]
     )
 
     product.add_metafield(

@@ -39,8 +39,10 @@ def create_product_media(
             productId=ID(product_id),
         ).execute(client=client)
 
-        media_result = result.get("media", [])
-        return len(media_result) > 0
+        media_result = result.get("media")
+        if media_result is None:
+            raise ValueError("Product media creation returned no media payload.")
+        return True
     except Exception as e:
         raise ValueError(f"Product media creation failed: {e}")
 
@@ -126,8 +128,7 @@ def set_product_images(product_id: str, images: Optional[list[str]]) -> bool:
     if images is None:
         return True  # No update requested
 
-    if not delete_product_media(product_id):
-        raise ValueError("Product media deletion failed.")
+    delete_product_media(product_id)
 
     if not images:
         return True  # Images explicitly cleared
@@ -136,6 +137,4 @@ def set_product_images(product_id: str, images: Optional[list[str]]) -> bool:
         product_id=product_id,
         image_urls=images,
     )
-    if not success:
-        raise ValueError("Product image setting failed.")
     return True
