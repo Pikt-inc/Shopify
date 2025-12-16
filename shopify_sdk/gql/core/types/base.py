@@ -23,7 +23,7 @@ class AutoRegisterModel(BaseModel):
         type_registry.register(cls)
 
     @classmethod
-    def fields_except(cls, exclude: Iterable[str] = (), ordered: bool = False) -> "List[str] | Set[str]":
+    def fields_except(cls, exclude: Iterable[str] = (), ordered: bool = False) -> "Set[str]":
         """Return the model's field names excluding those in `exclude`.
 
         - `exclude` may be any iterable of field names to remove.
@@ -39,7 +39,7 @@ class AutoRegisterModel(BaseModel):
             names = list(getattr(cls, "__annotations__", {}).keys())
 
         if ordered:
-            return [n for n in names if n not in exclude_set]
+            return set([n for n in names if n not in exclude_set])
         return set(names) - exclude_set
 
     
@@ -50,34 +50,40 @@ class connection(AutoRegisterModel):
     nodes: list[Any]
 
     @property
+    def validated_nodes(self) -> list[Any]:
+        if len(self.nodes) != 0:
+            return self.nodes
+        return [edge.node for edge in self.edges]
+
+    @property
     def count(self) -> int:
-        return len(self.edges)
+        return len(self.validated_nodes)
     
     @property
     def first(self) -> "Any | None":
-        return self.nodes[0] if self.nodes else None
+        return self.validated_nodes[0] if self.validated_nodes else None
     
     @property
     def second(self) -> "Any | None":
-        return self.nodes[1] if len(self.nodes) > 1 else None
+        return self.validated_nodes[1] if len(self.validated_nodes) > 1 else None
     
     @property
     def third(self) -> "Any | None":
-        return self.nodes[2] if len(self.nodes) > 2 else None
+        return self.validated_nodes[2] if len(self.validated_nodes) > 2 else None
     
     @property
     def last(self) -> "Any | None":
-        return self.nodes[-1] if self.nodes else None
+        return self.validated_nodes[-1] if self.validated_nodes else None
 
-
-Boolean = Optional[bool]
-ID = Optional[str]
-UnsignedInt64 = Optional[int]
-String = Optional[str]
-Int = Optional[int]
-Float = Optional[float]
-URL = Optional[str]
-DateTime = Optional[datetime]
+Boolean = bool
+ID = str
+UnsignedInt64 = int
+String = str
+Int = int
+Float = float
+URL = str
+DateTime = datetime
+Money = String  # Scalar
 
 
 class edge(AutoRegisterModel):

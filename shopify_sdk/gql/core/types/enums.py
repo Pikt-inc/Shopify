@@ -76,3 +76,39 @@ class ProductStatus(enum):
     ACTIVE = "ACTIVE"
     ARCHIVED = "ARCHIVED"
     DRAFT = "DRAFT"
+
+
+class CombinedListingsRole(enum):
+    NONE = "NONE"
+    PRIMARY = "PRIMARY"
+    SECONDARY = "SECONDARY"
+
+
+class ProductBundleComponentOptionSelectionStatus(enum):
+    DESELECTED = "DESELECTED"
+    NEW = "NEW"
+    SELECTED = "SELECTED"
+    UNAVAILABLE = "UNAVAILABLE"
+
+
+class CountryCode(enum):
+    US = "US"
+    CA = "CA"
+    GB = "GB"
+    AU = "AU"
+    FR = "FR"
+    DE = "DE"
+    IT = "IT"
+    ES = "ES"
+    NL = "NL"
+    JP = "JP"
+    CN = "CN"
+    IN = "IN"
+    BR = "BR"
+    MX = "MX"
+
+
+class LocationSortKeys(enum):
+    NAME = "NAME"
+    ID = "ID"
+    CREATED_AT = "CREATED_AT"

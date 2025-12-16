@@ -59,8 +59,8 @@ def set_order_line_item_tracking(
     order_id = ensure_order_gid(order_id)
     line_item_id = ensure_line_item_gid(line_item_id)
     fulfillments = get_fulfillments_by_order_id(order_id)
-    valid_fli: Optional[FulfillmentOrderLineItem] = None
-    fulfillment_id: Optional[ID] = None
+    valid_fli: FulfillmentOrderLineItem
+    fulfillment_id: ID
     for fulfillment in fulfillments:
         for fline_item in fulfillment.lineItems.nodes:
             if fline_item.lineItem.id == line_item_id:

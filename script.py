@@ -1,24 +1,16 @@
-from shopify_sdk.gql import orders
-from shopify_sdk.gql.core.types import OrderSortKeys
-from shopify_sdk import client
-from typing import Iterable
-from shopify_sdk.gql.core.types import Order
+from shopify_sdk.common import ProxyProduct
 
-def iter_orders() -> Iterable[Order]:
-    latest = orders(
-        first=25,
-        sortKey=OrderSortKeys.PROCESSED_AT,
-        reverse=True,
-        field_exclusions={
-            "Order": set(
-                Order.fields_except(
-                    exclude=["id", "shippingAddress", "displayAddress"]
-                )
-            )
-        }
-    ).execute(client=client)
-    for order in latest.nodes:
-        yield order
-    
-for order in iter_orders():
-    print(order.id, order.displayAddress)
+
+pp = ProxyProduct(
+    sku='skookey-19999',
+    title='GOOBER Plush Toy',
+    description_html='<p>Created via update_or_create_product script.</p>',
+    vendor='Demo Vendor',
+    type='Demo Type',
+    tags=['demo', 'script'],
+    price='39.99',
+    quantity=2,
+    seo_description='A cuddly GOOBER plush toy for all ages.',
+    seo_title='GOOBER Plush Toy - Cuddly and Fun'
+)
+pp.update_or_create()

@@ -1,37 +1,25 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 from pydantic import Field
-from .base import (
-    Boolean,
-    ID,
-    String,
-    DateTime,
-    UnsignedInt64,
-    Int,
-    Float,
-    URL,
-    connection,
-    AutoRegisterModel,
-    Weight,
-)
-from .enums import (
-    OrderReturnStatus,
-    OrderDisplayFulfillmentStatus,
-    OrderDisplayFinancialStatus,
-    OrderCancelReason,
-    FulfillmentOrderStatus,
-    ProductVariantInventoryPolicy,
-)
 
+from .base import *
 if TYPE_CHECKING:
     from .connections import (
-        LineItemConnection,
+        CollectionConnection,
         FulfillmentOrderConnection,
         FulfillmentOrderLineItemConnection,
+        LineItemConnection,
+        LocationConnection,
+        OrderConnection,
+        ProductBundleComponentConnection,
+        ProductVariantConnection,
+        PublicationConnection,
+        ResourcePublicationConnection,
         SalesAgreementConnection,
-        ResourcePublicationConnection
     )
+    from .enums import *
+
 
 
 class input_object(AutoRegisterModel):
@@ -53,10 +41,6 @@ class MoneyBag(AutoRegisterModel):
     shopMoney: MoneyV2
 
 
-# Shopify's deprecated Money scalar; keep as string to avoid invalid sub-selections.
-Money = String
-
-
 class Attribute(AutoRegisterModel):
     key: String
     value: String
@@ -66,6 +50,9 @@ class DiscountApplication(AutoRegisterModel):
     allocationMethod: String
     targetSelection: String
     targetType: String
+
+# GraphQL often returns formatted strings; alias to simple String for typing.
+FormattedString = String
 
 
 class DiscountAllocation(AutoRegisterModel):
@@ -100,6 +87,13 @@ class SelectedOption(AutoRegisterModel):
     value: String
 
 
+class ProductOption(AutoRegisterModel):
+    id: ID
+    name: String
+    position: Int
+    values: List[String]
+
+
 class ProductVariantContextualPricing(AutoRegisterModel):
     compareAtPrice: MoneyV2
     price: MoneyV2
@@ -125,24 +119,131 @@ class EventConnection(connection):
 
 
 class InventoryItem(AutoRegisterModel):
+    countryCodeOfOrigin: Optional[CountryCode] = Field(default=None)
+    countryHarmonizedSystemCodes: "CountryHarmonizedSystemCodeConnection"
+    createdAt: DateTime
+    duplicateSkuCount: Int
+    harmonizedSystemCode: Optional[String] = Field(default=None)
     id: ID
-    sku: String
+    inventoryHistoryUrl: Optional[URL] = Field(default=None)
+    inventoryLevel: Optional["InventoryLevel"] = Field(default=None)
+    inventoryLevels: "InventoryLevelConnection"
+    legacyResourceId: UnsignedInt64
+    locationsCount: Optional[Count] = Field(default=None)
+    measurement: "InventoryItemMeasurement"
+    provinceCodeOfOrigin: Optional[String] = Field(default=None)
+    requiresShipping: Boolean
+    sku: Optional[String] = Field(default=None)
+    tracked: Boolean
+    trackedEditable: "EditableProperty"
+    unitCost: Optional[MoneyV2] = Field(default=None)
+    updatedAt: DateTime
+    variant: ProductVariant
 
 
 class LineItemGroup(AutoRegisterModel):
     id: ID
 
 
+
+
+
+class InventoryLevel(AutoRegisterModel):
+    canDeactivate: Boolean
+    createdAt: DateTime
+    deactivationAlert: Optional[String] = Field(default=None)
+    id: ID
+    item: InventoryItem
+    location: "Location"
+    quantities: List["InventoryQuantity"]
+    scheduledChanges: "InventoryScheduledChangeConnection"
+    updatedAt: DateTime
+
+
+class InventoryLevelEdge(AutoRegisterModel):
+    cursor: String
+    node: InventoryLevel
+
+
+class InventoryLevelConnection(connection):
+    edges: List[InventoryLevelEdge]
+    nodes: List[InventoryLevel]
+    pageInfo: "PageInfo"
+
+
 class LineItemSellingPlan(AutoRegisterModel):
     name: String
     sellingPlanId: ID
 
+class SEO(AutoRegisterModel):
+    description: String
+    title: String
+
+class TaxonomyCategory(AutoRegisterModel):
+    ancestorIds: List[ID]
+    childrenIds: List[ID]
+    fullName: String
+    id: ID
+    isArchived: Boolean
+    isLeaf: Boolean
+    isRoot: Boolean
+    level: Int
+    parentId: Optional[ID] = Field(default=None)
+
+
 
 class Product(AutoRegisterModel):
+    availablePublicationsCount: Optional[Count] = Field(default=None)
+    bundleComponents: ProductBundleComponentConnection
+    category: Optional[TaxonomyCategory] = Field(default=None)
+    collections: "CollectionConnection"
+    combinedListingRole: Optional["CombinedListingsRole"] = Field(default=None)
+    createdAt: DateTime
+    defaultCursor: String
+    description: String
+    descriptionHtml: String
+    events: EventConnection
+    featuredMedia: Optional[Media] = Field(default=None)
+    giftCardTemplateSuffix: Optional[String] = Field(default=None)
     handle: String
+    hasOnlyDefaultVariant: Boolean
+    hasOutOfStockVariants: Boolean
+    hasVariantsThatRequiresComponents: Boolean
     id: ID
+    inCollection: Boolean
+    isGiftCard: Boolean
+    legacyResourceId: UnsignedInt64
+    media: MediaConnection
+    mediaCount: Optional[Count] = Field(default=None)
+    metafield: Optional[Metafield] = Field(default=None)
+    metafields: MetafieldConnection
+    onlineStorePreviewUrl: Optional[URL] = Field(default=None)
+    onlineStoreUrl: Optional[URL] = Field(default=None)
+    options: List[ProductOption]
+    productComponentsCount: Optional[Count] = Field(default=None)
+    productParents: ProductConnection
+    productType: String
+    publishedAt: Optional[DateTime] = Field(default=None)
+    publishedInContext: Boolean
+    publishedOnCurrentPublication: Boolean
+    publishedOnPublication: Boolean
+    requiresSellingPlan: Boolean
     resourcePublications: "ResourcePublicationConnection"
+    resourcePublicationsCount: Optional[Count] = Field(default=None)
+    sellingPlanGroups: SellingPlanGroupConnection
+    sellingPlanGroupsCount: Optional[Count] = Field(default=None)
+    seo: SEO
+    status: ProductStatus
+    tags: List[String]
+    templateSuffix: Optional[String] = Field(default=None)
     title: String
+    totalInventory: Int
+    tracksInventory: Boolean
+    translations: List[Translation]
+    unpublishedPublications: "PublicationConnection"
+    updatedAt: DateTime
+    variants: "ProductVariantConnection"
+    variantsCount: Optional[Count] = Field(default=None)
     vendor: String
 
 
@@ -199,6 +300,23 @@ class UnitPriceMeasurement(AutoRegisterModel):
     referenceValue: Float
 
 
+class CountryHarmonizedSystemCode(AutoRegisterModel):
+    id: ID
+    countryCode: CountryCode
+    harmonizedSystemCode: String
+
+
+class CountryHarmonizedSystemCodeEdge(AutoRegisterModel):
+    cursor: String
+    node: CountryHarmonizedSystemCode
+
+
+class CountryHarmonizedSystemCodeConnection(connection):
+    edges: List[CountryHarmonizedSystemCodeEdge]
+    nodes: List[CountryHarmonizedSystemCode]
+    pageInfo: "PageInfo"
+
+
 class ProductEdge(AutoRegisterModel):
     cursor: String
     node: Product
@@ -243,37 +361,42 @@ class SellingPlanGroupConnection(connection):
 
 class ProductVariant(AutoRegisterModel):
     availableForSale: Boolean
-    barcode: String
-    compareAtPrice: Money
+    barcode: Optional[String] = Field(default=None)
+    compareAtPrice: Optional[Money] = Field(default=None)
+    contextualPricing: ProductVariantContextualPricing
     createdAt: DateTime
     defaultCursor: String
-    deliveryProfile: DeliveryProfile
+    deliveryProfile: Optional[DeliveryProfile] = Field(default=None)
     displayName: String
     events: EventConnection
     id: ID
     inventoryItem: InventoryItem
     inventoryPolicy: ProductVariantInventoryPolicy
-    inventoryQuantity: Int
-    image: Image
+    inventoryQuantity: Optional[Int] = Field(default=None)
+    image: Optional[Image] = Field(default=None)
     legacyResourceId: UnsignedInt64
     media: MediaConnection
+    metafield: Optional[Metafield] = Field(default=None)
     metafields: MetafieldConnection
     position: Int
     price: Money
     product: Product
     productParents: ProductConnection
     productVariantComponents: ProductVariantComponentConnection
-    requiresComponents: Boolean
-    selectedOptions: List[SelectedOption]
+    requiresComponents: Boolean = Field(default=False)
+    requiresShipping: Boolean
+    selectedOptions: List[SelectedOption] = Field(default_factory=list)
     sellableOnlineQuantity: Int
     sellingPlanGroups: SellingPlanGroupConnection
-    sellingPlanGroupsCount: Count
+    sellingPlanGroupsCount: Optional[Count] = Field(default=None)
     showUnitPrice: Boolean
-    sku: String
+    sku: Optional[String] = Field(default=None)
+    taxCode: Optional[String] = Field(default=None)
     taxable: Boolean
     title: String
-    unitPrice: MoneyV2
-    unitPriceMeasurement: UnitPriceMeasurement
+    translations: List[Translation] = Field(default_factory=list)
+    unitPrice: Optional[MoneyV2] = Field(default=None)
+    unitPriceMeasurement: Optional[UnitPriceMeasurement] = Field(default=None)
     updatedAt: DateTime
 
 
@@ -446,24 +569,44 @@ class Publication(AutoRegisterModel):
 
 
 class ResourcePublication(AutoRegisterModel):
-    id: ID
+    isPublished: Boolean
     publication: Publication
     publishDate: DateTime
 
 
+class LocationAddress(AutoRegisterModel):
+    address1: Optional[String] = Field(default=None)
+    address2: Optional[String] = Field(default=None)
+    city: Optional[String] = Field(default=None)
+    country: Optional[String] = Field(default=None)
+    countryCode: Optional[String] = Field(default=None)
+    formatted: List[String] = Field(default_factory=list)
+    latitude: Optional[Float] = Field(default=None)
+    longitude: Optional[Float] = Field(default=None)
+    phone: Optional[String] = Field(default=None)
+    province: Optional[String] = Field(default=None)
+    provinceCode: Optional[String] = Field(default=None)
+    zip: Optional[String] = Field(default=None)
+
+
 class Location(AutoRegisterModel):
-    address1: String
-    address2: String
-    city: String
-    countryCode: String
+    activatable: Boolean
+    address: LocationAddress
+    addressVerified: Boolean
+    createdAt: DateTime
+    deactivatable: Boolean
+    deactivatedAt: Optional[DateTime] = Field(default=None)
+    deletable: Boolean
+    fulfillmentService: Optional[FulfillmentService] = Field(default=None)
+    fulfillsOnlineOrders: Boolean
+    hasActiveInventory: Boolean
+    hasUnfulfilledOrders: Boolean
     id: ID
     name: String
-    province: String
-    zip: String
 
 
 class PurchasingEntity(AutoRegisterModel):
-    typename: String = Field(default=None, alias="__typename")
+    typename: Optional[String] = Field(default=None, alias="__typename")
 
 
 class Refund(AutoRegisterModel):
@@ -749,3 +892,74 @@ class FulfillmentOrder(AutoRegisterModel):
     fulfillBy: DateTime
     status: FulfillmentOrderStatus
     lineItems: FulfillmentOrderLineItemConnection
+
+
+class ProductBundleComponentOptionSelectionValue(AutoRegisterModel):
+    selectionStatus: ProductBundleComponentOptionSelectionStatus
+    value: String
+
+
+class ProductBundleComponentQuantityOption(AutoRegisterModel):
+    name: String
+    parentOption: Optional[ProductOption] = Field(default=None)
+    values: ProductBundleComponentOptionSelectionValue
+
+
+class ProductBundleComponentOptionSelection(AutoRegisterModel):
+    componentOption: ProductOption
+    parentOption: Optional[ProductOption] = Field(default=None)
+    values: List[ProductBundleComponentOptionSelectionValue]
+
+
+class ProductBundleComponent(AutoRegisterModel):
+    componentProduct: Product
+    componentVariants: ProductVariantConnection
+    componentVariantsCount: Count
+    optionSelections: List[ProductBundleComponentOptionSelection]
+    quantity: Int
+    quantityOption: ProductBundleComponentQuantityOption
+
+class Collection(AutoRegisterModel):
+    availablePublicationsCount: Optional[Count] = Field(default=None)
+    description: String
+    descriptionHtml: String
+    handle: String
+    hasProducts: Boolean
+    id: ID
+    image: Optional[Image] = Field(default=None)
+    productsCount: Optional[Count] = Field(default=None)
+
+
+class InventoryQuantity(AutoRegisterModel):
+    id: ID
+    name: String
+    quantity: Int
+    updatedAt: Optional[DateTime] = Field(default=None)
+
+
+class InventoryItemMeasurement(AutoRegisterModel):
+    id: ID
+    weight: Optional[Weight] = Field(default=None)
+
+
+class EditableProperty(AutoRegisterModel):
+    locked: Boolean
+    reason: Optional[FormattedString] = Field(default=None)
+
+
+class InventoryScheduledChange(AutoRegisterModel):
+    id: ID
+    effectiveAt: DateTime
+    createdAt: DateTime
+    quantities: List[InventoryQuantity]
+
+
+class InventoryScheduledChangeEdge(AutoRegisterModel):
+    cursor: String
+    node: InventoryScheduledChange
+
+
+class InventoryScheduledChangeConnection(connection):
+    edges: List[InventoryScheduledChangeEdge]
+    nodes: List[InventoryScheduledChange]
+    pageInfo: "PageInfo"

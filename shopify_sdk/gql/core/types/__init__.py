@@ -14,6 +14,7 @@ from .objects import (
     Order,
     LineItem,
     Product,
+    ProductOption,
     ProductVariant,
     PageInfo,
     FulfillmentOrderLineItem,
@@ -21,25 +22,40 @@ from .objects import (
     Fulfillment,
     Publication,
     ResourcePublication,
+    InventoryItem,
+    SelectedOption
 )
 from .connections import (
     OrderConnection,
     LineItemConnection,
     FulfillmentOrderConnection,
     ProductVariantConnection,
-    ResourcePublicationConnection,
+    PublicationConnection,
+    ResourcePublicationConnection
 )
-from .edges import OrderEdge, LineItemEdge, FulfillmentOrderEdge, ProductVariantEdge, ResourcePublicationEdge
+from .edges import OrderEdge, LineItemEdge, FulfillmentOrderEdge, ProductVariantEdge, PublicationEdge, ResourcePublicationEdge
 from .input_objects import (
     OrderIdentifierInput,
     FulfillmentV2Input,
     ProductPublicationInput,
     ProductUnpublishInput,
+    ProductPublishInput,
+    OptionCreateInput,
+    ProductClaimOwnershipInput,
+    ProductCreateInput,
+    ProductUpdateInput,
+    ProductVariantsBulkInput,
+    InventoryItemInput,
+    InventoryLevelInput,
+    VariantOptionValueInput,
+    UnitPriceMeasurementInput,
+    SEOInput,
     ProductInput,
     OrderInput,
     FulfillmentTrackingInput,
     FulfillmentOrderLineItemsInput,
-    FulfillmentOrderLineItemInput
+    FulfillmentOrderLineItemInput,
+    ProductIdentifierInput
 )
 from .enums import (
     OrderReturnStatus,
@@ -50,6 +66,7 @@ from .enums import (
     ProductVariantInventoryPolicy,
     ProductVariantSortKeys,
     ProductStatus,
+    CombinedListingsRole,
 )
 from .registry import type_registry
 
@@ -73,6 +90,7 @@ __all__ = [
     "PageInfo",
     "Order",
     "Product",
+    "ProductOption",
     "ProductVariant",
     "Publication",
     "ResourcePublication",
@@ -85,21 +103,35 @@ __all__ = [
     "ProductVariantInventoryPolicy",
     "ProductVariantSortKeys",
     "ProductStatus",
+    "CombinedListingsRole",
     "LineItemConnection",
     "OrderConnection",
     "FulfillmentOrderConnection",
     "ProductVariantConnection",
+    "PublicationConnection",
     "ResourcePublicationConnection",
     "LineItemEdge",
     "OrderEdge",
     "FulfillmentOrderEdge",
     "ProductVariantEdge",
+    "PublicationEdge",
     "ResourcePublicationEdge",
     "type_registry",
     "TYPES_NAMESPACE",
     "FulfillmentV2Input",
     "ProductPublicationInput",
     "ProductUnpublishInput",
+    "ProductPublishInput",
+    "OptionCreateInput",
+    "ProductClaimOwnershipInput",
+    "ProductCreateInput",
+    "ProductUpdateInput",
+    "ProductVariantsBulkInput",
+    "InventoryItemInput",
+    "InventoryLevelInput",
+    "VariantOptionValueInput",
+    "UnitPriceMeasurementInput",
+    "SEOInput",
     "ProductInput",
     "OrderInput",
     "FulfillmentTrackingInput",
@@ -108,4 +140,7 @@ __all__ = [
     "FulfillmentOrderLineItemInput",
     "ShippingLine",
     "Fulfillment",
+    "ProductIdentifierInput",
+    "InventoryItem",
+    "SelectedOption"
 ]
