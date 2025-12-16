@@ -23,7 +23,9 @@ from .objects import (
     Publication,
     ResourcePublication,
     InventoryItem,
-    SelectedOption
+    SelectedOption,
+    Metafield,
+    MetafieldConnection
 )
 from .connections import (
     OrderConnection,
@@ -144,5 +146,7 @@ __all__ = [
     "ProductIdentifierInput",
     "InventoryItem",
     "SelectedOption",
-    "MetafieldInput"
+    "MetafieldInput",
+    "Metafield",
+    "MetafieldConnection"
 ]
