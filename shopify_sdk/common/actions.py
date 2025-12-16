@@ -1,6 +1,6 @@
 from __future__ import annotations
 from functools import cached_property
-from typing import cast
+from typing import Optional, cast
 
 from shopify_sdk.common.store.locations import get_locations
 from shopify_sdk.common.store.inventory import update_inventory
@@ -23,6 +23,15 @@ from shopify_sdk.gql.core.types.enums import *
 from shopify_sdk.gql.core.types.objects import *
 from shopify_sdk.gql.core.types.connections import *
 from .types import ProxyProduct
+
+
+def _calculate_inventory_delta(
+    desired_quantity: Optional[int],
+    current_quantity: Optional[int],
+) -> int:
+    if desired_quantity is None:
+        return 0
+    return int(desired_quantity) - int(current_quantity or 0)
 
 def create_product(
     product: ProxyProduct
@@ -151,6 +160,12 @@ class ProductCreate:
         return product_id
 
     def _set_inventory(self) -> bool:
+        delta = _calculate_inventory_delta(
+            desired_quantity=self._proxy_product.quantity,
+            current_quantity=self.variant.inventoryQuantity,
+        )
+        if delta == 0:
+            return True
         success = update_inventory(
             input=InventoryAdjustQuantitiesInput(
                 name="available",
@@ -159,7 +174,7 @@ class ProductCreate:
                     InventoryChangeInput(
                         inventoryItemId=self.variant.inventoryItem.id,
                         locationId=self.shop_location_id,
-                        delta=int(self._proxy_product.quantity if self._proxy_product.quantity is not None else 0)
+                        delta=delta
                     )
                 ]
             )
@@ -277,6 +292,12 @@ class ProductUpdate:
         return product_id
 
     def _set_inventory(self) -> bool:
+        delta = _calculate_inventory_delta(
+            desired_quantity=self._proxy_product.quantity,
+            current_quantity=self.variant.inventoryQuantity,
+        )
+        if delta == 0:
+            return True
         success = update_inventory(
             input=InventoryAdjustQuantitiesInput(
                 name="available",
@@ -285,7 +306,7 @@ class ProductUpdate:
                     InventoryChangeInput(
                         inventoryItemId=self.variant.inventoryItem.id,
                         locationId=self.shop_location_id,
-                        delta=int(self._proxy_product.quantity if self._proxy_product.quantity is not None else 0)
+                        delta=delta
                     )
                 ]
             )

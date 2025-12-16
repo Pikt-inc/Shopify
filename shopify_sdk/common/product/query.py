@@ -56,7 +56,7 @@ def variants_by_product(
                 exclude={"nodes"}
             ),
             "ProductVariant": ProductVariant.fields_except(
-                exclude={"id", "title", "sku", "price", 'inventoryItem'}
+                exclude={"id", "title", "sku", "price", "inventoryItem", "inventoryQuantity"}
             ),
             "InventoryItem": InventoryItem.fields_except(
                 exclude={"id"}
