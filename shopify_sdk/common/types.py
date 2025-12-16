@@ -71,17 +71,18 @@ class ProxyProduct(BaseModel):
             self.seo_description = product.seo.description
             
             # Hydrate metafields if present
-            if hasattr(product, 'metafields') and product.metafields and product.metafields.nodes:
-                self.metafields = [
-                    MetafieldInput(
-                        id=mf.id,
-                        key=mf.key,
-                        namespace=mf.namespace,
-                        type=mf.type,
-                        value=mf.value
-                    )
-                    for mf in product.metafields.nodes
-                ]
+            if hasattr(product, 'metafields') and product.metafields:
+                if hasattr(product.metafields, 'nodes') and product.metafields.nodes:
+                    self.metafields = [
+                        MetafieldInput(
+                            id=mf.id,
+                            key=mf.key,
+                            namespace=mf.namespace,
+                            type=mf.type,
+                            value=mf.value
+                        )
+                        for mf in product.metafields.nodes
+                    ]
             
             first_variant = None
             variants = product.variants
