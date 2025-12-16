@@ -11,14 +11,14 @@ from .product.types import (
     ProductActionResponse
 )
 from .actions import (
-    update_product
+    create_product
 )
 from .types import (
     ProxyProduct
 )
 
 __all__ = [
-    "update_product",
+    "create_product",
     "ProxyProduct",
     "archive_product_by_sku",
     "ProductActionResponse",
