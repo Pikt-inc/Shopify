@@ -77,8 +77,7 @@ class ProxyProduct(BaseModel):
                 raise ValueError("No variants found for the product.")
             
             self.sku = first_variant.sku
-            price = first_variant.price
-            self.price = price.amount if price is not None else None
+            self.price = first_variant.price
             self.quantity = first_variant.inventoryQuantity
         except Exception:
             return self
