@@ -137,20 +137,18 @@ class ProxyProduct(BaseModel):
         from shopify_sdk.common.product import product_by_sku
         product = product_by_sku(sku)
         if not product:
-            return cls()
-        hydrated = cls().hydrate(product)
-        return hydrated or cls()
+            raise ValueError(f"No product found for SKU '{sku}'.")
+        
+        return cls(id=product.id).hydrate()
     
-    def hydrate(self, product: Optional[Product] = None) -> Optional["ProxyProduct"]:
-        from shopify_sdk.common.product import product_by_sku
-        target_product: Optional[Product] = product
+    def hydrate(self) -> Optional["ProxyProduct"]:
+        from shopify_sdk.common.product import product_details
+        if not self.id:
+            raise ValueError("Cannot hydrate ProxyProduct without an ID")
+        
+        target_product = product_details(self.id)
         if target_product is None:
-            if self.sku is None:
-                return None
-            target_product = product_by_sku(self.sku)
-
-        if target_product is None:
-            return None
+            raise ValueError(f"Failed to fetch product details for ID '{self.id}'")
 
         try:
             self.id = target_product.id
@@ -189,7 +187,7 @@ class ProxyProduct(BaseModel):
             self.sku = first_variant.sku
             self.price = first_variant.price
             self.quantity = first_variant.inventoryQuantity
-        except Exception:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             return None
 
         return self

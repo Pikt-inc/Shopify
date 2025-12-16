@@ -58,9 +58,6 @@ def example_create_with_metafields():
 def example_update_metafields():
     """Update metafields on an existing product"""
     
-    # Fetch existing product by SKU
-    product = ProxyProduct.get(sku='blue-tshirt-001')
-    
     # For demonstration, create a mock product
     product = ProxyProduct(sku='blue-tshirt-001', title='Premium Blue T-Shirt')
     product.add_metafield(
@@ -182,10 +179,9 @@ def example_update_or_create_with_metafields():
     # This will create if new, or update if exists (based on SKU)
     product.update_or_create()
     if product.id:
-        details = product_details(product.id)
-        product.hydrate(details)
+        product.hydrate()
     else:
-        # Fallback to hydrate via SKU if the ID lookup failed
+        # Recover gracefully if Shopify never returned an ID
         product.hydrate()
     print(product.metafields)
     
