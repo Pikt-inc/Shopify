@@ -1,4 +1,3 @@
-from typing import Optional
 import logging
 
 from shopify_sdk import client

@@ -1,6 +1,5 @@
 from .core import Mutation
 from .core.types.input_objects import *
-from .core.types.objects import *
 
 class productUnpublish(Mutation):
 
