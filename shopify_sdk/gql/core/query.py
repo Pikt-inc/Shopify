@@ -1,4 +1,5 @@
 import sys
+import inspect
 from enum import Enum
 from typing import Optional, Dict, Any, Type, List, Tuple, Union, Set, get_args, get_origin, get_type_hints, cast
 
@@ -48,8 +49,9 @@ class Query:
         parts = []
         for name, value in inputs.items():
             gql_type, nullable = self._graphql_type_for_argument(
-                annotation=annotations.get(name),
-                value=value,
+                name,
+                annotations.get(name),
+                value,
             )
             required_marker = "" if nullable else "!"
             parts.append(f"${name}: {gql_type}{required_marker}")
@@ -277,11 +279,32 @@ class Query:
         except Exception:
             hints = getattr(init_method, "__annotations__", {}) or {}
 
+        # Also capture raw annotation text from the source so we can
+        # preserve declared GraphQL scalar names (e.g., `ID`) even when
+        # the name was aliased to a builtin at import time.
+        raw_map: Dict[str, str] = {}
+        try:
+            src = inspect.getsource(init_method)
+            start = src.find('(') + 1
+            end = src.rfind(')')
+            sig = src[start:end]
+            parts = [p.strip() for p in sig.split(',') if p.strip()]
+            for part in parts:
+                if ':' in part:
+                    pname, rest = part.split(':', 1)
+                    pname = pname.strip()
+                    ann_text = rest.split('=')[0].strip()
+                    raw_map[pname] = ann_text
+        except Exception:
+            raw_map = {}
+
+        self._raw_argument_strings = raw_map
+
         hints.pop("return", None)
         hints.pop("self", None)
         return hints
 
-    def _graphql_type_for_argument(self, annotation: Any, value: Any) -> Tuple[str, bool]:
+    def _graphql_type_for_argument(self, name: str, annotation: Any, value: Any) -> Tuple[str, bool]:
         """Return (GraphQL type name, is_nullable)."""
         nullable = False
         resolved = annotation
@@ -296,8 +319,10 @@ class Query:
 
             if origin is list or origin is List:
                 inner = get_args(resolved)
-                inner_type, _ = self._graphql_type_for_argument(inner[0] if inner else Any, None)
-                return f"[{inner_type}]", nullable
+                inner_ann = inner[0] if inner else Any
+                inner_type, inner_nullable = self._graphql_type_for_argument(name, inner_ann, None)
+                inner_required = "" if inner_nullable else "!"
+                return f"[{inner_type}{inner_required}]", nullable
 
             scalar_map = {
                 str: "String",
@@ -306,6 +331,11 @@ class Query:
                 float: "Float",
             }
             if resolved in scalar_map:
+                raw = getattr(self, "_raw_argument_strings", {}).get(name)
+                if isinstance(raw, str):
+                    token = raw.split('[')[0].strip()
+                    if token in ("ID", "String", "Boolean", "Int", "Float", "URL", "DateTime"):
+                        return token, nullable
                 return scalar_map[resolved], nullable
             if isinstance(resolved, type):
                 return resolved.__name__, nullable
@@ -350,7 +380,7 @@ class Query:
                 variables[name] = value.value
             else:
                 variables[name] = value
-                
+
         response = client.request(
             query=self.body,
             variables=variables
