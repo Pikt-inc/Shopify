@@ -8,7 +8,6 @@ This script shows how to:
 """
 
 from shopify_sdk.common import ProxyProduct
-from shopify_sdk.gql.core.types import MetafieldInput
 
 
 # Example 1: Create a new product with metafields
@@ -25,32 +24,31 @@ def example_create_with_metafields():
         price='29.99',
         quantity=100,
         seo_title='Blue T-Shirt - Comfortable Cotton',
-        seo_description='Premium quality blue t-shirt made from 100% cotton',
-        metafields=[
-            MetafieldInput(
-                namespace='custom',
-                key='material',
-                type='single_line_text_field',
-                value='100% Cotton'
-            ),
-            MetafieldInput(
-                namespace='custom',
-                key='care_instructions',
-                type='multi_line_text_field',
-                value='Machine wash cold. Tumble dry low.'
-            ),
-            MetafieldInput(
-                namespace='inventory',
-                key='warehouse_location',
-                type='single_line_text_field',
-                value='Aisle 3, Shelf B'
-            )
-        ]
+        seo_description='Premium quality blue t-shirt made from 100% cotton'
+    )
+
+    product.add_metafield(
+        namespace='custom',
+        key='material',
+        type='single_line_text_field',
+        value='100% Cotton'
+    )
+    product.add_metafield(
+        namespace='custom',
+        key='care_instructions',
+        type='multi_line_text_field',
+        value='Machine wash cold. Tumble dry low.'
+    )
+    product.add_metafield(
+        namespace='inventory',
+        key='warehouse_location',
+        type='single_line_text_field',
+        value='Aisle 3, Shelf B'
     )
     
     # This will create the product in Shopify with the metafields
-    # product_id = product.save()
-    # print(f"Created product with ID: {product_id}")
+    product_id = product.save()
+    print(f"Created product with ID: {product_id}")
     
     return product
 
@@ -60,52 +58,49 @@ def example_update_metafields():
     """Update metafields on an existing product"""
     
     # Fetch existing product by SKU
-    # product = ProxyProduct.get(sku='blue-tshirt-001')
+    product = ProxyProduct.get(sku='blue-tshirt-001')
     
     # For demonstration, create a mock product
-    product = ProxyProduct(
-        id='gid://shopify/Product/123456',
-        sku='blue-tshirt-001',
-        title='Premium Blue T-Shirt',
-        metafields=[
-            MetafieldInput(
-                id='gid://shopify/Metafield/1',
-                namespace='custom',
-                key='material',
-                type='single_line_text_field',
-                value='100% Cotton'
-            )
-        ]
+    product = ProxyProduct(sku='blue-tshirt-001', title='Premium Blue T-Shirt')
+    product.add_metafield(
+        namespace='custom',
+        key='material',
+        type='single_line_text_field',
+        value='100% Cotton'
     )
     
     # Add new metafield
-    if product.metafields is None:
-        product.metafields = []
-    
-    product.metafields.append(
-        MetafieldInput(
-            namespace='custom',
-            key='size_chart',
-            type='url',
-            value='https://example.com/size-chart'
-        )
+    product.add_metafield(
+        namespace='custom',
+        key='size_chart',
+        type='url',
+        value='https://example.com/size-chart'
     )
     
     # Update existing metafield by replacing the list
-    product.metafields = [
-        mf if mf.key != 'material' else MetafieldInput(
-            id=mf.id,
-            namespace=mf.namespace,
-            key=mf.key,
-            type=mf.type,
-            value='100% Organic Cotton'  # Updated value
-        )
-        for mf in product.metafields
-    ]
+    existing_metafields = list(product.metafields or [])
+    product.clear_metafields()
+    for mf in existing_metafields:
+        if mf.key == 'material':
+            product.add_metafield(
+                namespace=mf.namespace,
+                key=mf.key,
+                type=mf.type,
+                value='100% Organic Cotton',  # Updated value
+                id=mf.id,
+            )
+        else:
+            product.add_metafield(
+                namespace=mf.namespace,
+                key=mf.key,
+                type=mf.type,
+                value=mf.value,
+                id=mf.id,
+            )
     
     # This will update the product in Shopify
-    # product_id = product.update_or_create()
-    # print(f"Updated product with ID: {product_id}")
+    product_id = product.update_or_create()
+    print(f"Updated product with ID: {product_id}")
     
     return product
 
@@ -115,29 +110,29 @@ def example_read_metafields():
     """Fetch and display metafields from an existing product"""
     
     # Fetch product by SKU - this will include metafields
-    # product = ProxyProduct.get(sku='blue-tshirt-001')
+    product = ProxyProduct.get(sku='blue-tshirt-001')
     
     # For demonstration, create a mock product
-    product = ProxyProduct(
-        sku='blue-tshirt-001',
-        title='Premium Blue T-Shirt',
-        metafields=[
-            MetafieldInput(
-                id='gid://shopify/Metafield/1',
-                namespace='custom',
-                key='material',
-                type='single_line_text_field',
-                value='100% Cotton'
-            ),
-            MetafieldInput(
-                id='gid://shopify/Metafield/2',
-                namespace='custom',
-                key='care_instructions',
-                type='multi_line_text_field',
-                value='Machine wash cold. Tumble dry low.'
-            )
-        ]
-    )
+    # product = ProxyProduct(
+    #     sku='blue-tshirt-001',
+    #     title='Premium Blue T-Shirt',
+    #     metafields=[
+    #         MetafieldInput(
+    #             id='gid://shopify/Metafield/1',
+    #             namespace='custom',
+    #             key='material',
+    #             type='single_line_text_field',
+    #             value='100% Cotton'
+    #         ),
+    #         MetafieldInput(
+    #             id='gid://shopify/Metafield/2',
+    #             namespace='custom',
+    #             key='care_instructions',
+    #             type='multi_line_text_field',
+    #             value='Machine wash cold. Tumble dry low.'
+    #         )
+    #     ]
+    # )
     
     if product.metafields:
         print(f"\nMetafields for '{product.title}':")
@@ -161,32 +156,32 @@ def example_update_or_create_with_metafields():
         type='Apparel',
         tags=['clothing', 'tshirt', 'green', 'eco-friendly'],
         price='34.99',
-        quantity=50,
-        metafields=[
-            MetafieldInput(
-                namespace='sustainability',
-                key='recycled_content',
-                type='number_decimal',
-                value='95.5'
-            ),
-            MetafieldInput(
-                namespace='sustainability',
-                key='carbon_neutral',
-                type='boolean',
-                value='true'
-            ),
-            MetafieldInput(
-                namespace='custom',
-                key='material',
-                type='single_line_text_field',
-                value='Recycled Polyester'
-            )
-        ]
+        quantity=50
+    )
+
+    product.add_metafield(
+        namespace='sustainability',
+        key='recycled_content',
+        type='number_decimal',
+        value='95.5'
+    )
+    product.add_metafield(
+        namespace='sustainability',
+        key='carbon_neutral',
+        type='boolean',
+        value='true'
+    )
+    product.add_metafield(
+        namespace='custom',
+        key='material',
+        type='single_line_text_field',
+        value='Recycled Polyester'
     )
     
     # This will create if new, or update if exists (based on SKU)
-    # product_id = product.update_or_create()
-    # print(f"Product ID: {product_id}")
+    product.update_or_create()
+    product.hydrate()
+    print(product.metafields)
     
     return product
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 from typing import Optional
 from shopify_sdk.gql.core.types import Product, MetafieldInput
 
@@ -15,7 +15,42 @@ class ProxyProduct(BaseModel):
     seo_title: Optional[str] = Field(default=None)
     seo_description: Optional[str] = Field(default=None)
     quantity: Optional[int] = Field(default=0)
-    metafields: Optional[list[MetafieldInput]] = Field(default=None)
+    _metafields: list[MetafieldInput] = PrivateAttr(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _prevent_direct_metafields_init(cls, data):
+        if isinstance(data, dict) and "metafields" in data:
+            raise ValueError("metafields is read-only; use add_metafield() to manage metafields.")
+        return data
+
+    @property
+    def metafields(self) -> list[MetafieldInput]:
+        """Return a copy of metafields to prevent external mutation."""
+        return list(self._metafields)
+
+    def clear_metafields(self) -> None:
+        self._metafields = []
+
+    def add_metafield(
+        self,
+        *,
+        namespace: str,
+        key: str,
+        type: str,
+        value: str,
+        id: Optional[str] = None,
+    ) -> MetafieldInput:
+        """Create a MetafieldInput and store it on the proxy product."""
+        metafield = MetafieldInput(
+            id=id,
+            key=key,
+            namespace=namespace,
+            type=type,
+            value=value,
+        )
+        self._metafields.append(metafield)
+        return metafield
 
     def save(self) -> Optional[str]:
         if self.id:
@@ -56,24 +91,32 @@ class ProxyProduct(BaseModel):
             return cls()
         return cls().hydrate(product)
     
-    def hydrate(self, product: Product) -> Optional["ProxyProduct"]:
-        if not product:
-            return None
+    def hydrate(self, product: Optional[Product] = None) -> "ProxyProduct":
+        from shopify_sdk.common.product import product_by_sku
+        target_product: Optional[Product] = product
+        if target_product is None:
+            if self.sku is None:
+                return self
+            target_product = product_by_sku(self.sku)
+
+        if target_product is None:
+            return self
 
         try:
-            self.id = product.id
-            self.title = product.title
-            self.description_html = product.descriptionHtml
-            self.vendor = product.vendor
-            self.type = product.productType
-            self.tags = list(product.tags)
-            self.seo_title = product.seo.title
-            self.seo_description = product.seo.description
+            self.id = target_product.id
+            self.title = target_product.title
+            self.description_html = target_product.descriptionHtml
+            self.vendor = target_product.vendor
+            self.type = target_product.productType
+            self.tags = list(target_product.tags)
+            self.seo_title = target_product.seo.title
+            self.seo_description = target_product.seo.description
             
             # Hydrate metafields if present
-            if hasattr(product, 'metafields') and product.metafields:
-                if hasattr(product.metafields, 'nodes') and product.metafields.nodes:
-                    self.metafields = [
+            hydrated_metafields: list[MetafieldInput] = []
+            if hasattr(target_product, 'metafields') and target_product.metafields:
+                if hasattr(target_product.metafields, 'nodes') and target_product.metafields.nodes:
+                    hydrated_metafields = [
                         MetafieldInput(
                             id=mf.id,
                             key=mf.key,
@@ -81,11 +124,12 @@ class ProxyProduct(BaseModel):
                             type=mf.type,
                             value=mf.value
                         )
-                        for mf in product.metafields.nodes
+                        for mf in target_product.metafields.nodes
                     ]
+            self._set_metafields(hydrated_metafields)
             
             first_variant = None
-            variants = product.variants
+            variants = target_product.variants
             if variants and variants.nodes:
                 first_variant = variants.nodes[0]
 
@@ -99,3 +143,11 @@ class ProxyProduct(BaseModel):
             return self
 
         return self
+
+    def __setattr__(self, name, value):
+        if name == "metafields":
+            raise AttributeError("metafields is read-only; use add_metafield() or clear_metafields().")
+        super().__setattr__(name, value)
+
+    def _set_metafields(self, metafields: list[MetafieldInput]) -> None:
+        self._metafields = list(metafields)
