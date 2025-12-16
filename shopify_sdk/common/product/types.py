@@ -5,3 +5,4 @@ class ProductActionResponse(BaseModel):
     success: bool
     message: str | None = None
     sku: str | None = None
+    product_id: str | None = None

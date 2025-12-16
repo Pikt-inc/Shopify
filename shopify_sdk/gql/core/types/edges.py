@@ -5,8 +5,19 @@ from .base import edge, String
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from .objects import *
-    from .base import *
+    from .objects import (
+        Collection,
+        FulfillmentOrder,
+        FulfillmentOrderLineItem,
+        LineItem,
+        Location,
+        Order,
+        ProductBundleComponent,
+        ProductVariant,
+        Publication,
+        ResourcePublication,
+        SalesAgreement,
+    )
 
 
 class OrderEdge(edge):
@@ -44,9 +55,9 @@ class ProductBundleComponentEdge(edge):
     node: ProductBundleComponent
 
 
-class ProductBundleComponentEdge(edge):
-    node: ProductBundleComponent
-
-
 class CollectionEdge(edge):
     node: Collection
+
+
+class LocationEdge(edge):
+    node: Location

@@ -1,7 +1,8 @@
 from shopify_sdk import client
 from shopify_sdk.gql import productUpdate, productVariants
-from shopify_sdk.gql.core.types import ProductInput, ProductStatus
+from shopify_sdk.gql.core.types import ProductUpdateInput, ProductStatus
 from .types import ProductActionResponse
+from .query import product_by_sku
 
 
 def _lookup_product_by_sku(
@@ -36,9 +37,14 @@ def archive_product_by_sku(sku: str) -> ProductActionResponse:
     success = False
     message: str | None = None
     try:
-        product_id, product_title = _lookup_product_by_sku(sku)
-        update_input = ProductInput(id=product_id, status=ProductStatus.ARCHIVED)
-        result = productUpdate(input=update_input).execute(client=client)
+        product = product_by_sku(sku)
+        if not product:
+            raise ValueError(f"No product found for SKU '{sku}'.")
+        
+        product_id = product.id
+        product_title = getattr(product, "title", None)
+        update_input = ProductUpdateInput(id=product_id, status=ProductStatus.ARCHIVED)
+        result = productUpdate(product=update_input).execute(client=client)
         success = bool(result and getattr(result, "product", None))
         if not success:
             label = product_title or product_id

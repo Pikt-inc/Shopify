@@ -3,31 +3,32 @@ from __future__ import annotations
 from .base import connection
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from .objects import *
-    from .base import *
-    from .edges import *
-
-if TYPE_CHECKING:
     from .edges import (
-        OrderEdge,
-        LineItemEdge,
+        CollectionEdge,
         FulfillmentOrderEdge,
         FulfillmentOrderLineItemEdge,
-        SalesAgreementEdge,
+        LineItemEdge,
+        LocationEdge,
+        OrderEdge,
+        ProductBundleComponentEdge,
         ProductVariantEdge,
         PublicationEdge,
         ResourcePublicationEdge,
+        SalesAgreementEdge,
     )
     from .objects import (
-        Order,
-        LineItem,
-        PageInfo,
+        Collection,
         FulfillmentOrder,
         FulfillmentOrderLineItem,
-        SalesAgreement,
+        LineItem,
+        Location,
+        Order,
+        PageInfo,
+        ProductBundleComponent,
         ProductVariant,
         Publication,
         ResourcePublication,
+        SalesAgreement,
     )
 
 
@@ -88,4 +89,10 @@ class ProductBundleComponentConnection(connection):
 class CollectionConnection(connection):
     edges: list[CollectionEdge]
     nodes: list[Collection]
+    pageInfo: PageInfo
+
+
+class LocationConnection(connection):
+    edges: list[LocationEdge]
+    nodes: list[Location]
     pageInfo: PageInfo

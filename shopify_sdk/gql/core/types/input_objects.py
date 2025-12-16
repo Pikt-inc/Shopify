@@ -26,7 +26,7 @@ class FulfillmentTrackingInput(input_object):
     company: String
     number: String
     numbers: List[String] = Field(default_factory=list)
-    url: URL = Field(default=None)
+    url: Optional[URL] = Field(default=None)
     urls: List[URL] = Field(default_factory=list)
 
 
@@ -51,13 +51,13 @@ class FulfillmentOrderLineItemsInput(input_object):
 
 class FulfillmentV2Input(input_object):
     lineItemsByFulfillmentOrder: List[FulfillmentOrderLineItemsInput]
-    notifyCustomer: Boolean = Field(default=None)
+    notifyCustomer: Optional[Boolean] = Field(default=None)
     originAddress: Optional[FulfillmentOriginAddressInput] = Field(default=None)
     trackingInfo: Optional[FulfillmentTrackingInput] = Field(default=None)
 
 class ProductPublicationInput(input_object):
     publicationId: ID
-    publishDate: DateTime = Field(default=None)
+    publishDate: Optional[DateTime] = Field(default=None)
 
 
 class ProductUnpublishInput(input_object):
@@ -71,7 +71,7 @@ class ProductPublishInput(input_object):
 
 
 class ProductClaimOwnershipInput(input_object):
-    bundles: Boolean = Field(default=None)
+    bundles: Optional[Boolean] = Field(default=None)
 
 
 class OptionCreateInput(input_object):
@@ -80,8 +80,8 @@ class OptionCreateInput(input_object):
 
 
 class SEOInput(input_object):
-    description: String = Field(default=None)
-    title: String = Field(default=None)
+    description: Optional[String] = Field(default=None)
+    title: Optional[String] = Field(default=None)
 
 
 class ProductCreateInput(input_object):
@@ -128,20 +128,20 @@ class ProductUpdateInput(input_object):
 
 class ProductInput(input_object):
     id: Optional[ID] = Field(default=None)
-    title: String = Field(default=None)
-    descriptionHtml: String = Field(default=None)
-    handle: String = Field(default=None)
-    productType: String = Field(default=None)
+    title: Optional[String] = Field(default=None)
+    descriptionHtml: Optional[String] = Field(default=None)
+    handle: Optional[String] = Field(default=None)
+    productType: Optional[String] = Field(default=None)
     status: Optional["ProductStatus"] = Field(default=None)
     tags: List[String] = Field(default_factory=list)
-    vendor: String = Field(default=None)
+    vendor: Optional[String] = Field(default=None)
 
 
 class InventoryItemInput(input_object):
-    sku: String = Field(default=None)
-    cost: String = Field(default=None)
-    tracked: Boolean = Field(default=None)
-    requiresShipping: Boolean = Field(default=None)
+    sku: Optional[String] = Field(default=None)
+    cost: Optional[String] = Field(default=None)
+    tracked: Optional[Boolean] = Field(default=None)
+    requiresShipping: Optional[Boolean] = Field(default=None)
 
 
 class InventoryLevelInput(input_object):
@@ -151,25 +151,25 @@ class InventoryLevelInput(input_object):
 
 class VariantOptionValueInput(input_object):
     id: Optional[ID] = Field(default=None)
-    linkedMetafieldValue: String = Field(default=None)
-    name: String = Field(default=None)
-    optionId: String = Field(default=None)
-    optionName: String = Field(default=None)
+    linkedMetafieldValue: Optional[String] = Field(default=None)
+    name: Optional[String] = Field(default=None)
+    optionId: Optional[String] = Field(default=None)
+    optionName: Optional[String] = Field(default=None)
 
 
 class UnitPriceMeasurementInput(input_object):
-    measuredType: String = Field(default=None)
-    quantityUnit: String = Field(default=None)
-    quantityValue: Float = Field(default=None)
-    referenceUnit: String = Field(default=None)
-    referenceValue: Float = Field(default=None)
+    measuredType: Optional[String] = Field(default=None)
+    quantityUnit: Optional[String] = Field(default=None)
+    quantityValue: Optional[Float] = Field(default=None)
+    referenceUnit: Optional[String] = Field(default=None)
+    referenceValue: Optional[Float] = Field(default=None)
 
 
 class ProductVariantsBulkInput(input_object):
     id: Optional[ID] = Field(default=None)
-    price: String = Field(default=None)
-    compareAtPrice: String = Field(default=None)
-    barcode: String = Field(default=None)
+    price: Optional[String] = Field(default=None)
+    compareAtPrice: Optional[String] = Field(default=None)
+    barcode: Optional[String] = Field(default=None)
     inventoryItem: Optional[InventoryItemInput] = Field(default=None)
     inventoryPolicy: Optional[ProductVariantInventoryPolicy] = Field(default=None)
     inventoryQuantities: Optional[List[InventoryLevelInput]] = Field(default=None)
@@ -177,11 +177,25 @@ class ProductVariantsBulkInput(input_object):
     mediaSrc: List[String] = Field(default_factory=list)
     metafields: List["MetafieldInput"] = Field(default_factory=list)
     optionValues: List[VariantOptionValueInput] = Field(default_factory=list)
-    requiresComponents: Boolean = Field(default=None)
-    showUnitPrice: Boolean = Field(default=None)
-    taxable: Boolean = Field(default=None)
-    taxCode: String = Field(default=None)
+    requiresComponents: Optional[Boolean] = Field(default=None)
+    showUnitPrice: Optional[Boolean] = Field(default=None)
+    taxable: Optional[Boolean] = Field(default=None)
+    taxCode: Optional[String] = Field(default=None)
     unitPriceMeasurement: Optional[UnitPriceMeasurementInput] = Field(default=None)
+
+
+class InventoryChangeInput(input_object):
+    inventoryItemId: ID
+    locationId: ID
+    delta: Int
+    ledgerDocumentUri: Optional[String] = Field(default=None)
+
+
+class InventoryAdjustQuantitiesInput(input_object):
+    changes: List[InventoryChangeInput]
+    name: String
+    reason: String
+    referenceDocumentUri: Optional[String] = Field(default=None)
 
 
 class MailingAddressInput(input_object):

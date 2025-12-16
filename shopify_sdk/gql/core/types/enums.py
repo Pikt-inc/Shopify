@@ -106,3 +106,9 @@ class CountryCode(enum):
     IN = "IN"
     BR = "BR"
     MX = "MX"
+
+
+class LocationSortKeys(enum):
+    NAME = "NAME"
+    ID = "ID"
+    CREATED_AT = "CREATED_AT"

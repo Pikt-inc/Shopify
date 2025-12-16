@@ -3,10 +3,21 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Optional
 from pydantic import Field
 
-from .base import AutoRegisterModel, connection
+from .base import *
 if TYPE_CHECKING:
-    from .connections import *
-    from .base import *
+    from .connections import (
+        CollectionConnection,
+        FulfillmentOrderConnection,
+        FulfillmentOrderLineItemConnection,
+        LineItemConnection,
+        LocationConnection,
+        OrderConnection,
+        ProductBundleComponentConnection,
+        ProductVariantConnection,
+        PublicationConnection,
+        ResourcePublicationConnection,
+        SalesAgreementConnection,
+    )
     from .enums import *
 
 
@@ -39,6 +50,9 @@ class DiscountApplication(AutoRegisterModel):
     allocationMethod: String
     targetSelection: String
     targetType: String
+
+# GraphQL often returns formatted strings; alias to simple String for typing.
+FormattedString = String
 
 
 class DiscountAllocation(AutoRegisterModel):
@@ -560,19 +574,39 @@ class ResourcePublication(AutoRegisterModel):
     publishDate: DateTime
 
 
+class LocationAddress(AutoRegisterModel):
+    address1: Optional[String] = Field(default=None)
+    address2: Optional[String] = Field(default=None)
+    city: Optional[String] = Field(default=None)
+    country: Optional[String] = Field(default=None)
+    countryCode: Optional[String] = Field(default=None)
+    formatted: List[String] = Field(default_factory=list)
+    latitude: Optional[Float] = Field(default=None)
+    longitude: Optional[Float] = Field(default=None)
+    phone: Optional[String] = Field(default=None)
+    province: Optional[String] = Field(default=None)
+    provinceCode: Optional[String] = Field(default=None)
+    zip: Optional[String] = Field(default=None)
+
+
 class Location(AutoRegisterModel):
-    address1: String
-    address2: String
-    city: String
-    countryCode: String
+    activatable: Boolean
+    address: LocationAddress
+    addressVerified: Boolean
+    createdAt: DateTime
+    deactivatable: Boolean
+    deactivatedAt: Optional[DateTime] = Field(default=None)
+    deletable: Boolean
+    fulfillmentService: Optional[FulfillmentService] = Field(default=None)
+    fulfillsOnlineOrders: Boolean
+    hasActiveInventory: Boolean
+    hasUnfulfilledOrders: Boolean
     id: ID
     name: String
-    province: String
-    zip: String
 
 
 class PurchasingEntity(AutoRegisterModel):
-    typename: String = Field(default=None, alias="__typename")
+    typename: Optional[String] = Field(default=None, alias="__typename")
 
 
 class Refund(AutoRegisterModel):

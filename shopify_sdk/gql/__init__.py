@@ -3,6 +3,7 @@ from .queries import (
     orders,
     productVariants,
     publications,
+    locations
 )
 from .mutations import (
     productUnpublish,
@@ -31,4 +32,5 @@ __all__ = [
     "orderUpdate",
     "fulfillmentCreateV2",
     "client",
+    "locations"
 ]
