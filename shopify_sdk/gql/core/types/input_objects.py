@@ -211,7 +211,7 @@ class MailingAddressInput(input_object):
     zip: String
 
 class MetafieldInput(input_object):
-    id: ID
+    id: Optional[ID] = Field(default=None)
     key: String
     namespace: String
     type: String

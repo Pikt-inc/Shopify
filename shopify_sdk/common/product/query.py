@@ -18,10 +18,19 @@ def product_details(
             "Product": Product.fields_except(
                 exclude={
                     "id", "title", "descriptionHtml", "vendor", "productType", "tags",
-                    "seo", "metafields", "status", "vendor"
+                    "seo", "metafields", "status", "variants"
                 }
             ),
-        },
+            "ProductVariant": ProductVariant.fields_except(
+                exclude={"id", "title", "sku", "price"}
+            ),
+            MetafieldConnection: MetafieldConnection.fields_except(
+                exclude={"nodes"}
+            ),
+            Metafield: Metafield.fields_except(
+                exclude={"id", "key", "namespace", "type", "value"}
+            ),
+        }
     ).execute(client=client)
 
     if not product:
@@ -71,7 +80,10 @@ def product_by_sku(
         query=f"sku:{sku}",
         field_inclusions={
             "ProductVariant": {"sku", "product"},
-            "Product": {"id", "title"},
+            "Product": {"id", "title", "descriptionHtml", "vendor", "productType", "tags", "seo", "metafields"},
+            "MetafieldConnection": {"nodes"},
+            "Metafield": {"id", "key", "namespace", "type", "value"},
+            "SEO": {"title", "description"}
         },
     ).execute(client=client)
 
