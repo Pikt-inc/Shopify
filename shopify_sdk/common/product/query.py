@@ -21,15 +21,7 @@ def product_details(
                     "seo", "metafields", "status"
                 }
             ),
-            "MetafieldConnection": {"edges", "pageInfo"},
-            "Metafield": set(),  # Include all Metafield fields
-            "SEO": set(),  # Include all SEO fields
-            "ProductVariantConnection": ProductVariantConnection.fields_except(
-                exclude={"nodes"}
-            ),
-            "ProductVariant": ProductVariant.fields_except(
-                exclude={"id", "sku", "price", "inventoryQuantity"}
-            ),
+            "MetafieldConnection": {"edges", "pageInfo"}
         },
     ).execute(client=client)
 
