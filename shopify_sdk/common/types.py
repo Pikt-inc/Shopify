@@ -137,7 +137,7 @@ class ProxyProduct(BaseModel):
         from shopify_sdk.common.product import product_by_sku
         product = product_by_sku(sku)
         if not product:
-            raise ValueError(f"No product found for SKU '{sku}'.")
+            return None
         
         return cls(id=product.id).hydrate()
     
