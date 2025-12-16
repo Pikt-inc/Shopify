@@ -34,8 +34,8 @@ def archive_product_by_sku(sku: str) -> ProductActionResponse:
     Archive a product by SKU using Shopify's productUpdate mutation (status=ARCHIVED).
     Shopify docs: https://shopify.dev/docs/api/admin-graphql/2025-10/mutations/productUpdate
     """
-    success = False
-    message: str | None = None
+    success = True
+    message = f"Successfully archived product for SKU '{sku}'."
     try:
         product = product_by_sku(sku)
         if not product:
@@ -45,8 +45,8 @@ def archive_product_by_sku(sku: str) -> ProductActionResponse:
         product_title = getattr(product, "title", None)
         update_input = ProductUpdateInput(id=product_id, status=ProductStatus.ARCHIVED)
         result = productUpdate(product=update_input).execute(client=client)
-        success = bool(result and getattr(result, "product", None))
-        if not success:
+        if not result or result.get("userErrors") != []:
+            success = False
             label = product_title or product_id
             message = f"Failed to archive product '{label}' for SKU '{sku}'."
     except Exception as e:

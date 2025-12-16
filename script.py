@@ -1,4 +1,12 @@
 from shopify_sdk.common import update_product, ProxyProduct
+from shopify_sdk.common import (
+    archive_product_by_sku,
+    ProductActionResponse
+)
+from shopify_sdk.common import set_order_line_item_tracking
+from shopify_sdk.common import get_orders_from_last_n_days
+from shopify_sdk.gql.core.types import Order
+
 
 pp = ProxyProduct(
     sku='skookey-19999',
@@ -13,5 +21,7 @@ pp = ProxyProduct(
     seo_title='GOOBER Plush Toy - Cuddly and Fun'
 )
 pp.save()
-product_id = pp.id
-print(f"Product created or updated with ID: {product_id}")
+res = archive_product_by_sku('skookey-19999')
+print(res)
+order = get_orders_from_last_n_days(15)
+print(order)
