@@ -128,3 +128,6 @@ venv.bak/
 
 # Local pytest cache
 .pytest_cache/
+
+# Test files
+test_images.py

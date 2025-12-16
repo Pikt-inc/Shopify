@@ -1,6 +1,6 @@
 from __future__ import annotations
 from functools import cached_property
-from typing import cast
+from typing import Optional, cast
 
 from shopify_sdk.common.store.locations import get_locations
 from shopify_sdk.common.store.inventory import update_inventory
@@ -10,6 +10,7 @@ from shopify_sdk.common.product.query import (
 from shopify_sdk.common.product.publish import (
     publish_product_to_all_publications
 )
+from shopify_sdk.common.product.media import set_product_images
 from shopify_sdk.common.variant.update_or_create import update_variant
 from shopify_sdk.common.product.create import (
     create_product as create_product_mutation,
@@ -22,6 +23,15 @@ from shopify_sdk.gql.core.types.enums import *
 from shopify_sdk.gql.core.types.objects import *
 from shopify_sdk.gql.core.types.connections import *
 from .types import ProxyProduct
+
+
+def _calculate_inventory_delta(
+    desired_quantity: Optional[int],
+    current_quantity: Optional[int],
+) -> int:
+    if desired_quantity is None:
+        return 0
+    return int(desired_quantity) - int(current_quantity or 0)
 
 def create_product(
     product: ProxyProduct
@@ -123,6 +133,7 @@ class ProductCreate:
         )
         instance._set_variant()
         instance._set_inventory()
+        instance._set_images()
         publish_product_to_all_publications(
             product_id=instance.product_id
         )
@@ -149,6 +160,12 @@ class ProductCreate:
         return product_id
 
     def _set_inventory(self) -> bool:
+        delta = _calculate_inventory_delta(
+            desired_quantity=self._proxy_product.quantity,
+            current_quantity=self.variant.inventoryQuantity,
+        )
+        if delta == 0:
+            return True
         success = update_inventory(
             input=InventoryAdjustQuantitiesInput(
                 name="available",
@@ -157,7 +174,7 @@ class ProductCreate:
                     InventoryChangeInput(
                         inventoryItemId=self.variant.inventoryItem.id,
                         locationId=self.shop_location_id,
-                        delta=int(self._proxy_product.quantity if self._proxy_product.quantity is not None else 0)
+                        delta=delta
                     )
                 ]
             )
@@ -165,6 +182,9 @@ class ProductCreate:
         if not success:
             raise ValueError("Inventory update failed.")
         return True
+
+    def _set_images(self) -> bool:
+        return set_product_images(self.product_id, self._proxy_product.images)
 
 
 class ProductUpdate:
@@ -247,6 +267,7 @@ class ProductUpdate:
         instance._update_product()
         instance._set_variant()
         instance._set_inventory()
+        instance._set_images()
         publish_product_to_all_publications(
             product_id=instance.product_id
         )
@@ -271,6 +292,12 @@ class ProductUpdate:
         return product_id
 
     def _set_inventory(self) -> bool:
+        delta = _calculate_inventory_delta(
+            desired_quantity=self._proxy_product.quantity,
+            current_quantity=self.variant.inventoryQuantity,
+        )
+        if delta == 0:
+            return True
         success = update_inventory(
             input=InventoryAdjustQuantitiesInput(
                 name="available",
@@ -279,7 +306,7 @@ class ProductUpdate:
                     InventoryChangeInput(
                         inventoryItemId=self.variant.inventoryItem.id,
                         locationId=self.shop_location_id,
-                        delta=int(self._proxy_product.quantity if self._proxy_product.quantity is not None else 0)
+                        delta=delta
                     )
                 ]
             )
@@ -287,3 +314,6 @@ class ProductUpdate:
         if not success:
             raise ValueError("Inventory update failed.")
         return True
+
+    def _set_images(self) -> bool:
+        return set_product_images(self.product_id, self._proxy_product.images)

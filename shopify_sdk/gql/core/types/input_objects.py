@@ -20,7 +20,16 @@ class OrderIdentifierInput(input_object):
 class ProductIdentifierInput(input_object):
     handle: Optional[String]
     id: Optional[ID]
-    
+
+
+class FileUpdateInput(input_object):
+    alt: Optional[String] = Field(default=None)
+    filename: Optional[String] = Field(default=None)
+    id: ID
+    originalSource: Optional[String] = Field(default=None)
+    previewImageSource: Optional[String] = Field(default=None)
+    referencesToAdd: List[ID] = Field(default_factory=list)
+    referencesToRemove: List[ID] = Field(default_factory=list)
 
 class FulfillmentTrackingInput(input_object):
     company: String
@@ -237,3 +246,9 @@ class OrderInput(input_object):
     note: Optional[String] = Field(default=None)
     shippingAddress: Optional[MailingAddressInput] = Field(default=None)
     tags: List[String] = Field(default_factory=list)
+
+
+class CreateMediaInput(input_object):
+    alt: Optional[String] = Field(default=None)
+    mediaContentType: String
+    originalSource: String
