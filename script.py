@@ -11,6 +11,10 @@ pp = ProxyProduct(
     price='39.99',
     quantity=2,
     seo_description='A cuddly GOOBER plush toy for all ages.',
-    seo_title='GOOBER Plush Toy - Cuddly and Fun'
+    seo_title='GOOBER Plush Toy - Cuddly and Fun',
+    # images=[
+    #     'https://example.com/goober-front.jpg',
+    #     'https://example.com/goober-side.jpg'
+    # ]
 )
 pp.update_or_create()
