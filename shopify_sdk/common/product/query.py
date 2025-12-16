@@ -20,8 +20,11 @@ def product_details(
                     "id", "title", "descriptionHtml", "vendor", "productType", "tags",
                     "seo", "metafields", "status"
                 }
-            ),
-            "MetafieldConnection": {"edges", "pageInfo"}
+            )
+        },
+        field_inclusions={
+            "MetafieldConnection": {"nodes"},
+            "Metafield": {"id", "key", "namespace", "type", "value"},
         },
     ).execute(client=client)
 

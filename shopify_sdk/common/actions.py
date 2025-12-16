@@ -97,7 +97,7 @@ class ProductCreate:
                 title=self._proxy_product.seo_title,
                 description=self._proxy_product.seo_description
             ),
-            metafields=self._proxy_product.metafields or []
+            metafields=self._proxy_product.metafields
         )
 
     @cached_property
@@ -220,7 +220,7 @@ class ProductUpdate:
                 title=self._proxy_product.seo_title,
                 description=self._proxy_product.seo_description
             ),
-            metafields=self._proxy_product.metafields or []
+            metafields=self._proxy_product.metafields
         )
 
     @cached_property

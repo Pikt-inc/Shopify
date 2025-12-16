@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field, PrivateAttr, model_validator
-from typing import Optional
+from copy import deepcopy
+from typing import Any, Optional
+
+from pydantic import BaseModel, Field, PrivateAttr
 from shopify_sdk.gql.core.types import Product, MetafieldInput
 
 
@@ -15,22 +17,27 @@ class ProxyProduct(BaseModel):
     seo_title: Optional[str] = Field(default=None)
     seo_description: Optional[str] = Field(default=None)
     quantity: Optional[int] = Field(default=0)
+    metafields_init: Optional[list[MetafieldInput]] = Field(
+        default=None,
+        alias="metafields",
+        validation_alias="metafields",
+        exclude=True,
+    )
     _metafields: list[MetafieldInput] = PrivateAttr(default_factory=list)
 
-    @model_validator(mode="before")
-    @classmethod
-    def _prevent_direct_metafields_init(cls, data):
-        if isinstance(data, dict) and "metafields" in data:
-            raise ValueError("metafields is read-only; use add_metafield() to manage metafields.")
-        return data
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        if self.metafields_init:
+            self._set_metafields(self.metafields_init)
+            self.metafields_init = None
 
     @property
     def metafields(self) -> list[MetafieldInput]:
-        """Return a copy of metafields to prevent external mutation."""
-        return list(self._metafields)
+        """Return a deep copy of metafields to prevent accidental mutation."""
+        return deepcopy(self._metafields)
 
     def clear_metafields(self) -> None:
-        self._metafields = []
+        self._metafields.clear()
 
     def add_metafield(
         self,
@@ -89,18 +96,19 @@ class ProxyProduct(BaseModel):
         product = product_by_sku(sku)
         if not product:
             return cls()
-        return cls().hydrate(product)
+        hydrated = cls().hydrate(product)
+        return hydrated or cls()
     
-    def hydrate(self, product: Optional[Product] = None) -> "ProxyProduct":
+    def hydrate(self, product: Optional[Product] = None) -> Optional["ProxyProduct"]:
         from shopify_sdk.common.product import product_by_sku
         target_product: Optional[Product] = product
         if target_product is None:
             if self.sku is None:
-                return self
+                return None
             target_product = product_by_sku(self.sku)
 
         if target_product is None:
-            return self
+            return None
 
         try:
             self.id = target_product.id
@@ -140,14 +148,10 @@ class ProxyProduct(BaseModel):
             self.price = first_variant.price
             self.quantity = first_variant.inventoryQuantity
         except Exception:
-            return self
+            return None
 
         return self
 
-    def __setattr__(self, name, value):
-        if name == "metafields":
-            raise AttributeError("metafields is read-only; use add_metafield() or clear_metafields().")
-        super().__setattr__(name, value)
-
     def _set_metafields(self, metafields: list[MetafieldInput]) -> None:
-        self._metafields = list(metafields)
+        """Overwrite internal metafield cache with defensive copies."""
+        self._metafields = [mf.model_copy(deep=True) for mf in metafields]
