@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from shopify_sdk import client
 from shopify_sdk.gql import productCreateMedia
@@ -19,7 +19,7 @@ def create_product_media(
     media_inputs = []
     for url in image_urls:
         media_input = CreateMediaInput(
-            alt="",  # Can be extended to support alt text in the future
+            alt=None,  # Alt text can be extended in the future
             mediaContentType="IMAGE",
             originalSource=url
         )
@@ -33,6 +33,19 @@ def create_product_media(
         
         # Check if media was created successfully
         media_result = result.get('media', [])
-        return len(media_result) > 0 or len(image_urls) == 0
+        return len(media_result) > 0
     except Exception as e:
         raise ValueError(f"Product media creation failed: {e}")
+
+
+def set_product_images(product_id: str, images: Optional[list[str]]) -> bool:
+    """Helper function to set product images. Used by ProductCreate and ProductUpdate."""
+    if not images:
+        return True  # No images to set
+    success = create_product_media(
+        product_id=product_id,
+        image_urls=images
+    )
+    if not success:
+        raise ValueError("Product image setting failed.")
+    return True

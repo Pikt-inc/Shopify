@@ -10,7 +10,7 @@ from shopify_sdk.common.product.query import (
 from shopify_sdk.common.product.publish import (
     publish_product_to_all_publications
 )
-from shopify_sdk.common.product.media import create_product_media
+from shopify_sdk.common.product.media import set_product_images
 from shopify_sdk.common.variant.update_or_create import update_variant
 from shopify_sdk.common.product.create import (
     create_product as create_product_mutation,
@@ -168,15 +168,7 @@ class ProductCreate:
         return True
 
     def _set_images(self) -> bool:
-        if not self._proxy_product.images:
-            return True  # No images to set
-        success = create_product_media(
-            product_id=self.product_id,
-            image_urls=self._proxy_product.images
-        )
-        if not success:
-            raise ValueError("Product image creation failed.")
-        return True
+        return set_product_images(self.product_id, self._proxy_product.images)
 
 
 class ProductUpdate:
@@ -301,12 +293,4 @@ class ProductUpdate:
         return True
 
     def _set_images(self) -> bool:
-        if not self._proxy_product.images:
-            return True  # No images to set
-        success = create_product_media(
-            product_id=self.product_id,
-            image_urls=self._proxy_product.images
-        )
-        if not success:
-            raise ValueError("Product image update failed.")
-        return True
+        return set_product_images(self.product_id, self._proxy_product.images)
