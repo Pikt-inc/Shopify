@@ -55,7 +55,8 @@ from .input_objects import (
     FulfillmentTrackingInput,
     FulfillmentOrderLineItemsInput,
     FulfillmentOrderLineItemInput,
-    ProductIdentifierInput
+    ProductIdentifierInput,
+    MetafieldInput
 )
 from .enums import (
     OrderReturnStatus,
@@ -142,5 +143,6 @@ __all__ = [
     "Fulfillment",
     "ProductIdentifierInput",
     "InventoryItem",
-    "SelectedOption"
+    "SelectedOption",
+    "MetafieldInput"
 ]

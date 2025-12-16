@@ -96,7 +96,8 @@ class ProductCreate:
             seo=SEOInput(
                 title=self._proxy_product.seo_title,
                 description=self._proxy_product.seo_description
-            )
+            ),
+            metafields=self._proxy_product.metafields or []
         )
 
     @cached_property
@@ -218,7 +219,8 @@ class ProductUpdate:
             seo=SEOInput(
                 title=self._proxy_product.seo_title,
                 description=self._proxy_product.seo_description
-            )
+            ),
+            metafields=self._proxy_product.metafields or []
         )
 
     @cached_property

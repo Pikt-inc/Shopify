@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-from shopify_sdk.gql.core.types import Product
+from shopify_sdk.gql.core.types import Product, MetafieldInput
 
 
 class ProxyProduct(BaseModel):
@@ -15,6 +15,7 @@ class ProxyProduct(BaseModel):
     seo_title: Optional[str] = Field(default=None)
     seo_description: Optional[str] = Field(default=None)
     quantity: Optional[int] = Field(default=0)
+    metafields: Optional[list[MetafieldInput]] = Field(default=None)
 
     def save(self) -> Optional[str]:
         if self.id:
@@ -68,6 +69,20 @@ class ProxyProduct(BaseModel):
             self.tags = list(product.tags)
             self.seo_title = product.seo.title
             self.seo_description = product.seo.description
+            
+            # Hydrate metafields if present
+            if hasattr(product, 'metafields') and product.metafields and product.metafields.nodes:
+                self.metafields = [
+                    MetafieldInput(
+                        id=mf.id,
+                        key=mf.key,
+                        namespace=mf.namespace,
+                        type=mf.type,
+                        value=mf.value
+                    )
+                    for mf in product.metafields.nodes
+                ]
+            
             first_variant = None
             variants = product.variants
             if variants and variants.nodes:
