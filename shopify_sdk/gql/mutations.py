@@ -140,3 +140,25 @@ class productCreateMedia(Mutation):
             ]
         )
         return "\n".join([media_block, self._user_errors_block])
+
+
+class fileUpdate(Mutation):
+    def __init__(
+        self,
+        files: list[FileUpdateInput],
+    ):
+        self.files: list[FileUpdateInput] = files
+
+    @property
+    def fields(self) -> str:
+        spacer = " " * (self._indent * 2)
+        inner = " " * (self._indent * 3)
+        files_block = "\n".join(
+            [
+                f"{spacer}files {{",
+                f"{inner}id",
+                f"{spacer}}}",
+            ]
+        )
+        return "\n".join([files_block, self._user_errors_block])
+
