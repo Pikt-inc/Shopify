@@ -18,10 +18,11 @@ def product_details(
             "Product": Product.fields_except(
                 exclude={
                     "id", "title", "descriptionHtml", "vendor", "productType", "tags",
-                    "seo", "metafields", "status", "vendor", "variants"
+                    "seo", "metafields", "status", "variants"
                 }
             ),
             "MetafieldConnection": {"edges", "pageInfo"},
+            "Metafield": {"id", "key", "namespace", "type", "value"},
             "ProductVariantConnection": ProductVariantConnection.fields_except(
                 exclude={"nodes"}
             ),
