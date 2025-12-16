@@ -1,9 +1,12 @@
 from copy import deepcopy
 from enum import Enum
 from typing import Any, ClassVar, Optional, Type, Union
-
 from pydantic import BaseModel, Field, PrivateAttr
+
 from shopify_sdk.gql.core.types import Product, MetafieldInput
+from shopify_sdk.common.product import product_details, product_by_sku
+from shopify_sdk.common.actions import create_product, update_product
+
 
 
 class MetafieldType(str, Enum):
@@ -110,9 +113,6 @@ class ProxyProduct(BaseModel):
         return product_id
 
     def update_or_create(self) -> Optional[str]:
-        from shopify_sdk.common.actions import create_product, update_product
-        from shopify_sdk.common.product import product_by_sku
-
         product_id = self.id
 
         if not product_id and self.sku:
@@ -133,8 +133,6 @@ class ProxyProduct(BaseModel):
     
     @classmethod
     def get(cls, sku: str) -> Optional["ProxyProduct"]:
-        """Return a hydrated product for the SKU or an empty proxy if lookup fails."""
-        from shopify_sdk.common.product import product_by_sku
         product = product_by_sku(sku)
         if not product:
             raise ValueError(f"No product found for SKU '{sku}'.")
@@ -142,7 +140,7 @@ class ProxyProduct(BaseModel):
         return cls(id=product.id).hydrate()
     
     def hydrate(self) -> Optional["ProxyProduct"]:
-        from shopify_sdk.common.product import product_details
+        
         if not self.id:
             raise ValueError("Cannot hydrate ProxyProduct without an ID")
         
