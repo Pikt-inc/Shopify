@@ -21,8 +21,7 @@ class ProductIdSkuResolver:
 
     @cached_property
     def id_sku_map(self) -> dict[str, str]:
-        if not self._map:
-            self._build_map()
+        self._build_map()
         return self._map
     
     @classmethod
@@ -85,7 +84,16 @@ class ProductIdSkuResolver:
             sku = line.get("sku")
             if not product_id or not sku or sku not in target_skus:
                 continue
-            self._map[sku] = product_id
+            existing_id = self._map.get(sku)
+            if existing_id and existing_id != product_id:
+                logger.warning(
+                    "Conflicting product IDs for SKU %s: existing id=%s, new id=%s; keeping existing id.",
+                    sku,
+                    existing_id,
+                    product_id,
+                )
+                continue
+            self._map.setdefault(sku, product_id)
             if sku in remaining:
                 remaining.discard(sku)
             if not remaining:

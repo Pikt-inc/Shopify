@@ -1,6 +1,7 @@
 import sys
 import inspect
 import math
+import json
 from enum import Enum
 from typing import Optional, Dict, Any, Type, List, Tuple, Union, Set, get_args, get_origin, get_type_hints, cast
 
@@ -144,7 +145,7 @@ class Query:
         if isinstance(value, Enum):
             return str(value.value)
         if isinstance(value, str):
-            return f'"{value}"'
+            return json.dumps(value)
         if isinstance(value, bool):
             return str(value).lower()
         if isinstance(value, (int, float)):
@@ -153,6 +154,8 @@ class Query:
             return str(value)
         if value is None:
             return "null"
+        if hasattr(value, "to_graphql"):
+            return self._format_literal(value.to_graphql())
         if isinstance(value, dict):
             parts = []
             for k, v in value.items():

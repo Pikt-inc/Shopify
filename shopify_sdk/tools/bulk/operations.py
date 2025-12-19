@@ -382,11 +382,12 @@ def wait_for_bulk_operation(
                 last_snapshot = snapshot
         if status in terminal_statuses:
             return operation
-        if time.monotonic() >= deadline:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
             raise TimeoutError(
                 f"Bulk operation {bulk_operation_id} did not complete within {timeout_s} seconds; last status={operation.status!r}."
             )
-        time.sleep(poll_interval_s)
+        time.sleep(min(poll_interval_s, remaining))
 
 
 def iter_bulk_operation_results(
