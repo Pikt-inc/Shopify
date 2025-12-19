@@ -4,10 +4,12 @@ import time
 from typing import Any, Iterable
 
 from shopify_sdk.common import ProxyProduct as ProductProxy
-from shopify_sdk.common.bulk.run import run_bulk_operation, run_bulk_query
-from shopify_sdk.gql import productCreate, products
+from shopify_sdk.tools import run_bulk_query
+from shopify_sdk.gql import products, productVariants
 from shopify_sdk.gql.core.types import ProductCreateInput, ProductStatus, SEOInput
 
+from shopify_sdk.gql.core.types.objects import Product, ProductVariant
+from shopify_sdk.gql.core.types.connections import ProductVariantConnection
 PRODUCT_COUNT = 2
 
 
@@ -62,33 +64,48 @@ def _extract_product_id_from_payload(payload: dict[str, Any] | None) -> str | No
 
 
 def main() -> None:
-    product_list = _build_test_products(count=PRODUCT_COUNT)
-    variables = _product_create_variables(product_list)
+    # product_list = _build_test_products(count=PRODUCT_COUNT)
+    # variables = _product_create_variables(product_list)
 
-    # Bulk mutation demo: create products
-    results = run_bulk_operation(productCreate, variables, verbose=True)
-    print("================ Bulk Mutation Results ================")
+    # # Bulk mutation demo: create products
+    # results = run_bulk_operation(productCreate, variables, verbose=True)
+    # print("================ Bulk Mutation Results ================")
 
-    total = 0
-    failed = 0
-    for index, result in enumerate(results):
-        total += 1
-        if result.user_errors or result.top_errors:
-            failed += 1
-            print({"line": result.line_number or total, "userErrors": result.user_errors, "errors": result.top_errors})
-            continue
+    # total = 0
+    # failed = 0
+    # for index, result in enumerate(results):
+    #     total += 1
+    #     if result.user_errors or result.top_errors:
+    #         failed += 1
+    #         print({"line": result.line_number or total, "userErrors": result.user_errors, "errors": result.top_errors})
+    #         continue
 
-        product_id = _extract_product_id_from_payload(result.payload)
-        if index < len(product_list) and product_id:
-            product_list[index].id = product_id
-        print({"line": result.line_number or total, "product_id": product_id, "result": result.payload})
+    #     product_id = _extract_product_id_from_payload(result.payload)
+    #     if index < len(product_list) and product_id:
+    #         product_list[index].id = product_id
+    #     print({"line": result.line_number or total, "product_id": product_id, "result": result.payload})
 
     # Bulk query demo: fetch all products (ids/titles/status)
-    bulk_query = products(field_inclusions={"Product": {"id", "title", "status"}})
+    
+    bulk_query = productVariants(
+        field_exclusions={
+            "ProductVariant": ProductVariant.fields_except(
+                exclude={"id", "product"}
+            ),
+            "Product": Product.fields_except(
+                exclude={"id"}
+            ),
+        }
+    )
     print("================ Bulk Query Results ================")
+    line_count = 0
+    lines = []
     for line in run_bulk_query(bulk_query, verbose=True):
-        # Each line is one node from the JSONL output
-        print(line)
+        line_count += 1
+        lines.append(line)
+    print(f"Fetched {line_count} products via bulk query.")
+    print(lines[:5])  # Print first 5 products only for brevity
+        
 
 
 if __name__ == "__main__":
