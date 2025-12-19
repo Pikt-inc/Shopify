@@ -213,10 +213,10 @@ def stage_and_upload_jsonl(
         f" {key_info}",
     )
 
-    http = session or requests
+    http_post = session.post if session else requests.post
     response = None
     try:
-        response = http.post(
+        response = http_post(
             upload_url,
             data=params,
             files={"file": (filename, content, mime_type)},
@@ -292,7 +292,7 @@ def start_bulk_query(
     trimmed = query.strip()
     if not trimmed:
         raise ValueError("bulk query must be a non-empty GraphQL query string.")
-    first_line = trimmed.splitlines()[0] if trimmed else ""
+    first_line = trimmed.splitlines()[0]
     _emit(verbose, log, f"[bulk] starting bulk query: inner={first_line[:200]}")
 
     payload = bulkOperationRunQuery(query=trimmed).execute(client=client)

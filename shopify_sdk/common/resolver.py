@@ -21,7 +21,7 @@ class ProductIdSkuResolver:
 
     @cached_property
     def id_sku_map(self) -> dict[str, str]:
-        if not self._map or self._map == {}:
+        if not self._map:
             self._build_map()
         return self._map
     

@@ -5,12 +5,10 @@ from typing import Any, Iterable
 
 from shopify_sdk.common import ProxyProduct as ProductProxy
 from shopify_sdk.tools import run_bulk_query, run_bulk_operation
-from shopify_sdk.gql import products, productVariants
+from shopify_sdk.gql import productVariants
 from shopify_sdk.gql.mutations import productCreate
 from shopify_sdk.gql.core.types import ProductCreateInput, ProductStatus, SEOInput
-
 from shopify_sdk.gql.core.types.objects import Product, ProductVariant
-from shopify_sdk.gql.core.types.connections import ProductVariantConnection
 PRODUCT_COUNT = 2
 
 

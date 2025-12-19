@@ -55,8 +55,6 @@ def _prepare_mutation(
     action: Mutation | Type[Mutation],
     variables_iter: Iterable[Any],
 ) -> tuple[Mutation, str, Iterable[Any]]:
-    first_item, replayable_iter = _peek_first(variables_iter)
-
     if isinstance(action, Query):
         raise NotImplementedError(
             "Bulk queries are not supported by run_bulk_operation. Use run_bulk_query for Query instances."
@@ -64,9 +62,11 @@ def _prepare_mutation(
     if isinstance(action, type):
         if not issubclass(action, Mutation):
             raise TypeError("action class must be a Mutation subclass.")
+        first_item, replayable_iter = _peek_first(variables_iter)
         arg_name = _get_single_argument_name(action)
         mutation = action(**{arg_name: first_item})
     elif isinstance(action, Mutation):
+        _, replayable_iter = _peek_first(variables_iter)
         mutation = action
     else:
         raise TypeError("action must be a Mutation instance or Mutation class.")
@@ -87,7 +87,7 @@ def _serialize_variable(arg_name: str, item: Any) -> Mapping[str, Any]:
             payload = dict(item)
         else:
             raise TypeError(f"Unsupported variable payload: {type(item).__name__}")
-    except Exception as e:  # pragma: no cover - defensive
+    except Exception as e:
         raise ValueError(f"Failed to serialize variable for argument {arg_name!r}: {e}") from e
     return {arg_name: payload}
 
@@ -187,8 +187,12 @@ def _format_graphql_literal(value: Any) -> str:
     if value is None:
         return "null"
     if isinstance(value, Mapping):
-        inner = ", ".join(f"{str(k)}: {_format_graphql_literal(v)}" for k, v in value.items())
-        return f"{{{inner}}}"
+        parts = []
+        for k, v in value.items():
+            if not isinstance(k, str):
+                raise TypeError(f"GraphQL object key must be a string, got {type(k).__name__}")
+            parts.append(f"{k}: {_format_graphql_literal(v)}")
+        return "{" + ", ".join(parts) + "}"
     if isinstance(value, list):
         inner = ", ".join(_format_graphql_literal(v) for v in value)
         return f"[{inner}]"
