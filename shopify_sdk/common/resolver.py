@@ -73,16 +73,28 @@ class ProductIdSkuResolver:
 
     def _build_map(self):
         start = time.perf_counter()
+        target_skus = {p.sku for p in self._products if getattr(p, "sku", None)}
+        if not target_skus:
+            logger.info("No SKUs provided; skipping bulk productVariants lookup.")
+            return
+        remaining = set(target_skus)
         count = 0
         for line in run_bulk_query(self._query, verbose=True):
             count += 1
             product_id = line.get("product", {}).get("id")
             sku = line.get("sku")
-            if product_id and sku:
-                self._map[sku] = product_id
+            if not product_id or not sku or sku not in target_skus:
+                continue
+            self._map[sku] = product_id
+            if sku in remaining:
+                remaining.discard(sku)
+            if not remaining:
+                break
         elapsed = time.perf_counter() - start
         logger.info(
-            "Bulk productVariants query returned %d rows in %.3fs",
+            "Bulk productVariants query processed %d rows in %.3fs (resolved %d SKUs out of %d requested)",
             count,
             elapsed,
+            len(target_skus) - len(remaining),
+            len(target_skus),
         )

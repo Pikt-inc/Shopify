@@ -348,6 +348,8 @@ def wait_for_bulk_operation(
     If you expect smaller operations, pass a shorter ``timeout_s`` to avoid waiting
     too long when an operation is stuck in a non-terminal state.
     """
+    # NOTE: Shopify documents "CANCELED" as the terminal status spelling; "CANCELLED"
+    # is accepted defensively in case of upstream variation.
     terminal_statuses = {"COMPLETED", "FAILED", "CANCELED", "CANCELLED", "EXPIRED"}
     deadline = time.monotonic() + timeout_s
     last_snapshot: tuple[str | None, Any, str | None, str | None, str | None] | None = None
@@ -399,10 +401,10 @@ def iter_bulk_operation_results(
     display_url = _display_url(results_url, redact=redact_urls)
     _emit(verbose, log, f"[bulk] downloading results: url={display_url}")
 
-    http = session or requests
+    http_get = session.get if session else requests.get
     response = None
     try:
-        response = http.get(results_url, stream=True, timeout=timeout_s)
+        response = http_get(results_url, stream=True, timeout=timeout_s)
         response.raise_for_status()
 
         for line_number, line in enumerate(response.iter_lines(decode_unicode=True), start=1):
@@ -422,7 +424,7 @@ def iter_bulk_operation_results(
             response.close()
 
 
-def run_bulk_mutation(
+def _run_bulk_mutation(
     *,
     inner_mutation: str,
     variables: Iterable[Mapping[str, Any]],
@@ -440,6 +442,13 @@ def run_bulk_mutation(
     verbose: bool = False,
     log: LogFn | None = None,
 ) -> Iterator[dict[str, Any]]:
+    """
+    Run a bulk mutation by chunking variables into JSONL uploads and streaming results.
+
+    This helper fails fast on chunk-level errors (e.g., upload or operation failure)
+    and stops processing subsequent chunks. Per-item errors within a completed chunk
+    are yielded in the result payload for caller handling.
+    """
     if not inner_mutation.strip():
         raise ValueError("inner_mutation must be a non-empty GraphQL mutation string.")
 

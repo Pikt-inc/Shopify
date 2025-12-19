@@ -4,7 +4,7 @@ import time
 from typing import Any, Iterable
 
 from shopify_sdk.common import ProxyProduct as ProductProxy
-from shopify_sdk.tools import run_bulk_query, run_bulk_operation
+from shopify_sdk.tools import run_bulk_query, run_bulk_mutation
 from shopify_sdk.gql import productVariants
 from shopify_sdk.gql.mutations import productCreate
 from shopify_sdk.gql.core.types import ProductCreateInput, ProductStatus, SEOInput
@@ -67,7 +67,9 @@ def main() -> None:
     variables = _product_create_variables(product_list)
 
     # # Bulk mutation demo: create products
-    results = run_bulk_operation(productCreate, variables, verbose=True)
+    # NOTE: This script creates BULK-TEST-* products and does not delete them;
+    # remove them manually if you don't want test data left in your store.
+    results = run_bulk_mutation(productCreate, variables, verbose=True)
     print("================ Bulk Mutation Results ================")
 
     total = 0

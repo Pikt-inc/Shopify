@@ -3,8 +3,6 @@ from __future__ import annotations
 import inspect
 import itertools
 import logging
-import json
-from enum import Enum
 from typing import Any, Iterable, Iterator, Mapping, Type
 
 from pydantic import BaseModel, Field
@@ -13,7 +11,7 @@ from shopify_sdk import client as default_client
 from shopify_sdk.gql.core import Mutation, Query
 from shopify_sdk.gql.core.types.input_objects import input_object
 
-from .operations import LogFn, run_bulk_mutation
+from .operations import LogFn, _run_bulk_mutation
 from .operations import run_bulk_query as operations_run_bulk_query
 
 logger = logging.getLogger(__name__)
@@ -25,12 +23,25 @@ class BulkOperationResult(BaseModel):
     success: bool
     user_errors: list[dict[str, Any]] = Field(default_factory=list)
     top_errors: list[Any] = Field(default_factory=list)
-    payload: dict[str, Any] | None = None
-    raw: dict[str, Any] | None = None
+    payload: dict[str, Any] | None = Field(
+        default=None,
+        description=(
+            "The extracted, mutation-specific data for this bulk operation line. "
+            "Typically a subset of `raw` under the mutation root; may be None when "
+            "no payload could be extracted (e.g., only errors present)."
+        ),
+    )
+    raw: dict[str, Any] | None = Field(
+        default=None,
+        description=(
+            "The full parsed JSON object for the bulk operation line as returned by Shopify. "
+            "Use primarily for debugging or advanced inspection; prefer `payload` for normal use."
+        ),
+    )
     line_number: int | None = None
 
 
-def _peek_first(iterable: Iterable[Any]) -> tuple[Any, Iterable[Any]]:
+def _peek_first(iterable: Iterable[input_object]) -> tuple[input_object, Iterable[input_object]]:
     iterator = iter(iterable)
     try:
         first = next(iterator)
@@ -47,14 +58,16 @@ def _get_single_argument_name(mutation_cls: Type[Mutation]) -> str:
         if name != "self" and p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)
     ]
     if len(params) != 1:
-        raise ValueError("Bulk mutations currently require exactly one argument.")
+        raise ValueError(
+            "Bulk mutation __init__ must declare exactly one parameter (excluding self) for bulk execution."
+        )
     return params[0].name
 
 
 def _prepare_mutation(
     action: Mutation | Type[Mutation],
-    variables_iter: Iterable[Any],
-) -> tuple[Mutation, str, Iterable[Any]]:
+    variables_iter: Iterable[input_object],
+) -> tuple[Mutation, str, Iterable[input_object]]:
     if isinstance(action, Mutation):
         # Handle concrete Mutation instances first; Mutation is a subclass of Query.
         _, replayable_iter = _peek_first(variables_iter)
@@ -66,46 +79,45 @@ def _prepare_mutation(
             mutation = action(**{arg_name: first_item})
         elif issubclass(action, Query):
             raise NotImplementedError(
-                "Bulk queries are not supported by run_bulk_operation. Use run_bulk_query for Query instances."
+                "Bulk queries are not supported by run_bulk_mutation. Use run_bulk_query for Query instances."
             )
         else:
             raise TypeError("action class must be a Mutation subclass.")
     elif isinstance(action, Query):
         raise NotImplementedError(
-            "Bulk queries are not supported by run_bulk_operation. Use run_bulk_query for Query instances."
+            "Bulk queries are not supported by run_bulk_mutation. Use run_bulk_query for Query instances."
         )
     else:
         raise TypeError("action must be a Mutation instance or Mutation class.")
 
     arg_names = list(mutation._input_arguments.keys())
     if len(arg_names) != 1:
-        raise ValueError("Bulk mutations currently require exactly one argument.")
+        raise ValueError(
+            "Bulk mutation instance must expose exactly one input argument for bulk execution."
+        )
     return mutation, arg_names[0], replayable_iter
 
 
-def _serialize_variable(arg_name: str, item: Any) -> Mapping[str, Any]:
+def _serialize_variable(arg_name: str, item: input_object) -> Mapping[str, Any]:
     try:
-        if hasattr(item, "to_graphql"):
-            payload = item.to_graphql()
-        elif isinstance(item, BaseModel):
-            payload = item.model_dump(exclude_none=True)
-        elif isinstance(item, Mapping):
-            payload = dict(item)
-        else:
-            raise TypeError(f"Unsupported variable payload: {type(item).__name__}")
+        payload = item.to_graphql()
     except Exception as e:
-        raise ValueError(f"Failed to serialize variable for argument {arg_name!r}: {e}") from e
+        item_type = type(item).__name__
+        raise ValueError(
+            f"Failed to serialize variable for argument {arg_name!r} "
+            f"with item of type {item_type}. Original error: {e}"
+        ) from e
     return {arg_name: payload}
 
 
-def _extract_payload(line: Any, mutation_name: str) -> dict[str, Any] | None:
-    if not isinstance(line, dict):
+def _extract_payload(line: Mapping[str, Any], mutation_name: str) -> dict[str, Any] | None:
+    if not isinstance(line, Mapping):
         return None
-    op_payload = line.get(mutation_name)
+    op_payload = line.get(mutation_name)  # type: ignore[index]
     if isinstance(op_payload, dict):
         return op_payload
 
-    data = line.get("data")
+    data = line.get("data")  # type: ignore[index]
     if isinstance(data, dict):
         op_payload = data.get(mutation_name)
         if isinstance(op_payload, dict):
@@ -119,7 +131,7 @@ def _extract_payload(line: Any, mutation_name: str) -> dict[str, Any] | None:
     return None
 
 
-def _build_bulk_result(line: Any, mutation_name: str, index: int) -> BulkOperationResult:
+def _build_bulk_result(line: Mapping[str, Any], mutation_name: str, index: int) -> BulkOperationResult:
     payload = _extract_payload(line, mutation_name)
 
     user_errors: list[dict[str, Any]] = []
@@ -128,14 +140,13 @@ def _build_bulk_result(line: Any, mutation_name: str, index: int) -> BulkOperati
         if isinstance(raw_errors, list):
             user_errors = [e for e in raw_errors if isinstance(e, dict)]
 
-    top_errors_raw = line.get("errors") if isinstance(line, dict) else None
+    top_errors_raw = line.get("errors")
     top_errors: list[Any] = top_errors_raw if isinstance(top_errors_raw, list) else []
 
     line_number = None
-    if isinstance(line, dict):
-        raw_line_number = line.get("__bulkGlobalLineNumber") or line.get("__lineNumber")
-        if isinstance(raw_line_number, int):
-            line_number = raw_line_number
+    raw_line_number = line.get("__bulkGlobalLineNumber") or line.get("__lineNumber")
+    if isinstance(raw_line_number, int):
+        line_number = raw_line_number
 
     success = payload is not None and not user_errors and not top_errors
     return BulkOperationResult(
@@ -145,12 +156,12 @@ def _build_bulk_result(line: Any, mutation_name: str, index: int) -> BulkOperati
         user_errors=user_errors,
         top_errors=top_errors,
         payload=payload,
-        raw=line if isinstance(line, dict) else None,
+        raw=dict(line),
         line_number=line_number,
     )
 
 
-def run_bulk_operation(
+def run_bulk_mutation(
     action: Mutation | Type[Mutation],
     variables_iter: Iterable[input_object],
     *,
@@ -164,14 +175,17 @@ def run_bulk_operation(
     The mutation must accept a single input argument; each item in variables_iter
     is serialized to that argument before being uploaded.
 
-    For bulk queries, use ``run_bulk_query`` instead.
+    Use this helper for bulk write operations (create/update/delete) via Shopify's
+    bulk mutation API. For read-only bulk exports that fetch data via connections,
+    use ``run_bulk_query`` instead. Chunk failures abort iteration; per-item errors
+    are surfaced on each ``BulkOperationResult`` instance.
     """
     mutation, arg_name, variables = _prepare_mutation(action, variables_iter)
     log_fn = log or logger.info
 
     variable_lines = (_serialize_variable(arg_name, item) for item in variables)
     for index, line in enumerate(
-        run_bulk_mutation(
+        _run_bulk_mutation(
             inner_mutation=mutation.body,
             variables=variable_lines,
             client=client,
@@ -181,47 +195,6 @@ def run_bulk_operation(
         start=1,
     ):
         yield _build_bulk_result(line, mutation.class_name, index)
-
-
-def _format_graphql_literal(value: Any) -> str:
-    # Enums are rendered as unquoted GraphQL enum literals; we convert to string and interpolate.
-    if isinstance(value, Enum):
-        return str(value.value)
-    if isinstance(value, str):
-        return json.dumps(value)
-    if isinstance(value, bool):
-        return str(value).lower()
-    if value is None:
-        return "null"
-    if isinstance(value, Mapping):
-        parts = []
-        for k, v in value.items():
-            if not isinstance(k, str):
-                raise TypeError(f"GraphQL object key must be a string, got {type(k).__name__}")
-            parts.append(f"{k}: {_format_graphql_literal(v)}")
-        return "{" + ", ".join(parts) + "}"
-    if isinstance(value, list):
-        inner = ", ".join(_format_graphql_literal(v) for v in value)
-        return f"[{inner}]"
-    return str(value)
-
-
-def _inline_query_string(query: Query) -> str:
-    args_list = query._input_arguments
-    args_inline = ", ".join(f"{name}: {_format_graphql_literal(value)}" for name, value in args_list.items())
-
-    spacer = " " * query._indent
-    args_fragment = f"({args_inline})" if args_inline else ""
-    return "\n".join(
-        [
-            "{",
-            f"{spacer}{query.class_name}{args_fragment} {{",
-            f"{query.fields}",
-            f"{spacer}}}",
-            "}",
-        ]
-    )
-
 
 def run_bulk_query(
     query: Query | str,
@@ -233,11 +206,14 @@ def run_bulk_query(
     """
     Run a bulk query (bulkOperationRunQuery) and stream raw JSONL results.
 
-    Accepts either a pre-built GraphQL query string or a Query instance; the
-    query must include at least one connection to be valid for bulk execution.
+    Use this for read-only bulk exports that fetch data via connections. Accepts
+    either a pre-built GraphQL query string or a Query instance; the query must
+    include at least one connection to be valid for bulk execution. The helper
+    raises if the bulk operation fails; per-line parsing errors surface during
+    iteration.
     """
     if isinstance(query, Query):
-        query_str = _inline_query_string(query)
+        query_str = query.inline_body()
     elif isinstance(query, str):
         query_str = query
     else:
