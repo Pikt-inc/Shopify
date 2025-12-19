@@ -963,3 +963,25 @@ class InventoryScheduledChangeConnection(connection):
     edges: List[InventoryScheduledChangeEdge]
     nodes: List[InventoryScheduledChange]
     pageInfo: "PageInfo"
+
+
+class BulkOperation(AutoRegisterModel):
+    id: ID
+    status: String
+    objectCount: Optional[UnsignedInt64] = Field(default=None)
+    errorCode: Optional[String] = Field(default=None)
+    url: Optional[URL] = Field(default=None)
+    partialDataUrl: Optional[URL] = Field(default=None)
+
+
+class ProductSetUserError(AutoRegisterModel):
+    code: ProductSetUserErrorCode
+    field: Optional[List[String]] = Field(default=None)
+    message: String
+
+
+class ProductSetOperation(AutoRegisterModel):
+    id: ID
+    status: String
+    product: Optional[Product] = Field(default=None)
+    userErrors: List[ProductSetUserError]

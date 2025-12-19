@@ -1,19 +1,95 @@
-from shopify_sdk.common import ProxyProduct
+from __future__ import annotations
+
+import time
+from typing import Any, Iterable
+
+from shopify_sdk.common import ProxyProduct as ProductProxy
+from shopify_sdk.common.bulk.run import run_bulk_operation, run_bulk_query
+from shopify_sdk.gql import productCreate, products
+from shopify_sdk.gql.core.types import ProductCreateInput, ProductStatus, SEOInput
+
+PRODUCT_COUNT = 2
 
 
-pp = ProxyProduct(
-    sku='999000111',
-    title='GOOBER Plush Toy',
-    description_html='<p>Created via update_or_create_product script.</p>',
-    vendor='Demo Vendor',
-    type='Demo Type',
-    tags=['demo', 'script'],
-    price='39.99',
-    quantity=1,
-    seo_description='A cuddly GOOBER plush toy for all ages.',
-    seo_title='GOOBER Plush Toy - Cuddly and Fun',
-    images=[
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/640px-PNG_transparency_demonstration_1.png'
-    ]
-)
-pp.update_or_create()
+def _build_test_products(count: int) -> list[ProductProxy]:
+    suffix = int(time.time())
+    products: list[ProductProxy] = []
+    for i in range(count):
+        products.append(
+            ProductProxy(
+                sku=f"BULK-TEST-{suffix}-{i}",
+                title=f"Bulk Test Product {suffix}-{i}",
+                vendor="Bulk Test Vendor",
+                type="Bulk Test Type",
+                tags=["bulk", "test"],
+                price="9.99",
+            )
+        )
+    return products
+
+
+def _product_create_variables(products: Iterable[ProductProxy]) -> list[ProductCreateInput]:
+    lines: list[ProductCreateInput] = []
+    for product in products:
+        seo = None
+        if product.seo_title is not None or product.seo_description is not None:
+            seo = SEOInput(
+                title=product.seo_title,
+                description=product.seo_description,
+            )
+        create_input = ProductCreateInput(
+            title=product.title,
+            descriptionHtml=product.description_html,
+            vendor=product.vendor,
+            productType=product.type,
+            tags=product.tags or [],
+            status=ProductStatus.ACTIVE,
+            seo=seo,
+            metafields=product.metafields,
+        )
+        lines.append(create_input)
+    return lines
+
+
+def _extract_product_id_from_payload(payload: dict[str, Any] | None) -> str | None:
+    if not isinstance(payload, dict):
+        return None
+    product_data = payload.get("product")
+    if not isinstance(product_data, dict):
+        return None
+    product_id = product_data.get("id")
+    return product_id if isinstance(product_id, str) else None
+
+
+def main() -> None:
+    product_list = _build_test_products(count=PRODUCT_COUNT)
+    variables = _product_create_variables(product_list)
+
+    # Bulk mutation demo: create products
+    results = run_bulk_operation(productCreate, variables, verbose=True)
+    print("================ Bulk Mutation Results ================")
+
+    total = 0
+    failed = 0
+    for index, result in enumerate(results):
+        total += 1
+        if result.user_errors or result.top_errors:
+            failed += 1
+            print({"line": result.line_number or total, "userErrors": result.user_errors, "errors": result.top_errors})
+            continue
+
+        product_id = _extract_product_id_from_payload(result.payload)
+        if index < len(product_list) and product_id:
+            product_list[index].id = product_id
+        print({"line": result.line_number or total, "product_id": product_id, "result": result.payload})
+
+    # Bulk query demo: fetch all products (ids/titles/status)
+    bulk_query = products(field_inclusions={"Product": {"id", "title", "status"}})
+    print("================ Bulk Query Results ================")
+    for line in run_bulk_query(bulk_query, verbose=True):
+        # Each line is one node from the JSONL output
+        print(line)
+
+
+if __name__ == "__main__":
+    main()

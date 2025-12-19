@@ -77,7 +77,7 @@ def _collect_media_ids(product_id: str) -> list[str]:
 
 def _fetch_media_connection(product_id: str, after: Optional[str]) -> Any:
     """Fetch one page of a product's media connection."""
-    connection_args = {"media": {"first": MEDIA_PAGE_SIZE}}
+    connection_args: dict[str, dict[str, Any]] = {"media": {"first": MEDIA_PAGE_SIZE}}
     if after:
         connection_args["media"]["after"] = after
 

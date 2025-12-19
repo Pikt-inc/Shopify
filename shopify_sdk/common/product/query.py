@@ -24,10 +24,10 @@ def product_details(
             "ProductVariant": ProductVariant.fields_except(
                 exclude={"id", "title", "sku", "price"}
             ),
-            MetafieldConnection: MetafieldConnection.fields_except(
+            "MetafieldConnection": MetafieldConnection.fields_except(
                 exclude={"nodes"}
             ),
-            Metafield: Metafield.fields_except(
+            "Metafield": Metafield.fields_except(
                 exclude={"id", "key", "namespace", "type", "value"}
             ),
         }
