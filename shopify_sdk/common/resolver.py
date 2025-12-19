@@ -42,8 +42,18 @@ class ProductIdSkuResolver:
             if not product.sku:
                 continue
             existing_id = self._get_id(product.sku)
-            if existing_id:
-                product.id = existing_id
+            if not existing_id:
+                continue
+            current_id = getattr(product, "id", None)
+            if current_id and current_id != existing_id:
+                logger.warning(
+                    "SKU-based ID resolution conflict for SKU %s: existing id=%s, resolved id=%s; keeping existing id.",
+                    product.sku,
+                    current_id,
+                    existing_id,
+                )
+                continue
+            product.id = existing_id
         logger.info(
             f"Resolved {len(self.id_sku_map)} existing product IDs for {len(self._products)} products based on SKU."
         )

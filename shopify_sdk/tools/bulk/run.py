@@ -55,19 +55,25 @@ def _prepare_mutation(
     action: Mutation | Type[Mutation],
     variables_iter: Iterable[Any],
 ) -> tuple[Mutation, str, Iterable[Any]]:
-    if isinstance(action, Query):
+    if isinstance(action, Mutation):
+        # Handle concrete Mutation instances first; Mutation is a subclass of Query.
+        _, replayable_iter = _peek_first(variables_iter)
+        mutation = action
+    elif isinstance(action, type):
+        if issubclass(action, Mutation):
+            first_item, replayable_iter = _peek_first(variables_iter)
+            arg_name = _get_single_argument_name(action)
+            mutation = action(**{arg_name: first_item})
+        elif issubclass(action, Query):
+            raise NotImplementedError(
+                "Bulk queries are not supported by run_bulk_operation. Use run_bulk_query for Query instances."
+            )
+        else:
+            raise TypeError("action class must be a Mutation subclass.")
+    elif isinstance(action, Query):
         raise NotImplementedError(
             "Bulk queries are not supported by run_bulk_operation. Use run_bulk_query for Query instances."
         )
-    if isinstance(action, type):
-        if not issubclass(action, Mutation):
-            raise TypeError("action class must be a Mutation subclass.")
-        first_item, replayable_iter = _peek_first(variables_iter)
-        arg_name = _get_single_argument_name(action)
-        mutation = action(**{arg_name: first_item})
-    elif isinstance(action, Mutation):
-        _, replayable_iter = _peek_first(variables_iter)
-        mutation = action
     else:
         raise TypeError("action must be a Mutation instance or Mutation class.")
 
@@ -178,6 +184,7 @@ def run_bulk_operation(
 
 
 def _format_graphql_literal(value: Any) -> str:
+    # Enums are rendered as unquoted GraphQL enum literals; we convert to string and interpolate.
     if isinstance(value, Enum):
         return str(value.value)
     if isinstance(value, str):

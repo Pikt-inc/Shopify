@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_MAX_JSONL_BYTES = 100_000_000
 DEFAULT_HTTP_TIMEOUT_S = 60.0 * 10
-DEFAULT_BULK_TIMEOUT_S = 60.0 * 60 * 2
+DEFAULT_BULK_TIMEOUT_S = 60.0 * 60 * 2  # default 2 hours to accommodate large operations
 DEFAULT_BULK_POLL_INTERVAL_S = 2.0
 
 LogFn = Callable[[str], None]
@@ -68,7 +68,10 @@ def build_jsonl_bytes(lines: Iterable[Mapping[str, Any]]) -> bytes:
         try:
             content.extend(_json_line_bytes(line))
         except (TypeError, ValueError) as e:
-            raise ValueError(f"Failed to JSON-encode JSONL line {line_index}: {e}") from e
+            snippet = str(line)
+            if len(snippet) > 200:
+                snippet = snippet[:200] + "...(truncated)"
+            raise ValueError(f"Failed to JSON-encode JSONL line {line_index}: {e}; line={snippet}") from e
     return bytes(content)
 
 
@@ -95,7 +98,10 @@ def iter_jsonl_chunks(
         try:
             encoded = _json_line_bytes(line)
         except (TypeError, ValueError) as e:
-            raise ValueError(f"Failed to JSON-encode JSONL line {line_index}: {e}") from e
+            snippet = str(line)
+            if len(snippet) > 200:
+                snippet = snippet[:200] + "...(truncated)"
+            raise ValueError(f"Failed to JSON-encode JSONL line {line_index}: {e}; line={snippet}") from e
         if len(encoded) > max_bytes:
             raise ValueError(
                 f"JSONL line {line_index} is {len(encoded)} bytes, which exceeds max_bytes={max_bytes}."
@@ -123,6 +129,7 @@ def iter_jsonl_chunks(
 
 
 def _chunk_filename(filename: str, chunk_index: int) -> str:
+    """Return a 1-based chunk filename, preserving suffix if present."""
     if chunk_index < 1:
         raise ValueError("chunk_index must be >= 1")
     stem, dot, suffix = filename.rpartition(".")
@@ -334,6 +341,13 @@ def wait_for_bulk_operation(
     verbose: bool = False,
     log: LogFn | None = None,
 ) -> BulkOperation:
+    """
+    Poll a bulk operation until it reaches a terminal status or the timeout expires.
+
+    The default timeout is intentionally long (2 hours) to allow large jobs to finish.
+    If you expect smaller operations, pass a shorter ``timeout_s`` to avoid waiting
+    too long when an operation is stuck in a non-terminal state.
+    """
     terminal_statuses = {"COMPLETED", "FAILED", "CANCELED", "CANCELLED", "EXPIRED"}
     deadline = time.monotonic() + timeout_s
     last_snapshot: tuple[str | None, Any, str | None, str | None, str | None] | None = None
@@ -513,12 +527,12 @@ def run_bulk_mutation(
             log=log,
         ):
             if isinstance(result, dict):
-                result["__bulkOperationId"] = bulk_operation_id
-                result["__bulkChunkIndex"] = chunk_index
-                result["__bulkChunkStartLine"] = chunk.start_line_index
+                result.setdefault("__bulkOperationId", bulk_operation_id)
+                result.setdefault("__bulkChunkIndex", chunk_index)
+                result.setdefault("__bulkChunkStartLine", chunk.start_line_index)
                 line_number = result.get("__lineNumber")
                 if isinstance(line_number, int):
-                    result["__bulkGlobalLineNumber"] = chunk.start_line_index + line_number
+                    result.setdefault("__bulkGlobalLineNumber", chunk.start_line_index + line_number)
             chunk_results += 1
             total_results += 1
             yield result
