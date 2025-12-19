@@ -186,20 +186,17 @@ class bulkOperation(Query):
     @property
     def fields(self) -> str:
         spacer = " " * (self._indent * 2)
-        inner = " " * (self._indent * 3)
-        bulk_block = "\n".join(
+        inner_indent = self._indent * 3
+        selection = self._build_model_selection(self.return_type, indent=inner_indent)
+        if not selection.strip():
+            selection = f"{' ' * inner_indent}__typename"
+        return "\n".join(
             [
-                f"{spacer}... on BulkOperation {{",
-                f"{inner}id",
-                f"{inner}status",
-                f"{inner}objectCount",
-                f"{inner}errorCode",
-                f"{inner}url",
-                f"{inner}partialDataUrl",
+                f"{spacer}... on {self.return_type.__name__} {{",
+                selection,
                 f"{spacer}}}",
             ]
         )
-        return bulk_block
 
 
 class productSetOperation(Query):
@@ -214,37 +211,9 @@ class productSetOperation(Query):
     ):
         self.id: ID = id
         self._field_exclusions = field_exclusions or {}
-        self._field_inclusions = field_inclusions or {
+        default_inclusions = {
             "ProductSetOperation": {"id", "status", "product", "userErrors"},
             "Product": {"id"},
         }
+        self._field_inclusions = default_inclusions if field_inclusions is None else field_inclusions
         self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)
-
-    @property
-    def fields(self) -> str:
-        spacer = " " * (self._indent * 2)
-        inner = " " * (self._indent * 3)
-        product_block = "\n".join(
-            [
-                f"{spacer}product {{",
-                f"{inner}id",
-                f"{spacer}}}",
-            ]
-        )
-        user_errors_block = "\n".join(
-            [
-                f"{spacer}userErrors {{",
-                f"{inner}code",
-                f"{inner}message",
-                f"{inner}field",
-                f"{spacer}}}",
-            ]
-        )
-        return "\n".join(
-            [
-                f"{spacer}id",
-                f"{spacer}status",
-                product_block,
-                user_errors_block,
-            ]
-        )

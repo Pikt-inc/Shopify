@@ -95,14 +95,22 @@ def _serialize_variable(arg_name: str, item: Any) -> Mapping[str, Any]:
 def _extract_payload(line: Any, mutation_name: str) -> dict[str, Any] | None:
     if not isinstance(line, dict):
         return None
+    op_payload = line.get(mutation_name)
+    if isinstance(op_payload, dict):
+        return op_payload
+
     data = line.get("data")
     if isinstance(data, dict):
         op_payload = data.get(mutation_name)
         if isinstance(op_payload, dict):
             return op_payload
-        return data
-    op_payload = line.get(mutation_name)
-    return op_payload if isinstance(op_payload, dict) else None
+        if "userErrors" in data:
+            return data
+        return None
+
+    if "userErrors" in line:
+        return line
+    return None
 
 
 def _build_bulk_result(line: Any, mutation_name: str, index: int) -> BulkOperationResult:
@@ -123,7 +131,7 @@ def _build_bulk_result(line: Any, mutation_name: str, index: int) -> BulkOperati
         if isinstance(raw_line_number, int):
             line_number = raw_line_number
 
-    success = not user_errors and not top_errors
+    success = payload is not None and not user_errors and not top_errors
     return BulkOperationResult(
         index=index,
         mutation=mutation_name,
