@@ -52,13 +52,15 @@ def _get_single_argument_name(mutation_cls: Type[Mutation]) -> str:
 
 
 def _prepare_mutation(
-    action: Query | Mutation | Type[Mutation],
+    action: Mutation | Type[Mutation],
     variables_iter: Iterable[Any],
 ) -> tuple[Mutation, str, Iterable[Any]]:
     first_item, replayable_iter = _peek_first(variables_iter)
 
     if isinstance(action, Query):
-        raise NotImplementedError("Bulk queries are not implemented yet.")
+        raise NotImplementedError(
+            "Bulk queries are not supported by run_bulk_operation. Use run_bulk_query for Query instances."
+        )
     if isinstance(action, type):
         if not issubclass(action, Mutation):
             raise TypeError("action class must be a Mutation subclass.")
@@ -67,7 +69,7 @@ def _prepare_mutation(
     elif isinstance(action, Mutation):
         mutation = action
     else:
-        raise TypeError("action must be a Query, Mutation instance, or Mutation class.")
+        raise TypeError("action must be a Mutation instance or Mutation class.")
 
     arg_names = list(mutation._input_arguments.keys())
     if len(arg_names) != 1:
@@ -135,7 +137,7 @@ def _build_bulk_result(line: Any, mutation_name: str, index: int) -> BulkOperati
 
 
 def run_bulk_operation(
-    action: Query | Mutation | Type[Mutation],
+    action: Mutation | Type[Mutation],
     variables_iter: Iterable[input_object],
     *,
     client=default_client,
@@ -146,7 +148,9 @@ def run_bulk_operation(
     Run a bulk mutation with the given variables, streaming structured results.
 
     The mutation must accept a single input argument; each item in variables_iter
-    is serialized to that argument before being uploaded. Bulk queries are not supported.
+    is serialized to that argument before being uploaded.
+
+    For bulk queries, use ``run_bulk_query`` instead.
     """
     mutation, arg_name, variables = _prepare_mutation(action, variables_iter)
     log_fn = log or logger.info
@@ -174,6 +178,9 @@ def _format_graphql_literal(value: Any) -> str:
         return str(value).lower()
     if value is None:
         return "null"
+    if isinstance(value, Mapping):
+        inner = ", ".join(f"{str(k)}: {_format_graphql_literal(v)}" for k, v in value.items())
+        return f"{{{inner}}}"
     if isinstance(value, list):
         inner = ", ".join(_format_graphql_literal(v) for v in value)
         return f"[{inner}]"

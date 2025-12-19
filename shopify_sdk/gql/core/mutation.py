@@ -66,7 +66,7 @@ class Mutation(Query):
             name: self._serialize_value(value)
             for name, value in self._input_arguments.items()
         }
-        
+
         response = client.request(query=self.body, variables=variables)
 
         payload = response.data.get(self.class_name) if response.data else None
@@ -78,5 +78,5 @@ class Mutation(Query):
         user_errors = payload.get("userErrors", [])
         if user_errors:
             raise MutationExecutionError(user_errors)
-        
+
         return payload
