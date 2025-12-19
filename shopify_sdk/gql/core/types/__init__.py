@@ -25,7 +25,9 @@ from .objects import (
     InventoryItem,
     SelectedOption,
     Metafield,
-    MetafieldConnection
+    MetafieldConnection,
+    BulkOperation,
+    ProductSetOperation
 )
 from .connections import (
     OrderConnection,
@@ -47,6 +49,8 @@ from .input_objects import (
     ProductCreateInput,
     ProductUpdateInput,
     ProductVariantsBulkInput,
+    ProductVariantSetInput,
+    ProductSetInput,
     InventoryItemInput,
     InventoryLevelInput,
     VariantOptionValueInput,
@@ -58,7 +62,8 @@ from .input_objects import (
     FulfillmentOrderLineItemsInput,
     FulfillmentOrderLineItemInput,
     ProductIdentifierInput,
-    MetafieldInput
+    MetafieldInput,
+    StagedUploadInput
 )
 from .enums import (
     OrderReturnStatus,
@@ -68,7 +73,9 @@ from .enums import (
     OrderCancelReason,
     ProductVariantInventoryPolicy,
     ProductVariantSortKeys,
+    ProductSortKeys,
     ProductStatus,
+    ProductSetUserErrorCode,
     CombinedListingsRole,
 )
 from .registry import type_registry
@@ -105,7 +112,9 @@ __all__ = [
     "OrderCancelReason",
     "ProductVariantInventoryPolicy",
     "ProductVariantSortKeys",
+    "ProductSortKeys",
     "ProductStatus",
+    "ProductSetUserErrorCode",
     "CombinedListingsRole",
     "LineItemConnection",
     "OrderConnection",
@@ -148,5 +157,10 @@ __all__ = [
     "SelectedOption",
     "MetafieldInput",
     "Metafield",
-    "MetafieldConnection"
+    "MetafieldConnection",
+    "StagedUploadInput",
+    "BulkOperation",
+    "ProductVariantSetInput",
+    "ProductSetInput",
+    "ProductSetOperation",
 ]

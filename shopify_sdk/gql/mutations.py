@@ -52,6 +52,40 @@ class productCreate(Mutation):
         return "\n".join([product_block, self._user_errors_block])
 
 
+class productSet(Mutation):
+    def __init__(
+        self,
+        input: ProductSetInput,
+        synchronous: Boolean = False,
+    ):
+        self.input: ProductSetInput = input
+        self.synchronous: Boolean = synchronous
+
+    @property
+    def fields(self) -> str:
+        spacer = " " * (self._indent * 2)
+        inner = " " * (self._indent * 3)
+        blocks = [
+            "\n".join(
+                [
+                    f"{spacer}product {{",
+                    f"{inner}id",
+                    f"{spacer}}}",
+                ]
+            ),
+            "\n".join(
+                [
+                    f"{spacer}productSetOperation {{",
+                    f"{inner}id",
+                    f"{inner}status",
+                    f"{spacer}}}",
+                ]
+            ),
+            self._user_errors_block,
+        ]
+        return "\n".join(blocks)
+
+
 class productPublish(Mutation):
     def __init__(
         self,
@@ -162,3 +196,75 @@ class fileUpdate(Mutation):
         )
         return "\n".join([files_block, self._user_errors_block])
 
+
+class stagedUploadsCreate(Mutation):
+    def __init__(
+        self,
+        input: list[StagedUploadInput],
+    ):
+        self.input: list[StagedUploadInput] = input
+
+    @property
+    def fields(self) -> str:
+        spacer = " " * (self._indent * 2)
+        inner = " " * (self._indent * 3)
+        deep = " " * (self._indent * 4)
+        targets_block = "\n".join(
+            [
+                f"{spacer}stagedTargets {{",
+                f"{inner}url",
+                f"{inner}resourceUrl",
+                f"{inner}parameters {{",
+                f"{deep}name",
+                f"{deep}value",
+                f"{inner}}}",
+                f"{spacer}}}",
+            ]
+        )
+        return "\n".join([targets_block, self._user_errors_block])
+
+
+class bulkOperationRunMutation(Mutation):
+    def __init__(
+        self,
+        mutation: String,
+        stagedUploadPath: String,
+    ):
+        self.mutation: String = mutation
+        self.stagedUploadPath: String = stagedUploadPath
+
+    @property
+    def fields(self) -> str:
+        spacer = " " * (self._indent * 2)
+        inner = " " * (self._indent * 3)
+        op_block = "\n".join(
+            [
+                f"{spacer}bulkOperation {{",
+                f"{inner}id",
+                f"{inner}status",
+                f"{spacer}}}",
+            ]
+        )
+        return "\n".join([op_block, self._user_errors_block])
+
+
+class bulkOperationRunQuery(Mutation):
+    def __init__(
+        self,
+        query: String,
+    ):
+        self.query: String = query
+
+    @property
+    def fields(self) -> str:
+        spacer = " " * (self._indent * 2)
+        inner = " " * (self._indent * 3)
+        op_block = "\n".join(
+            [
+                f"{spacer}bulkOperation {{",
+                f"{inner}id",
+                f"{inner}status",
+                f"{spacer}}}",
+            ]
+        )
+        return "\n".join([op_block, self._user_errors_block])

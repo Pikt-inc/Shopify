@@ -1,9 +1,12 @@
 from .queries import (
     orderByIdentifier,
     orders,
+    products,
     productVariants,
     publications,
-    locations
+    locations,
+    bulkOperation,
+    productSetOperation,
 )
 from .mutations import (
     productUnpublish,
@@ -12,10 +15,14 @@ from .mutations import (
     productVariantsBulkUpdate,
     productVariantsBulkCreate,
     productUpdate,
+    productSet,
     orderUpdate,
     fulfillmentCreateV2,
     productCreateMedia,
-    fileUpdate
+    fileUpdate,
+    stagedUploadsCreate,
+    bulkOperationRunMutation,
+    bulkOperationRunQuery,
 )
 from .core import client
 
@@ -23,6 +30,7 @@ from .core import client
 __all__ = [
     "orderByIdentifier",
     "orders",
+    "products",
     "productVariants",
     "publications",
     "productUnpublish",
@@ -31,10 +39,16 @@ __all__ = [
     "productVariantsBulkUpdate",
     "productVariantsBulkCreate",
     "productUpdate",
+    "productSet",
     "orderUpdate",
     "fulfillmentCreateV2",
     "productCreateMedia",
     "fileUpdate",
+    "stagedUploadsCreate",
+    "bulkOperationRunMutation",
+    "bulkOperationRunQuery",
     "client",
-    "locations"
+    "locations",
+    "bulkOperation",
+    "productSetOperation",
 ]

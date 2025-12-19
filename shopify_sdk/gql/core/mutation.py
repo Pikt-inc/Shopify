@@ -78,5 +78,5 @@ class Mutation(Query):
         user_errors = payload.get("userErrors", [])
         if user_errors:
             raise MutationExecutionError(user_errors)
-        
+
         return payload

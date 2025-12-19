@@ -1,5 +1,7 @@
 import sys
 import inspect
+import math
+import json
 from enum import Enum
 from typing import Optional, Dict, Any, Type, List, Tuple, Union, Set, get_args, get_origin, get_type_hints, cast
 
@@ -140,13 +142,35 @@ class Query:
         return f"({formatted})"
 
     def _format_literal(self, value: Any) -> str:
+        if isinstance(value, Enum):
+            return str(value.value)
         if isinstance(value, str):
-            return f'"{value}"'
+            return json.dumps(value)
         if isinstance(value, bool):
             return str(value).lower()
+        if isinstance(value, (int, float)):
+            if isinstance(value, float) and not math.isfinite(value):
+                raise ValueError(f"GraphQL numeric literal must be finite, got {value!r}")
+            return str(value)
         if value is None:
             return "null"
-        return str(value)
+        if hasattr(value, "to_graphql"):
+            return self._format_literal(value.to_graphql())
+        if isinstance(value, dict):
+            parts = []
+            for k, v in value.items():
+                if not isinstance(k, str):
+                    raise TypeError(f"GraphQL object key must be a string, got {type(k).__name__}")
+                parts.append(f"{k}: {self._format_literal(v)}")
+            return "{" + ", ".join(parts) + "}"
+        if isinstance(value, list):
+            inner = ", ".join(self._format_literal(v) for v in value)
+            return f"[{inner}]"
+
+        snippet = repr(value)
+        if len(snippet) > 200:
+            snippet = snippet[:197] + "..."
+        raise TypeError(f"Unsupported GraphQL literal {type(value).__name__}: {snippet}")
 
     def _unwrap_annotation(self, annotation: Any) -> Any:
         if annotation is None:
@@ -364,6 +388,26 @@ class Query:
         return "\n".join([
             f"query {self.class_name}({self.arguments}) {{",
             f"{' ' * self._indent}{self.class_name}({args_string}) {{",
+            f"{self.fields}",
+            f"{' ' * self._indent}}}",
+            "}",
+        ])
+
+    def inline_body(self) -> str:
+        """
+        Return a query string with arguments inlined as GraphQL literals.
+
+        This is useful for APIs (e.g., bulkOperationRunQuery) that do not
+        accept a separate variables payload. Only supports scalar/enum/list/dict
+        values that can be rendered directly into GraphQL literals.
+        """
+        args_list = self._input_arguments
+        args_inline = ", ".join(f"{name}: {self._format_literal(value)}" for name, value in args_list.items())
+        args_fragment = f"({args_inline})" if args_inline else ""
+
+        return "\n".join([
+            "{",
+            f"{' ' * self._indent}{self.class_name}{args_fragment} {{",
             f"{self.fields}",
             f"{' ' * self._indent}}}",
             "}",

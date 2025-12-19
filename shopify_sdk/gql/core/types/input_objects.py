@@ -6,11 +6,12 @@ from .base import (
     String,
     URL,
     Int,
+    UnsignedInt64,
     DateTime,
     Float,
 )
 from typing import List, Optional
-from pydantic import Field
+from pydantic import Field, field_serializer
 
 
 class OrderIdentifierInput(input_object):
@@ -193,6 +194,24 @@ class ProductVariantsBulkInput(input_object):
     unitPriceMeasurement: Optional[UnitPriceMeasurementInput] = Field(default=None)
 
 
+class ProductVariantSetInput(input_object):
+    id: Optional[ID] = Field(default=None)
+    sku: Optional[String] = Field(default=None)
+    price: Optional[String] = Field(default=None)
+    compareAtPrice: Optional[String] = Field(default=None)
+    barcode: Optional[String] = Field(default=None)
+    inventoryPolicy: Optional[ProductVariantInventoryPolicy] = Field(default=None)
+    inventoryQuantities: Optional[List[InventoryLevelInput]] = Field(default=None)
+    metafields: List["MetafieldInput"] = Field(default_factory=list)
+    optionValues: List[VariantOptionValueInput] = Field(default_factory=list)
+
+
+class ProductSetInput(input_object):
+    product: ProductInput
+    variants: List[ProductVariantSetInput] = Field(default_factory=list)
+    metafields: List["MetafieldInput"] = Field(default_factory=list)
+
+
 class InventoryChangeInput(input_object):
     inventoryItemId: ID
     locationId: ID
@@ -252,3 +271,17 @@ class CreateMediaInput(input_object):
     alt: Optional[String] = Field(default=None)
     mediaContentType: String
     originalSource: String
+
+
+class StagedUploadInput(input_object):
+    resource: String
+    filename: String
+    mimeType: String
+    httpMethod: Optional[String] = Field(default=None)
+    fileSize: Optional[UnsignedInt64] = Field(default=None)
+
+    @field_serializer("fileSize")
+    def _serialize_file_size(self, value: Optional[UnsignedInt64]) -> Optional[str]:
+        if value is None:
+            return None
+        return str(value)
