@@ -29,11 +29,17 @@ class StatusUpsertManager:
     @classmethod
     def inventory_status_sync(
         cls,
-        to_active: list[ID] = [],
-        to_archive: list[ID] = [],
-        to_draft: list[ID] = [],
+        to_active: Optional[list[ID]] = None,
+        to_archive: Optional[list[ID]] = None,
+        to_draft: Optional[list[ID]] = None,
         fallback_status: Optional[ProductStatus] = ProductStatus.ARCHIVED,
     ) -> bool:
+        if to_active is None:
+            to_active = []
+        if to_archive is None:
+            to_archive = []
+        if to_draft is None:
+            to_draft = []
         input = InventorySyncInput(
             active=to_active,
             archived=to_archive,
@@ -45,7 +51,7 @@ class StatusUpsertManager:
             (ProductStatus.ARCHIVED, input.archived),
             (ProductStatus.DRAFT, input.draft),
         ]:
-            if not id_list or len(id_list) == 0:
+            if not id_list:
                 continue
 
             success = manager._bulk_set_status(
@@ -67,6 +73,7 @@ class StatusUpsertManager:
             if not success:
                 logger.error(f"Failed to set fallback status '{fallback}' for diff IDs: {manager.diff_ids}")
                 return False
+        return True
         
     @cached_property
     def valid_ids(self) -> list[ID]:
@@ -126,5 +133,4 @@ class StatusUpsertManager:
                 logger.error(f"Failed to update product ID in bulk mutation: {res.user_errors} {res.top_errors}")
                 return False
         return True
-
 
