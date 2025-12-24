@@ -32,6 +32,15 @@ class FileUpdateInput(input_object):
     referencesToAdd: List[ID] = Field(default_factory=list)
     referencesToRemove: List[ID] = Field(default_factory=list)
 
+
+class FileSetInput(input_object):
+    id: Optional[ID] = Field(default=None)
+    originalSource: Optional[String] = Field(default=None)
+    contentType: Optional[String] = Field(default=None)
+    alt: Optional[String] = Field(default=None)
+    filename: Optional[String] = Field(default=None)
+    previewImageSource: Optional[String] = Field(default=None)
+
 class FulfillmentTrackingInput(input_object):
     company: String
     number: String
@@ -93,6 +102,14 @@ class SEOInput(input_object):
     description: Optional[String] = Field(default=None)
     title: Optional[String] = Field(default=None)
 
+class OptionValueUpdateInput(input_object):
+    id: ID
+    name: Optional[String] = Field(default=None)
+    linkedMetafieldValue: Optional[String] = Field(default=None)
+
+class OptionValueCreateInput(input_object):
+    linkedMetafieldValue: Optional[String] = Field(default=None)
+    name: String
 
 class ProductCreateInput(input_object):
     category: Optional[ID] = Field(default=None)
@@ -203,13 +220,32 @@ class ProductVariantSetInput(input_object):
     inventoryPolicy: Optional[ProductVariantInventoryPolicy] = Field(default=None)
     inventoryQuantities: Optional[List[InventoryLevelInput]] = Field(default=None)
     metafields: List["MetafieldInput"] = Field(default_factory=list)
-    optionValues: List[VariantOptionValueInput] = Field(default_factory=list)
+    optionValues: Optional[List[VariantOptionValueInput]] = Field(default=None)
 
 
 class ProductSetInput(input_object):
-    product: ProductInput
-    variants: List[ProductVariantSetInput] = Field(default_factory=list)
+    category: Optional[ID] = Field(default=None)
+    claimOwnership: Optional[ProductClaimOwnershipInput] = Field(default=None)
+    collections: List[ID] = Field(default_factory=list)
+    combinedListingRole: Optional[CombinedListingsRole] = Field(default=None)
+    title: Optional[String] = Field(default=None)
+    descriptionHtml: Optional[String] = Field(default=None)
+    files: List[FileSetInput] = Field(default_factory=list)
+    giftCard: Optional[Boolean] = Field(default=None)
+    giftCardTemplateSuffix: Optional[String] = Field(default=None)
+    handle: Optional[String] = Field(default=None)
+    productType: Optional[String] = Field(default=None)
+    status: Optional["ProductStatus"] = Field(default=None)
+    tags: List[String] = Field(default_factory=list)
+    vendor: Optional[String] = Field(default=None)
+    redirectNewHandle: Optional[Boolean] = Field(default=None)
+    requiresSellingPlan: Optional[Boolean] = Field(default=None)
+    seo: Optional[SEOInput] = Field(default=None)
+    productOptions: Optional[List[OptionCreateInput]] = Field(default=None)
     metafields: List["MetafieldInput"] = Field(default_factory=list)
+    templateSuffix: Optional[String] = Field(default=None)
+    variants: List[ProductVariantSetInput] = Field(default_factory=list)
+    id: Optional[ID] = Field(default=None)
 
 
 class InventoryChangeInput(input_object):
