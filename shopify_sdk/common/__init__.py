@@ -16,6 +16,7 @@ from .actions import (
 from .types import (
     ProxyProduct
 )
+from .status_upsert import upsert_inventory_status
 
 __all__ = [
     "create_product",
@@ -24,4 +25,5 @@ __all__ = [
     "ProductActionResponse",
     "set_order_line_item_tracking",
     "get_orders_from_last_n_days",
+    "upsert_inventory_status"
 ]

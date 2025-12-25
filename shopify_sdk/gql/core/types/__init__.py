@@ -46,6 +46,7 @@ from .input_objects import (
     ProductPublishInput,
     OptionCreateInput,
     OptionValueCreateInput,
+    OptionValueUpdateInput,
     ProductClaimOwnershipInput,
     ProductCreateInput,
     ProductUpdateInput,
