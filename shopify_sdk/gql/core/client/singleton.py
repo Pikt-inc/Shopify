@@ -21,6 +21,8 @@ class SingletonMeta(type):
             api_version = args[2]
         if access_token is None:
             raise ValueError("An 'access_token' must be provided to create a singleton instance.")
+        if shop_domain is None:
+            raise ValueError("A 'shop_domain' must be provided to create a singleton instance.")
 
         key = (shop_domain, access_token, api_version)
         if key not in cls._instances:
