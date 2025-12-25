@@ -23,7 +23,7 @@ class BulkOperationResult(BaseModel):
     success: bool
     user_errors: list[dict[str, Any]] = Field(default_factory=list)
     top_errors: list[Any] = Field(default_factory=list)
-    payload: dict[str, Any] | None = Field(
+    payload: Mapping[str, Any] | None = Field(
         default=None,
         description=(
             "The extracted, mutation-specific data for this bulk operation line. "
@@ -110,14 +110,14 @@ def _serialize_variable(arg_name: str, item: input_object) -> Mapping[str, Any]:
     return {arg_name: payload}
 
 
-def _extract_payload(line: Mapping[str, Any], mutation_name: str) -> dict[str, Any] | None:
+def _extract_payload(line: Mapping[str, Any], mutation_name: str) -> Mapping[str, Any] | None:
     if not isinstance(line, Mapping):
         return None
-    op_payload = line.get(mutation_name)  # type: ignore[index]
+    op_payload = line.get(mutation_name)
     if isinstance(op_payload, dict):
         return op_payload
 
-    data = line.get("data")  # type: ignore[index]
+    data = line.get("data")
     if isinstance(data, dict):
         op_payload = data.get(mutation_name)
         if isinstance(op_payload, dict):

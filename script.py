@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 from shopify_sdk.common import ProxyProduct as ProductProxy
 from shopify_sdk.tools import run_bulk_query, run_bulk_mutation
@@ -52,11 +52,11 @@ def _product_create_variables(product_list: Iterable[ProductProxy]) -> list[Prod
     return lines
 
 
-def _extract_product_id_from_payload(payload: dict[str, Any] | None) -> str | None:
-    if not isinstance(payload, dict):
+def _extract_product_id_from_payload(payload: Mapping[str, Any] | None) -> str | None:
+    if not isinstance(payload, Mapping):
         return None
     product_data = payload.get("product")
-    if not isinstance(product_data, dict):
+    if not isinstance(product_data, Mapping):
         return None
     product_id = product_data.get("id")
     return product_id if isinstance(product_id, str) else None
