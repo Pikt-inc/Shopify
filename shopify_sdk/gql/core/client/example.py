@@ -1,8 +1,6 @@
-from .wrapper import ShopifyClientWrapper
-
 def test():
-    domain = 'quickstart-5dd1aca4.myshopify.com'
-    at = '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'
+    domain = 'your-shop.myshopify.com'
+    at = 'shpat_your_token_here'
 
     query = '''
     query GetProductByHandle($handle: String!) {
@@ -11,7 +9,8 @@ def test():
         }
     }
     '''
-    scw = ShopifyClientWrapper(shop_domain=domain, access_token=at)
-    client = scw.client
-    response = client.request(query=query, variables={"handle": "157056959955"})
+    from . import client_context, client
+
+    with client_context(shop_domain=domain, access_token=at):
+        response = client.request(query=query, variables={"handle": "157056959955"})
     return response
