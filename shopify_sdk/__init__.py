@@ -1,7 +1,9 @@
 from .gql import (
-    client
+    client,
+    client_context,
 )
 
 __all__ = [
     "client",
+    "client_context",
 ]

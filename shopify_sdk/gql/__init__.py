@@ -24,7 +24,7 @@ from .mutations import (
     bulkOperationRunMutation,
     bulkOperationRunQuery,
 )
-from .core import client
+from .core import client, client_context
 
 
 __all__ = [
@@ -48,6 +48,7 @@ __all__ = [
     "bulkOperationRunMutation",
     "bulkOperationRunQuery",
     "client",
+    "client_context",
     "locations",
     "bulkOperation",
     "productSetOperation",
