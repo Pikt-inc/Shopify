@@ -1,5 +1,9 @@
+from typing import Type, Optional, Dict, Set
+from pydantic import BaseModel
+
 from .core import Mutation
 from .core.types.input_objects import *
+from .core.types.payloads import *
 
 class productUnpublish(Mutation):
 
@@ -53,37 +57,46 @@ class productCreate(Mutation):
 
 
 class productSet(Mutation):
+    return_type: Type[BaseModel] = ProductSetPayload
+
     def __init__(
         self,
         input: ProductSetInput,
-        synchronous: Boolean = False,
+        identifier: Optional[ProductSetIdentifiers] = None,
+        synchronous: Optional[Boolean] = False,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
+        self.identifier: Optional[ProductSetIdentifiers] = identifier
         self.input: ProductSetInput = input
         self.synchronous: Boolean = synchronous
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
+        
 
-    @property
-    def fields(self) -> str:
-        spacer = " " * (self._indent * 2)
-        inner = " " * (self._indent * 3)
-        blocks = [
-            "\n".join(
-                [
-                    f"{spacer}product {{",
-                    f"{inner}id",
-                    f"{spacer}}}",
-                ]
-            ),
-            "\n".join(
-                [
-                    f"{spacer}productSetOperation {{",
-                    f"{inner}id",
-                    f"{inner}status",
-                    f"{spacer}}}",
-                ]
-            ),
-            self._user_errors_block,
-        ]
-        return "\n".join(blocks)
+    # @property
+    # def fields(self) -> str:
+    #     spacer = " " * (self._indent * 2)
+    #     inner = " " * (self._indent * 3)
+    #     blocks = [
+    #         "\n".join(
+    #             [
+    #                 f"{spacer}product {{",
+    #                 f"{inner}id",
+    #                 f"{spacer}}}",
+    #             ]
+    #         ),
+    #         "\n".join(
+    #             [
+    #                 f"{spacer}productSetOperation {{",
+    #                 f"{inner}id",
+    #                 f"{inner}status",
+    #                 f"{spacer}}}",
+    #             ]
+    #         ),
+    #         self._user_errors_block,
+    #     ]
+    #     return "\n".join(blocks)
 
 
 class productPublish(Mutation):
@@ -198,30 +211,35 @@ class fileUpdate(Mutation):
 
 
 class stagedUploadsCreate(Mutation):
+    return_type: Type[BaseModel] = StagedUploadsCreatePayload
     def __init__(
         self,
         input: list[StagedUploadInput],
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.input: list[StagedUploadInput] = input
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
-    @property
-    def fields(self) -> str:
-        spacer = " " * (self._indent * 2)
-        inner = " " * (self._indent * 3)
-        deep = " " * (self._indent * 4)
-        targets_block = "\n".join(
-            [
-                f"{spacer}stagedTargets {{",
-                f"{inner}url",
-                f"{inner}resourceUrl",
-                f"{inner}parameters {{",
-                f"{deep}name",
-                f"{deep}value",
-                f"{inner}}}",
-                f"{spacer}}}",
-            ]
-        )
-        return "\n".join([targets_block, self._user_errors_block])
+    # @property
+    # def fields(self) -> str:
+    #     spacer = " " * (self._indent * 2)
+    #     inner = " " * (self._indent * 3)
+    #     deep = " " * (self._indent * 4)
+    #     targets_block = "\n".join(
+    #         [
+    #             f"{spacer}stagedTargets {{",
+    #             f"{inner}url",
+    #             f"{inner}resourceUrl",
+    #             f"{inner}parameters {{",
+    #             f"{deep}name",
+    #             f"{deep}value",
+    #             f"{inner}}}",
+    #             f"{spacer}}}",
+    #         ]
+    #     )
+    #     return "\n".join([targets_block, self._user_errors_block])
 
 
 class bulkOperationRunMutation(Mutation):

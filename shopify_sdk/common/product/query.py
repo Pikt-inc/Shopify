@@ -86,7 +86,7 @@ def product_by_sku(
             "SEO": {"title", "description"}
         },
     ).execute(client=client)
-
+    print(variant_connection)
     if not variant_connection or not getattr(variant_connection, "nodes", None):
         logger.error(f"No product variant found for SKU '{sku}'.")
         raise ValueError(f"No product variant found for SKU '{sku}'.")

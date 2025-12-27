@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Iterable, Mapping
+from typing import Iterable
 
 from shopify_sdk.common import ProxyProduct as ProductProxy
-from shopify_sdk.tools import run_bulk_query, run_bulk_mutation
-from shopify_sdk.gql import productVariants
-from shopify_sdk.gql.mutations import productCreate
-from shopify_sdk.gql.core.types import ProductCreateInput, ProductStatus, SEOInput
-from shopify_sdk.gql.core.types.objects import Product, ProductVariant
+from shopify_sdk.common.product import product_by_sku
+from shopify_sdk.managers.store import StoreManager
+
 PRODUCT_COUNT = 2
 
 
@@ -16,97 +14,95 @@ def _build_test_products(count: int) -> list[ProductProxy]:
     suffix = int(time.time())
     product_list: list[ProductProxy] = []
     for i in range(count):
-        product_list.append(
-            ProductProxy(
-                sku=f"BULK-TEST-{suffix}-{i}",
-                title=f"Bulk Test Product {suffix}-{i}",
-                vendor="Bulk Test Vendor",
-                type="Bulk Test Type",
-                tags=["bulk", "test"],
-                price="9.99",
-            )
+        p = ProductProxy(
+            sku=f"BULK-TEST-{suffix}-{i}",
+            title=f"Bulk Test Product {suffix}-{i}",
+            vendor="Bulk Test Vendor",
+            type="Bulk Test Type",
+            tags=["bulk", "test"],
+            price="9.99",
+            quantity=1,
+            seo_description="SEO Description for Bulk Test Product",
+            seo_title="SEO Title for Bulk Test Product",
         )
+        p.add_metafield(
+            namespace="pikt",
+            key="compatibility",
+            type=ProductProxy.metafield_type.JSON,
+            value="{\"devices\": [\"iOS\", \"Android\"]}"
+        )
+        product_list.append(p)
     return product_list
 
 
-def _product_create_variables(product_list: Iterable[ProductProxy]) -> list[ProductCreateInput]:
-    lines: list[ProductCreateInput] = []
+def _lookup_product_id_by_sku(sku: str, retries: int = 3, delay_s: float = 2.0) -> str:
+    # Bulk mutations can take a moment to surface in query APIs, so retry briefly.
+    for attempt in range(retries):
+        try:
+            return product_by_sku(sku).id
+        except Exception:
+            if attempt >= retries - 1:
+                raise
+            time.sleep(delay_s)
+    raise ValueError(f"Failed to resolve product ID for SKU '{sku}'")
+
+
+def _populate_product_ids(product_list: Iterable[ProductProxy]) -> None:
     for product in product_list:
-        seo = None
-        if product.seo_title is not None or product.seo_description is not None:
-            seo = SEOInput(
-                title=product.seo_title,
-                description=product.seo_description,
+        if not product.sku:
+            raise ValueError("Each product must have a SKU to resolve its ID after create.")
+        product.id = _lookup_product_id_by_sku(product.sku)
+
+
+def _build_update_products(product_list: Iterable[ProductProxy]) -> list[ProductProxy]:
+    updated_products: list[ProductProxy] = []
+    for product in product_list:
+        if not product.id:
+            raise ValueError("Each product must have an 'id' for bulk update.")
+        tags = list(product.tags or [])
+        if "bulk-update" not in tags:
+            tags.append("bulk-update")
+        updated_products.append(
+            ProductProxy(
+                id=product.id,
+                sku=product.sku,
+                title=f"{product.title} (Updated)",
+                vendor=product.vendor,
+                type=product.type,
+                tags=tags,
+                description_html=product.description_html,
+                seo_title=product.seo_title,
+                seo_description=product.seo_description,
+                metafields=product.metafields,
             )
-        create_input = ProductCreateInput(
-            title=product.title,
-            descriptionHtml=product.description_html,
-            vendor=product.vendor,
-            productType=product.type,
-            tags=product.tags or [],
-            status=ProductStatus.ACTIVE,
-            seo=seo,
-            metafields=product.metafields,
         )
-        lines.append(create_input)
-    return lines
-
-
-def _extract_product_id_from_payload(payload: Mapping[str, Any] | None) -> str | None:
-    if not isinstance(payload, Mapping):
-        return None
-    product_data = payload.get("product")
-    if not isinstance(product_data, Mapping):
-        return None
-    product_id = product_data.get("id")
-    return product_id if isinstance(product_id, str) else None
+    return updated_products
 
 
 def main() -> None:
+    store = StoreManager()
     product_list = _build_test_products(count=PRODUCT_COUNT)
-    variables = _product_create_variables(product_list)
 
-    # # Bulk mutation demo: create products
-    # NOTE: This script creates BULK-TEST-* products and does not delete them;
-    # remove them manually if you don't want test data left in your store.
-    results = run_bulk_mutation(productCreate, variables, verbose=True)
-    print("================ Bulk Mutation Results ================")
-
-    total = 0
-    failed = 0
-    for index, result in enumerate(results):
-        total += 1
-        if result.user_errors or result.top_errors:
-            failed += 1
-            print({"line": result.line_number or total, "userErrors": result.user_errors, "errors": result.top_errors})
-            continue
-
-        product_id = _extract_product_id_from_payload(result.payload)
-        if index < len(product_list) and product_id:
-            product_list[index].id = product_id
-        print({"line": result.line_number or total, "product_id": product_id, "result": result.payload})
-
-    # Bulk query demo: fetch all products (ids/titles/status)
+    success = store.products.bulk.set(product_list)
+    if not success:
+        print("Bulk set failed.")
+        return
+    print(product_list[10])
+    product = product_list[10]
+    product.hydrate()
+    print(product)
     
-    bulk_query = productVariants(
-        field_exclusions={
-            "ProductVariant": ProductVariant.fields_except(
-                exclude={"id", "product"}
-            ),
-            "Product": Product.fields_except(
-                exclude={"id"}
-            ),
-        }
-    )
-    print("================ Bulk Query Results ================")
-    line_count = 0
-    lines = []
-    for line in run_bulk_query(bulk_query, verbose=True):
-        line_count += 1
-        lines.append(line)
-    print(f"Fetched {line_count} products via bulk query.")
-    print(lines[:5])  # Print first 5 products only for brevity
-        
+    # for p in product_list:
+    #     print(f"  ✓ Created product SKU: {p.sku} with ID: {p.id}")
+
+    # print(f"Bulk create succeeded: {created}")
+
+    # _populate_product_ids(product_list)
+    # update_products = _build_update_products(product_list)
+    # print(f"Prepared {len(update_products)} products for bulk update.", update_products[0])
+
+    # updated = store.products.bulk.set(update_products)
+    # print(f"Bulk update succeeded: {updated}")
 
 
 if __name__ == "__main__":

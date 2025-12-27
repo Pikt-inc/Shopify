@@ -21,10 +21,6 @@ class Mutation(Query):
         }
 
     @property
-    def fields(self) -> str:
-        return self._user_errors_block
-
-    @property
     def _user_errors_block(self) -> str:
         spacer = " " * (self._indent * 2)
         inner = " " * (self._indent * 3)
@@ -80,3 +76,39 @@ class Mutation(Query):
             raise MutationExecutionError(user_errors)
 
         return payload
+
+    @classmethod
+    def bulk(
+        cls,
+        mutations: list["Mutation"]
+    ):
+        """
+        Execute a bulk mutation operation.
+
+        Args:
+            mutations (list[Mutation]): A list of Mutation instances to be executed in bulk.
+
+        Returns:
+            Iterator[BulkOperationResult]: An iterator over the results of the bulk operation.
+        """
+        from shopify_sdk.tools.bulk.run import bulk_mutation
+        instance = mutations[0]
+        serialized_vars = []
+        for mutation in mutations:
+            variables = {
+                name: instance._serialize_value(value)
+                for name, value in mutation._input_arguments.items()
+            }
+            serialized_vars.append(variables)
+        print(mutations[0].body)
+        responses = bulk_mutation(
+            mutations[0],
+            mutations[0].body,
+            serialized_vars
+        )
+        for response in responses:
+            print(response)
+            if response.data and cls.return_type:
+                yield instance.cast_response(response=response)
+            else:
+                yield response

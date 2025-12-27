@@ -97,6 +97,7 @@ class Query:
             return self._build_connection_selection(name, resolved, indent, graphql_name=field_label)
 
         if self._is_model(resolved):
+            print(resolved)
             nested = self._build_model_selection(resolved, indent + self._indent)
             return f"{spacer}{field_label} {{\n{nested}\n{spacer}}}"
 
@@ -413,23 +414,7 @@ class Query:
             "}",
         ])
     
-    def execute(self, client: ShopifyClient):
-        variables: Dict[str, Any] = {}
-        for name, value in self._input_arguments.items():
-            if value is None:
-                variables[name] = None
-            elif hasattr(value, "to_graphql"):
-                variables[name] = value.to_graphql()
-            elif isinstance(value, Enum):
-                variables[name] = value.value
-            else:
-                variables[name] = value
-                
-        response = client.request(
-            query=self.body,
-            variables=variables
-        )
-        
+    def cast_response(self, response: Dict) -> Any:
         if response.data is None:
             raise ValueError("Response data is None.")
         order_data = response.data.get(self.class_name)
@@ -448,3 +433,22 @@ class Query:
         else:
             cast_obj = self.return_type(**order_data)
         return cast_obj
+    
+    def execute(self, client: ShopifyClient):
+        variables: Dict[str, Any] = {}
+        for name, value in self._input_arguments.items():
+            if value is None:
+                variables[name] = None
+            elif hasattr(value, "to_graphql"):
+                variables[name] = value.to_graphql()
+            elif isinstance(value, Enum):
+                variables[name] = value.value
+            else:
+                variables[name] = value
+                
+        response = client.request(
+            query=self.body,
+            variables=variables
+        )
+        return self.cast_response(response=response)
+        

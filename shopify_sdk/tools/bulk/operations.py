@@ -170,7 +170,7 @@ def stage_and_upload_jsonl(
         f"[bulk] staging upload: filename={filename!r} bytes={len(content)} mime_type={mime_type!r}",
     )
 
-    staged = stagedUploadsCreate(
+    b = stagedUploadsCreate(
         input=[
             StagedUploadInput(
                 resource="BULK_MUTATION_VARIABLES",
@@ -179,8 +179,15 @@ def stage_and_upload_jsonl(
                 httpMethod="POST",
                 fileSize=len(content),
             )
-        ]
-    ).execute(client=client)
+        ],
+        field_inclusions={
+            "Product": "id",
+
+        }
+    )
+    print(b.body)
+    staged = b.execute(client=client)
+    return
 
     targets = staged.get("stagedTargets")
     if not isinstance(targets, list) or not targets:

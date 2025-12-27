@@ -38,6 +38,7 @@ class BulkOperationResult(BaseModel):
             "Use primarily for debugging or advanced inspection; prefer `payload` for normal use."
         ),
     )
+    data: Mapping[str, Any] | None = None
     line_number: int | None = None
 
 
@@ -50,24 +51,24 @@ def _peek_first(iterable: Iterable[input_object]) -> tuple[input_object, Iterabl
     return first, itertools.chain([first], iterator)
 
 
-def _get_single_argument_name(mutation_cls: Type[Mutation]) -> str:
+def _get_argument_names(mutation_cls: Type[Mutation]) -> list[str]:
     sig = inspect.signature(mutation_cls.__init__)
     params = [
         p
         for name, p in sig.parameters.items()
         if name != "self" and p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)
     ]
-    if len(params) != 1:
+    if not params:
         raise ValueError(
-            "Bulk mutation __init__ must declare exactly one parameter (excluding self) for bulk execution."
+            "Bulk mutation __init__ must declare at least one parameter (excluding self) for bulk execution."
         )
-    return params[0].name
+    return [p.name for p in params]
 
 
 def _prepare_mutation(
     action: Mutation | Type[Mutation],
     variables_iter: Iterable[input_object],
-) -> tuple[Mutation, str, Iterable[input_object]]:
+) -> tuple[Mutation, list[str], Iterable[input_object]]:
     if isinstance(action, Mutation):
         # Handle concrete Mutation instances first; Mutation is a subclass of Query.
         _, replayable_iter = _peek_first(variables_iter)
@@ -75,8 +76,23 @@ def _prepare_mutation(
     elif isinstance(action, type):
         if issubclass(action, Mutation):
             first_item, replayable_iter = _peek_first(variables_iter)
-            arg_name = _get_single_argument_name(action)
-            mutation = action(**{arg_name: first_item})
+            arg_names = _get_argument_names(action)
+            if len(arg_names) == 1:
+                mutation = action(**{arg_names[0]: first_item})
+            else:
+                if isinstance(first_item, Mapping):
+                    kwargs = dict(first_item)
+                elif isinstance(first_item, (list, tuple)):
+                    if len(first_item) != len(arg_names):
+                        raise ValueError(
+                            "Iterable provided for bulk variables does not match mutation argument count."
+                        )
+                    kwargs = dict(zip(arg_names, first_item))
+                else:
+                    raise TypeError(
+                        "For mutations with multiple input args, each variables item must be a mapping or sequence matching the argument names."
+                    )
+                mutation = action(**kwargs)
         elif issubclass(action, Query):
             raise NotImplementedError(
                 "Bulk queries are not supported by run_bulk_mutation. Use run_bulk_query for Query instances."
@@ -91,23 +107,56 @@ def _prepare_mutation(
         raise TypeError("action must be a Mutation instance or Mutation class.")
 
     arg_names = list(mutation._input_arguments.keys())
-    if len(arg_names) != 1:
+    if not arg_names:
         raise ValueError(
-            "Bulk mutation instance must expose exactly one input argument for bulk execution."
+            "Bulk mutation instance must expose at least one input argument for bulk execution."
         )
-    return mutation, arg_names[0], replayable_iter
+    return mutation, arg_names, replayable_iter
 
 
-def _serialize_variable(arg_name: str, item: input_object) -> Mapping[str, Any]:
-    try:
-        payload = item.to_graphql()
-    except Exception as e:
-        item_type = type(item).__name__
-        raise ValueError(
-            f"Failed to serialize variable for argument {arg_name!r} "
-            f"with item of type {item_type}. Original error: {e}"
-        ) from e
-    return {arg_name: payload}
+def _serialize_variable(arg_names: list[str], item: Any, defaults: Mapping[str, Any] | None = None) -> Mapping[str, Any]:
+    def _to_payload(val: Any) -> Any:
+        if hasattr(val, "to_graphql"):
+            try:
+                return val.to_graphql()
+            except Exception as e:
+                raise ValueError(f"Failed to serialize value to graphql: {e}") from e
+        if isinstance(val, Mapping):
+            return dict(val)
+        return val
+
+    if len(arg_names) == 1:
+        try:
+            payload = _to_payload(item)
+        except Exception as e:
+            item_type = type(item).__name__
+            raise ValueError(
+                f"Failed to serialize variable for argument {arg_names[0]!r} "
+                f"with item of type {item_type}. Original error: {e}"
+            ) from e
+        return {arg_names[0]: payload}
+
+    # Multiple arg names: accept Mapping[str, value] or sequence of values
+    if isinstance(item, Mapping):
+        out: dict[str, Any] = {}
+        for name in arg_names:
+            if name in item:
+                out[name] = _to_payload(item[name])
+            else:
+                if defaults is not None and name in defaults:
+                    out[name] = _to_payload(defaults[name])
+                else:
+                    raise ValueError(f"Missing argument {name!r} in variables mapping.")
+        return out
+
+    if isinstance(item, (list, tuple)):
+        if len(item) != len(arg_names):
+            raise ValueError("Variables sequence length does not match mutation argument count.")
+        return {name: _to_payload(val) for name, val in zip(arg_names, item)}
+
+    raise TypeError(
+        "For mutations with multiple input args, each variables item must be a mapping or sequence matching the argument names."
+    )
 
 
 def _extract_payload(line: Mapping[str, Any], mutation_name: str) -> Mapping[str, Any] | None:
@@ -133,6 +182,7 @@ def _extract_payload(line: Mapping[str, Any], mutation_name: str) -> Mapping[str
 
 def _build_bulk_result(line: Mapping[str, Any], mutation_name: str, index: int) -> BulkOperationResult:
     payload = _extract_payload(line, mutation_name)
+    data = line.get("data", None)
 
     user_errors: list[dict[str, Any]] = []
     if isinstance(payload, dict):
@@ -156,6 +206,7 @@ def _build_bulk_result(line: Mapping[str, Any], mutation_name: str, index: int) 
         user_errors=user_errors,
         top_errors=top_errors,
         payload=payload,
+        data=data,
         raw=dict(line),
         line_number=line_number,
     )
@@ -180,10 +231,13 @@ def run_bulk_mutation(
     use ``run_bulk_query`` instead. Chunk failures abort iteration; per-item errors
     are surfaced on each ``BulkOperationResult`` instance.
     """
-    mutation, arg_name, variables = _prepare_mutation(action, variables_iter)
+    mutation, arg_names, variables = _prepare_mutation(action, variables_iter)
     log_fn = log or logger.info
 
-    variable_lines = (_serialize_variable(arg_name, item) for item in variables)
+    variable_lines = (
+        _serialize_variable(arg_names, item, defaults=mutation._input_arguments)
+        for item in variables
+    )
     for index, line in enumerate(
         _run_bulk_mutation(
             inner_mutation=mutation.body,
@@ -195,6 +249,24 @@ def run_bulk_mutation(
         start=1,
     ):
         yield _build_bulk_result(line, mutation.class_name, index)
+
+def bulk_mutation(
+    mutation: Mutation | Type[Mutation],
+    mutation_body: str,
+    variables: Iterable[str],
+):
+    for index, line in enumerate(
+        _run_bulk_mutation(
+            inner_mutation=mutation_body,
+            variables=variables,
+            client=default_client,
+            verbose=True
+        ),
+        start=1,
+    ):
+        print(line)
+        yield _build_bulk_result(line, mutation.class_name, index)
+
 
 def run_bulk_query(
     query: Query | str,

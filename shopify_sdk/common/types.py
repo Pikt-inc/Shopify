@@ -86,7 +86,7 @@ class ProxyProduct(BaseModel):
         *,
         namespace: str,
         key: str,
-        type: Union[MetafieldType, str],
+        type: MetafieldType,
         value: str,
         id: Optional[str] = None,
     ) -> MetafieldInput:

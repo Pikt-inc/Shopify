@@ -974,6 +974,11 @@ class BulkOperation(AutoRegisterModel):
     partialDataUrl: Optional[URL] = Field(default=None)
 
 
+class UserError(AutoRegisterModel):
+    field: Optional[List[String]] = Field(default=None)
+    message: String
+
+
 class ProductSetUserError(AutoRegisterModel):
     code: ProductSetUserErrorCode
     field: Optional[List[String]] = Field(default=None)
@@ -985,3 +990,13 @@ class ProductSetOperation(AutoRegisterModel):
     status: String
     product: Optional[Product] = Field(default=None)
     userErrors: List[ProductSetUserError]
+
+
+class StagedUploadParameter(AutoRegisterModel):
+    name: String
+    value: String
+
+class StagedMediaUploadTarget(AutoRegisterModel):
+    parameters: List[StagedUploadParameter]
+    resourceUrl: URL
+    url: URL

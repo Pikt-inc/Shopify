@@ -31,7 +31,7 @@ class ProductIdSkuResolver:
     ) -> "ProductIdSkuResolver":
         resolver = cls(list(products))
         resolver._resolve_products()
-        return resolver
+        return resolver._products
 
     def _get_id(self, sku: str) -> str | None:
         return self.id_sku_map.get(sku)
@@ -40,8 +40,10 @@ class ProductIdSkuResolver:
         for product in self._products:
             if not product.sku:
                 continue
+            print(f"Resolving product SKU {product.sku} to existing ID...")
             existing_id = self._get_id(product.sku)
             if not existing_id:
+                print(f"No existing product found for SKU {product.sku}.")
                 continue
             current_id = getattr(product, "id", None)
             if current_id and current_id != existing_id:
@@ -52,6 +54,7 @@ class ProductIdSkuResolver:
                     existing_id,
                 )
                 continue
+            print(f"Resolved product SKU {product.sku} to existing ID {existing_id}.")
             product.id = existing_id
         logger.info(
             f"Resolved {len(self.id_sku_map)} existing product IDs for {len(self._products)} products based on SKU."
@@ -106,3 +109,4 @@ class ProductIdSkuResolver:
             len(target_skus) - len(remaining),
             len(target_skus),
         )
+        print(self._map)

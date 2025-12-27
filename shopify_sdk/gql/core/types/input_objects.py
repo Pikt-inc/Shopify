@@ -22,6 +22,10 @@ class ProductIdentifierInput(input_object):
     handle: Optional[String]
     id: Optional[ID]
 
+class ProductSetIdentifiers(input_object):
+    handle: Optional[String]
+    id: Optional[ID]
+
 
 class FileUpdateInput(input_object):
     alt: Optional[String] = Field(default=None)
@@ -95,7 +99,16 @@ class ProductClaimOwnershipInput(input_object):
 
 class OptionCreateInput(input_object):
     name: String
-    values: List[String] = Field(default_factory=list)
+    values: List["OptionValueCreateInput"] = Field(default_factory=list)
+
+class OptionValueSetInput(input_object):
+    id: Optional[ID] = Field(default=None)
+    name: Optional[String] = Field(default=None)
+
+class OptionSetInput(input_object):
+    id: Optional[ID] = Field(default=None)
+    name: Optional[String] = Field(default=None)
+    values: Optional[List[OptionValueSetInput]] = Field(default=None)
 
 
 class SEOInput(input_object):
@@ -109,7 +122,7 @@ class OptionValueUpdateInput(input_object):
 
 class OptionValueCreateInput(input_object):
     linkedMetafieldValue: Optional[String] = Field(default=None)
-    name: String
+    name: Optional[String] = Field(default=None)
 
 class ProductCreateInput(input_object):
     category: Optional[ID] = Field(default=None)
@@ -175,6 +188,11 @@ class InventoryLevelInput(input_object):
     locationId: ID
     availableQuantity: Int
 
+class ProductSetInventoryInput(input_object):
+    locationId: ID
+    name: String
+    quantity: Int
+
 
 class VariantOptionValueInput(input_object):
     id: Optional[ID] = Field(default=None)
@@ -218,7 +236,7 @@ class ProductVariantSetInput(input_object):
     compareAtPrice: Optional[String] = Field(default=None)
     barcode: Optional[String] = Field(default=None)
     inventoryPolicy: Optional[ProductVariantInventoryPolicy] = Field(default=None)
-    inventoryQuantities: Optional[List[InventoryLevelInput]] = Field(default=None)
+    inventoryQuantities: Optional[List[ProductSetInventoryInput]] = Field(default=None)
     metafields: List["MetafieldInput"] = Field(default_factory=list)
     optionValues: Optional[List[VariantOptionValueInput]] = Field(default=None)
 
@@ -241,11 +259,10 @@ class ProductSetInput(input_object):
     redirectNewHandle: Optional[Boolean] = Field(default=None)
     requiresSellingPlan: Optional[Boolean] = Field(default=None)
     seo: Optional[SEOInput] = Field(default=None)
-    productOptions: Optional[List[OptionCreateInput]] = Field(default=None)
+    productOptions: Optional[List[OptionSetInput]] = Field(default=None)
     metafields: List["MetafieldInput"] = Field(default_factory=list)
     templateSuffix: Optional[String] = Field(default=None)
     variants: List[ProductVariantSetInput] = Field(default_factory=list)
-    id: Optional[ID] = Field(default=None)
 
 
 class InventoryChangeInput(input_object):

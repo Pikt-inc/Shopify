@@ -63,9 +63,9 @@ class StatusUpsertManager:
                 logger.error(f"Failed to set status '{status}' for IDs: {id_list}")
                 raise ValueError(f"Failed to set status '{status}' for IDs: {id_list}")
             
-        # Handle diff IDs (default to ARCHIVED)
-        if manager.diff_ids:
-            fallback = fallback_status or ProductStatus.ARCHIVED
+        # Handle diff IDs if a fallback status is provided
+        if manager.diff_ids and fallback_status is not None:
+            fallback = fallback_status
             success = manager._bulk_set_status(
                 status=fallback,
                 id_list=list(manager.diff_ids)

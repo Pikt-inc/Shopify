@@ -7,7 +7,7 @@ def upsert_inventory_status(
     to_active: Optional[list[ID]] = None,
     to_archive: Optional[list[ID]] = None,
     to_draft: Optional[list[ID]] = None,
-    fallback_status: Optional[ProductStatus] = ProductStatus.ARCHIVED,
+    fallback_status: Optional[ProductStatus] = None,
 ) -> bool:
     """
     Upserts product statuses in bulk.

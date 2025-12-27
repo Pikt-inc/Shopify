@@ -27,7 +27,8 @@ from .objects import (
     Metafield,
     MetafieldConnection,
     BulkOperation,
-    ProductSetOperation
+    ProductSetOperation,
+    Location
 )
 from .connections import (
     OrderConnection,
@@ -65,8 +66,13 @@ from .input_objects import (
     FulfillmentOrderLineItemsInput,
     FulfillmentOrderLineItemInput,
     ProductIdentifierInput,
+    ProductSetIdentifiers,
     MetafieldInput,
-    StagedUploadInput
+    StagedUploadInput,
+    OptionValueCreateInput,
+    ProductSetInventoryInput,
+    OptionValueSetInput,
+    OptionSetInput,
 )
 from .enums import (
     OrderReturnStatus,
@@ -79,7 +85,8 @@ from .enums import (
     ProductSortKeys,
     ProductStatus,
     ProductSetUserErrorCode,
-    CombinedListingsRole,
+    CombinedListingsRole
+
 )
 from .registry import type_registry
 
@@ -157,6 +164,7 @@ __all__ = [
     "ShippingLine",
     "Fulfillment",
     "ProductIdentifierInput",
+    "ProductSetIdentifiers",
     "InventoryItem",
     "SelectedOption",
     "MetafieldInput",
@@ -169,4 +177,9 @@ __all__ = [
     "ProductSetOperation",
     "OptionValueUpdateInput",
     "OptionValueCreateInput",
+    "OptionValueCreateInput",
+    "Location",
+    "ProductSetInventoryInput",
+    "OptionValueSetInput",
+    "OptionSetInput",
 ]
