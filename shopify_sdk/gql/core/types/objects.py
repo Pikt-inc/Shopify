@@ -985,3 +985,45 @@ class ProductSetOperation(AutoRegisterModel):
     status: String
     product: Optional[Product] = Field(default=None)
     userErrors: List[ProductSetUserError]
+
+
+class UserError(AutoRegisterModel):
+    field: Optional[List[String]] = Field(default=None)
+    message: String
+
+class BulkOperationUserError(AutoRegisterModel):
+    code: BulkOperationUserErrorCode
+    field: Optional[List[String]] = Field(default=None)
+    message: String
+
+
+class Shop(AutoRegisterModel):
+    checkoutApiSupported: Boolean
+    createdAt: DateTime
+    description: String
+    email: String
+    id: ID
+
+
+class StagedUploadParameter(AutoRegisterModel):
+    name: String
+    value: String
+
+
+class StagedMediaUploadTarget(AutoRegisterModel):
+    parameters: List[StagedUploadParameter]
+    resourceUrl: Optional[URL]
+    url: Optional[URL]
+
+
+class BulkOperation(AutoRegisterModel):
+    completedAt: Optional[DateTime] = Field(default=None)
+    createdAt: DateTime
+    fileSize: Optional[UnsignedInt64] = Field(default=None)
+    id: ID
+    objectCount: Optional[UnsignedInt64] = Field(default=None)
+    partialDataUrl: Optional[URL] = Field(default=None)
+    query: String
+    status: BulkOperationStatus
+    type: BulkOperationType
+    url: Optional[URL] = Field(default=None)
