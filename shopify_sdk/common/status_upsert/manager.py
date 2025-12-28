@@ -7,7 +7,6 @@ from shopify_sdk.gql.core.types import (
 )
 from shopify_sdk.gql.queries import products
 from shopify_sdk.gql.mutations import productUpdate
-from shopify_sdk.gql.core.bulk import bulk_query, bulk_mutation
 
 from .input import InventorySyncInput
 
@@ -114,20 +113,18 @@ class StatusUpsertManager:
     ) -> bool:
         if not id_list:
             return True
-
-        variables: list[ProductUpdateInput] = []
+        mutations: list[productUpdate] = []
         for product_id in id_list:
-            mutation_input = ProductUpdateInput(
-                id=product_id,
-                status=status
+            mutations.append(
+                productUpdate(
+                    product = ProductUpdateInput(
+                        id=product_id,
+                        status=status
+                    )
+                )
             )
-            variables.append(mutation_input)
             
-        result = run_bulk_mutation(
-            action=productUpdate,
-            variables_iter=variables,
-            verbose=True
-        )
+        result = productUpdate.bulk(mutations)
         for res in result:
             if res.user_errors or res.top_errors:
                 logger.error(f"Failed to update product ID in bulk mutation: {res.user_errors} {res.top_errors}")
