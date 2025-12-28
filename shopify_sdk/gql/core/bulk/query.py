@@ -38,7 +38,7 @@ class BulkQueryRunner:
         ).execute(client=self._client)
         if payload is None:
             raise ValueError("bulkOperationRunQuery returned no payload.")
-
+        
         if not payload.bulkOperation:
             raise ValueError("bulkOperationRunQuery returned no bulk operation.")
         

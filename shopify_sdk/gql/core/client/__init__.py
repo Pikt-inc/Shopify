@@ -53,13 +53,14 @@ class _ClientProxy:
 def client_context(
     shop_domain: str,
     access_token: str,
-    api_version: Optional[str] = None,
+    api_version: str,
 ) -> Iterator[ShopifyClient]:
     """
     Temporarily set the active Shopify client for the current context.
 
     Within the context, the module-level ``client`` proxy uses the provided
-    credentials. When the context exits, the previous client is restored.
+    credentials and API version. When the context exits, the previous client
+    is restored.
     """
     wrapper = ShopifyClient(
         shop_domain=shop_domain,

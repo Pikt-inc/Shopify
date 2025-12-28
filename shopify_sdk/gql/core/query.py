@@ -3,13 +3,16 @@ import inspect
 import math
 import json
 from enum import Enum
-from typing import Optional, Dict, Any, Type, List, Tuple, Union, Set, get_args, get_origin, get_type_hints, cast
+from typing import Optional, Dict, Any, Type, List, Tuple, Union, Set, get_args, get_origin, get_type_hints, cast, Iterator
+import logging
 
 from pydantic import BaseModel
 
 from .types import type_registry
 from .types.base import connection
 from .client import ShopifyClient
+
+logger = logging.getLogger(__name__)
 
 class Query:
     return_type: Optional[Type[BaseModel]] = None
@@ -469,9 +472,46 @@ class Query:
     
     def bulk(
         self
-    ):
+    ) -> BaseModel:
+        """
+        Execute the query as a bulk operation, returning data in the defined query return type.
+        """
         from .bulk import bulk_query
+        objects = []
+        cast_type = self._get_bulk_base_type()
         for line in bulk_query(
             query=self
         ):
-            yield self._build_partial_model(line, self.return_type)
+            objects.append( 
+                cast_type(**json.loads(line))
+            )
+        return self.return_type(
+            edges=[],
+            nodes=objects, 
+            pageInfo=self._fake_page_info()
+        )
+    
+    def _get_bulk_base_type(self) -> Type[BaseModel]:
+        """
+        Determine the base type of the bulk query from the return_type.
+        """
+        if self.return_type is None:
+            raise ValueError("return_type must be defined to access bulk base type.")
+        node_list_annotation = self.return_type.model_fields.get('nodes').annotation
+        inner_type_list = get_args(node_list_annotation)
+        if not inner_type_list:
+            raise ValueError("Unable to determine bulk base type from return_type.")
+        inner_type = inner_type_list[0]
+        return inner_type
+    
+    def _fake_page_info(self) -> BaseModel:
+        """
+        Faked PageInfo for bulk queries since pagination is not applicable.
+        """
+        from shopify_sdk.gql.core.types.objects import PageInfo
+        return PageInfo(
+            endCursor="",
+            startCursor="",
+            hasNextPage=False,
+            hasPreviousPage=False,
+        )
