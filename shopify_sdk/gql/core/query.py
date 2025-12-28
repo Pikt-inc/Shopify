@@ -18,11 +18,15 @@ class Query:
     _field_inclusions: Dict[str, Set[str]] = {}
     _indent: int = 2
     default_connection_first: Optional[int] = 100
+    action_type: str = "query"
 
     def __init__(
-        self
+        self,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
-        pass
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
     @property
     def connection_arguments(self) -> Dict[str, Dict[str, Any]]:
@@ -386,12 +390,26 @@ class Query:
         args_string = ", ".join(f"{name}: ${name}" for name in args_list.keys())
 
         return "\n".join([
-            f"query {self.class_name}({self.arguments}) {{",
+            f"{self.action_type} {self.class_name}({self.arguments}) {{",
             f"{' ' * self._indent}{self.class_name}({args_string}) {{",
             f"{self.fields}",
             f"{' ' * self._indent}}}",
             "}",
         ])
+    
+    @property
+    def variables(self) -> Dict[str, Any]:
+        variables: Dict[str, Any] = {}
+        for name, value in self._input_arguments.items():
+            if value is None:
+                variables[name] = None
+            elif hasattr(value, "to_graphql"):
+                variables[name] = value.to_graphql()
+            elif isinstance(value, Enum):
+                variables[name] = value.value
+            else:
+                variables[name] = value
+        return variables
 
     def inline_body(self) -> str:
         """
@@ -424,7 +442,7 @@ class Query:
                 variables[name] = value.value
             else:
                 variables[name] = value
-                
+ 
         response = client.request(
             query=self.body,
             variables=variables
@@ -448,3 +466,12 @@ class Query:
         else:
             cast_obj = self.return_type(**order_data)
         return cast_obj
+    
+    def bulk(
+        self
+    ):
+        from .bulk import bulk_query
+        for line in bulk_query(
+            query=self
+        ):
+            yield self._build_partial_model(line, self.return_type)

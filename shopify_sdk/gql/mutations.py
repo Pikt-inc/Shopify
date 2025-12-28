@@ -1,55 +1,46 @@
+from pydantic import BaseModel, Field
 from .core import Mutation
 from .core.types.input_objects import *
+from .core.types.payload import *
+from typing import Type, Any, Dict, Set, Optional
+
 
 class productUnpublish(Mutation):
 
     def __init__(
         self,
         input: ProductUnpublishInput,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.input: ProductUnpublishInput = input
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
 
 class productUpdate(Mutation):
     def __init__(
         self,
-        product: ProductUpdateInput
+        product: ProductUpdateInput,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.product: ProductUpdateInput = product
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
     
-    @property
-    def fields(self) -> str:
-        spacer = " " * (self._indent * 2)
-        inner = " " * (self._indent * 3)
-        product_block = "\n".join(
-            [
-                f"{spacer}product {{",
-                f"{inner}id",
-                f"{spacer}}}",
-            ]
-        )
-        return "\n".join([product_block, self._user_errors_block])
 
-    
 class productCreate(Mutation):
+    return_type: Type[BaseModel] = ProductCreatePayload
     def __init__(
         self,
         product: ProductCreateInput,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.product: ProductCreateInput = product
-
-    @property
-    def fields(self) -> str:
-        spacer = " " * (self._indent * 2)
-        inner = " " * (self._indent * 3)
-        product_block = "\n".join(
-            [
-                f"{spacer}product {{",
-                f"{inner}id",
-                f"{spacer}}}",
-            ]
-        )
-        return "\n".join([product_block, self._user_errors_block])
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
 
 class productSet(Mutation):
@@ -57,54 +48,25 @@ class productSet(Mutation):
         self,
         input: ProductSetInput,
         synchronous: Boolean = False,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.input: ProductSetInput = input
         self.synchronous: Boolean = synchronous
-
-    @property
-    def fields(self) -> str:
-        spacer = " " * (self._indent * 2)
-        inner = " " * (self._indent * 3)
-        blocks = [
-            "\n".join(
-                [
-                    f"{spacer}product {{",
-                    f"{inner}id",
-                    f"{spacer}}}",
-                ]
-            ),
-            "\n".join(
-                [
-                    f"{spacer}productSetOperation {{",
-                    f"{inner}id",
-                    f"{inner}status",
-                    f"{spacer}}}",
-                ]
-            ),
-            self._user_errors_block,
-        ]
-        return "\n".join(blocks)
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
 
 class productPublish(Mutation):
     def __init__(
         self,
         input: ProductPublishInput,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.input: ProductPublishInput = input
-
-    @property
-    def fields(self) -> str:
-        spacer = " " * (self._indent * 2)
-        inner = " " * (self._indent * 3)
-        product_block = "\n".join(
-            [
-                f"{spacer}product {{",
-                f"{inner}id",
-                f"{spacer}}}",
-            ]
-        )
-        return "\n".join([product_block, self._user_errors_block])
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
 
 class productVariantsBulkUpdate(Mutation):
@@ -112,9 +74,13 @@ class productVariantsBulkUpdate(Mutation):
         self,
         productId: ID,
         variants: list[ProductVariantsBulkInput],
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.productId: ID = productId
         self.variants: list[ProductVariantsBulkInput] = variants
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
 
 class productVariantsBulkCreate(Mutation):
@@ -122,17 +88,25 @@ class productVariantsBulkCreate(Mutation):
         self,
         productId: ID,
         variants: list[ProductVariantsBulkInput],
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.productId: ID = productId
         self.variants: list[ProductVariantsBulkInput] = variants
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
 
 class orderUpdate(Mutation):
     def __init__(
         self,
-        input: OrderInput
+        input: OrderInput,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.input: OrderInput = input
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
 
 class fulfillmentCreateV2(Mutation):
@@ -140,17 +114,25 @@ class fulfillmentCreateV2(Mutation):
         self,
         fulfillment: FulfillmentV2Input,
         message: String = "",
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.fulfillment: FulfillmentV2Input = fulfillment
         self.message: String = message
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
 
 class inventoryAdjustQuantities(Mutation):
     def __init__(
         self,
         input: InventoryAdjustQuantitiesInput,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.input: InventoryAdjustQuantitiesInput = input
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
 
 class productCreateMedia(Mutation):
@@ -158,113 +140,68 @@ class productCreateMedia(Mutation):
         self,
         media: list[CreateMediaInput],
         productId: ID,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.media: list[CreateMediaInput] = media
         self.productId: ID = productId
-    
-    @property
-    def fields(self) -> str:
-        spacer = " " * (self._indent * 2)
-        inner = " " * (self._indent * 3)
-        media_block = "\n".join(
-            [
-                f"{spacer}media {{",
-                f"{inner}id",
-                f"{spacer}}}",
-            ]
-        )
-        return "\n".join([media_block, self._user_errors_block])
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
 
 class fileUpdate(Mutation):
     def __init__(
         self,
         files: list[FileUpdateInput],
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.files: list[FileUpdateInput] = files
-
-    @property
-    def fields(self) -> str:
-        spacer = " " * (self._indent * 2)
-        inner = " " * (self._indent * 3)
-        files_block = "\n".join(
-            [
-                f"{spacer}files {{",
-                f"{inner}id",
-                f"{spacer}}}",
-            ]
-        )
-        return "\n".join([files_block, self._user_errors_block])
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
 
 class stagedUploadsCreate(Mutation):
+    return_type: Type[BaseModel] = StagedUploadsCreatePayload
+
     def __init__(
         self,
         input: list[StagedUploadInput],
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.input: list[StagedUploadInput] = input
-
-    @property
-    def fields(self) -> str:
-        spacer = " " * (self._indent * 2)
-        inner = " " * (self._indent * 3)
-        deep = " " * (self._indent * 4)
-        targets_block = "\n".join(
-            [
-                f"{spacer}stagedTargets {{",
-                f"{inner}url",
-                f"{inner}resourceUrl",
-                f"{inner}parameters {{",
-                f"{deep}name",
-                f"{deep}value",
-                f"{inner}}}",
-                f"{spacer}}}",
-            ]
-        )
-        return "\n".join([targets_block, self._user_errors_block])
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
 
 class bulkOperationRunMutation(Mutation):
+    return_type: Type[BaseModel] = BulkOperationRunMutationPayload
+
     def __init__(
         self,
         mutation: String,
         stagedUploadPath: String,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.mutation: String = mutation
         self.stagedUploadPath: String = stagedUploadPath
-
-    @property
-    def fields(self) -> str:
-        spacer = " " * (self._indent * 2)
-        inner = " " * (self._indent * 3)
-        op_block = "\n".join(
-            [
-                f"{spacer}bulkOperation {{",
-                f"{inner}id",
-                f"{inner}status",
-                f"{spacer}}}",
-            ]
-        )
-        return "\n".join([op_block, self._user_errors_block])
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
 
 
 class bulkOperationRunQuery(Mutation):
+    return_type: Type[BaseModel] = BulkOperationRunQueryPayload
+
     def __init__(
         self,
         query: String,
+        groupObjects: Boolean = True,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.query: String = query
-
-    @property
-    def fields(self) -> str:
-        spacer = " " * (self._indent * 2)
-        inner = " " * (self._indent * 3)
-        op_block = "\n".join(
-            [
-                f"{spacer}bulkOperation {{",
-                f"{inner}id",
-                f"{inner}status",
-                f"{spacer}}}",
-            ]
-        )
-        return "\n".join([op_block, self._user_errors_block])
+        self.groupObjects: Boolean = groupObjects
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}

@@ -3,7 +3,7 @@ import time
 from functools import cached_property
 from typing import Iterable, Any
 from .types import ProxyProduct
-from shopify_sdk.tools import run_bulk_query
+from shopify_sdk.tools import bulk_query
 from shopify_sdk.gql import productVariants
 from shopify_sdk.gql.core.types.objects import Product, ProductVariant
 
@@ -78,7 +78,7 @@ class ProductIdSkuResolver:
             return
         remaining = set(target_skus)
         count = 0
-        for line in run_bulk_query(self._query, verbose=True):
+        for line in bulk_query(self._query, verbose=True):
             count += 1
             product_id = line.get("product", {}).get("id")
             sku = line.get("sku")
