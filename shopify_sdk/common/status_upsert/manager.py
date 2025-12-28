@@ -7,7 +7,7 @@ from shopify_sdk.gql.core.types import (
 )
 from shopify_sdk.gql.queries import products
 from shopify_sdk.gql.mutations import productUpdate
-from shopify_sdk.tools.bulk import run_bulk_query, run_bulk_mutation
+from shopify_sdk.gql.core.bulk import bulk_query, bulk_mutation
 
 from .input import InventorySyncInput
 
@@ -85,7 +85,7 @@ class StatusUpsertManager:
             }
         )
         _ids: list[ID] = []
-        for line in run_bulk_query(bulk_query, verbose=True):
+        for line in bulk_query(bulk_query, verbose=True):
             product_id = line.get('id', None)
             if not product_id:
                 logger.warning("Encountered product with no ID during validation.")

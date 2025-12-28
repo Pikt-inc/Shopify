@@ -54,7 +54,10 @@ class JSONUploadManager:
 
     @property
     def target(self) -> StagedMediaUploadTarget:
-        return self.stage.stagedTargets[0]
+        staged_targets = getattr(self.stage, "stagedTargets", None)
+        if not staged_targets:
+            raise ValueError("No staged upload targets available from stagedUploadsCreate response.")
+        return staged_targets[0]
 
     @cached_property
     def params(self) -> Mapping[str, Any]:

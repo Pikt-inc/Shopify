@@ -34,6 +34,8 @@ class BulkMutationRunner:
         """
         We need to validate that all mutations are of the same type and instantiated
         """
+        if not self._mutations:
+            raise ValueError("At least one mutation must be provided.")
         type_cls = type(self._mutations[0])
         for mutation in self._mutations:
             if not isinstance(mutation, type_cls):
@@ -102,11 +104,7 @@ class BulkMutationRunner:
         from shopify_sdk.gql.mutations import bulkOperationRunMutation
         response: BulkOperationRunMutationPayload = bulkOperationRunMutation(
             mutation=self.inner_mutation,
-            stagedUploadPath=staged_upload_path,
-            field_inclusions={
-                "BulkOperationRunQueryPayload": ["bulkOperation", "userErrors"],
-                "BulkOperation": ["id", "status", "url", "partialDataUrl", "errorCode"],
-            }
+            stagedUploadPath=staged_upload_path
         ).execute(client=self._client)
         if not response.bulkOperation:
             raise ValueError("No bulk operation was created.")

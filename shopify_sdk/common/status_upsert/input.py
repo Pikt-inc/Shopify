@@ -3,7 +3,7 @@ from pydantic import model_validator, Field, BaseModel
 
 from shopify_sdk.gql.core.types import ID, Product
 from shopify_sdk.gql.queries import products
-from shopify_sdk.tools.bulk import run_bulk_query
+from shopify_sdk.gql.core.bulk import bulk_query
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class InventorySyncInput(BaseModel):
             }
         )
         _ids: list[ID] = []
-        for line in run_bulk_query(bulk_query, verbose=True):
+        for line in bulk_query(bulk_query, verbose=True):
             product_id = line.get('id', None)
             if not product_id:
                 logger.warning("Encountered product with no ID during validation.")

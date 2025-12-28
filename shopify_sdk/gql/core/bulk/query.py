@@ -29,7 +29,6 @@ class BulkQueryRunner:
 
     @cached_property
     def query(self) -> str:
-        print( self._query.inline_body())
         return self._query.inline_body()
     
     @cached_property
