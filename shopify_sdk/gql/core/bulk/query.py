@@ -1,5 +1,6 @@
 from typing import Any, Iterator, Mapping
 from functools import cached_property
+import logging
 
 from shopify_sdk import client as default_client
 from shopify_sdk.gql.core.client import ShopifyClient
@@ -9,7 +10,7 @@ from shopify_sdk.gql.core.types.payload import (
     BulkOperationRunQueryPayload
 )
 
-from .chunker import iter_jsonl_chunks, JsonlChunk
+logger = logging.getLogger(__name__)
 
 MAX_JSONL_BYTES = 5 * 1024 * 1024  # 5 MB
 UPLOAD_TIMEOUT_S = 300  # 5 minutes
@@ -37,9 +38,11 @@ class BulkQueryRunner:
             query=self.query
         ).execute(client=self._client)
         if payload is None:
+            logger.error("bulkOperationRunQuery returned no payload.", payload)
             raise ValueError("bulkOperationRunQuery returned no payload.")
-        
+
         if not payload.bulkOperation:
+            logger.error("bulkOperationRunQuery returned no bulk operation.", payload)
             raise ValueError("bulkOperationRunQuery returned no bulk operation.")
         
         return payload.bulkOperation.id

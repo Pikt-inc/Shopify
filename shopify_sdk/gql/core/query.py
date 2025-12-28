@@ -483,7 +483,7 @@ class Query:
             query=self
         ):
             objects.append( 
-                cast_type(**json.loads(line))
+                self._build_partial_model(json.loads(line), cast_type)
             )
         return self.return_type(
             edges=[],

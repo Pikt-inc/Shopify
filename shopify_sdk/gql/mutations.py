@@ -19,6 +19,8 @@ class productUnpublish(Mutation):
 
 
 class productUpdate(Mutation):
+    return_type: Type[BaseModel] = ProductUpdatePayload
+
     def __init__(
         self,
         product: ProductUpdateInput,

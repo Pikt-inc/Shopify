@@ -28,3 +28,8 @@ class BulkOperationRunMutationPayload(AutoRegisterModel):
 class BulkOperationResultPayload(AutoRegisterModel):
     data: Optional[Dict] = Field(default={})
     lineNumber: Optional[int] = Field(alias="__lineNumber", default=None)
+
+
+class ProductUpdatePayload(AutoRegisterModel):
+    product: Optional[Product] = Field(default=None)
+    userErrors: List[UserError]

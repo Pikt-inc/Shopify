@@ -48,7 +48,7 @@ class BulkActionResultManager:
                 f"Message: {operation.error_message}"
             )
         if not operation.url:
-            raise ValueError("Bulk operation completed but no results URL was provided.")
+            return None
 
         yield from runner._iter_bulk_operation_results(
             results_url=operation.url,
