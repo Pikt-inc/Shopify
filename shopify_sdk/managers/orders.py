@@ -29,7 +29,7 @@ class OrderManager:
                 )
             },
         )
-        response: OrderConnection = query.bulk()
+        response = cast(OrderConnection, query.bulk())
         return response
 
     def details(self, id: "ID") -> Optional["Order"]:
