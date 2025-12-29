@@ -131,3 +131,8 @@ venv.bak/
 
 # Test files
 test_images.py
+
+# Swap files
+*.swp
+*.swo
+*.swx
