@@ -53,7 +53,7 @@ class JSONUploadManager:
             },
         ).execute(client=self._client)
         if not staged:
-            logger.error("stagedUploadsCreate returned no payload.", staged)
+            logger.error(f"stagedUploadsCreate returned no payload: {staged}")
             raise ValueError("stagedUploadsCreate returned no payload.")
         
         return staged
