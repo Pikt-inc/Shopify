@@ -1,9 +1,8 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, TYPE_CHECKING, cast
+from typing import Optional, TYPE_CHECKING, cast
 
 from shopify_sdk.gql.core.types.base import ID
 from shopify_sdk.gql.core.types.enums import ProductStatus
-from shopify_sdk.gql.core.types.objects import Product
 
 if TYPE_CHECKING:
     from shopify_sdk.gql.core.types.payload import ProductUpdatePayload
