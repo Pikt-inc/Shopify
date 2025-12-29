@@ -6,6 +6,7 @@ class SingletonMeta(type):
     A metaclass for creating singleton classes.
     Ensures that only one instance of the class exists per unique key.
     """
+
     _instances: Dict[Any, Any] = {}
 
     def __call__(cls, *args, **kwargs):
@@ -20,9 +21,13 @@ class SingletonMeta(type):
         if api_version is None and len(args) >= 3:
             api_version = args[2]
         if access_token is None:
-            raise ValueError("An 'access_token' must be provided to create a singleton instance.")
+            raise ValueError(
+                "An 'access_token' must be provided to create a singleton instance."
+            )
         if shop_domain is None:
-            raise ValueError("A 'shop_domain' must be provided to create a singleton instance.")
+            raise ValueError(
+                "A 'shop_domain' must be provided to create a singleton instance."
+            )
 
         key = (shop_domain, access_token, api_version)
         if key not in cls._instances:
@@ -37,4 +42,5 @@ class SingletonBase(metaclass=SingletonMeta):
     Base class for creating singleton objects.
     Inherit from this class to make a class a singleton.
     """
+
     pass

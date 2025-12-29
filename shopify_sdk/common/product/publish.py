@@ -5,7 +5,11 @@ from typing import Sequence
 
 from shopify_sdk import client
 from shopify_sdk.gql import productPublish, publications as publications_query
-from shopify_sdk.gql.core.types import ProductPublicationInput, ProductPublishInput, Publication
+from shopify_sdk.gql.core.types import (
+    ProductPublicationInput,
+    ProductPublishInput,
+    Publication,
+)
 
 from .types import ProductActionResponse
 
@@ -34,10 +38,18 @@ def list_publications(page_size: int = 20) -> list[Publication]:
         if not connection:
             break
 
-        publications.extend([node for node in getattr(connection, "nodes", []) or [] if getattr(node, "id", None)])
+        publications.extend(
+            [
+                node
+                for node in getattr(connection, "nodes", []) or []
+                if getattr(node, "id", None)
+            ]
+        )
 
         page_info = getattr(connection, "pageInfo", None)
-        has_next = bool(getattr(page_info, "hasNextPage", False)) if page_info else False
+        has_next = (
+            bool(getattr(page_info, "hasNextPage", False)) if page_info else False
+        )
         after = getattr(page_info, "endCursor", None) if has_next else None
         if not has_next:
             break

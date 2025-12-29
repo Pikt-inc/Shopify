@@ -70,19 +70,30 @@ def unpublish_product_by_sku(
         if publication_page_size < 1:
             raise ValueError("publication_page_size must be at least 1.")
 
-        product_id, existing_publications, product_title = _lookup_product_publications_by_sku(
-            sku=sku,
-            publication_page_size=publication_page_size,
+        product_id, existing_publications, product_title = (
+            _lookup_product_publications_by_sku(
+                sku=sku,
+                publication_page_size=publication_page_size,
+            )
         )
-        target_publications = list(publication_ids) if publication_ids is not None else existing_publications
+        target_publications = (
+            list(publication_ids)
+            if publication_ids is not None
+            else existing_publications
+        )
 
         if not target_publications:
             label = product_title or product_id
-            raise ValueError(f"No publications found for product '{label}' tied to SKU '{sku}'.")
+            raise ValueError(
+                f"No publications found for product '{label}' tied to SKU '{sku}'."
+            )
 
         unpublish_input = ProductUnpublishInput(
             id=product_id,
-            productPublications=[ProductPublicationInput(publicationId=pub_id) for pub_id in target_publications],
+            productPublications=[
+                ProductPublicationInput(publicationId=pub_id)
+                for pub_id in target_publications
+            ],
         )
         result = productUnpublish(input=unpublish_input).execute(client=client)
         success = bool(result and getattr(result, "product", None))

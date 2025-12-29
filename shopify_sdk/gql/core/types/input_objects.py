@@ -41,6 +41,7 @@ class FileSetInput(input_object):
     filename: Optional[String] = Field(default=None)
     previewImageSource: Optional[String] = Field(default=None)
 
+
 class FulfillmentTrackingInput(input_object):
     company: String
     number: String
@@ -65,7 +66,9 @@ class FulfillmentOrderLineItemInput(input_object):
 
 class FulfillmentOrderLineItemsInput(input_object):
     fulfillmentOrderId: ID
-    fulfillmentOrderLineItems: List[FulfillmentOrderLineItemInput] = Field(default_factory=list)
+    fulfillmentOrderLineItems: List[FulfillmentOrderLineItemInput] = Field(
+        default_factory=list
+    )
 
 
 class FulfillmentV2Input(input_object):
@@ -73,6 +76,7 @@ class FulfillmentV2Input(input_object):
     notifyCustomer: Optional[Boolean] = Field(default=None)
     originAddress: Optional[FulfillmentOriginAddressInput] = Field(default=None)
     trackingInfo: Optional[FulfillmentTrackingInput] = Field(default=None)
+
 
 class ProductPublicationInput(input_object):
     publicationId: ID
@@ -102,14 +106,17 @@ class SEOInput(input_object):
     description: Optional[String] = Field(default=None)
     title: Optional[String] = Field(default=None)
 
+
 class OptionValueUpdateInput(input_object):
     id: ID
     name: Optional[String] = Field(default=None)
     linkedMetafieldValue: Optional[String] = Field(default=None)
 
+
 class OptionValueCreateInput(input_object):
     linkedMetafieldValue: Optional[String] = Field(default=None)
     name: String
+
 
 class ProductCreateInput(input_object):
     category: Optional[ID] = Field(default=None)
@@ -273,6 +280,7 @@ class MailingAddressInput(input_object):
     phone: String
     provinceCode: String
     zip: String
+
 
 class MetafieldInput(input_object):
     id: Optional[ID] = Field(default=None)

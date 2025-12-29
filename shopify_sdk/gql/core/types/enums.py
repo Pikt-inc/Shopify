@@ -1,5 +1,6 @@
 from .base import enum
 
+
 class OrderReturnStatus(enum):
     IN_PROGRESS = "IN_PROGRESS"
     INSPECTION_COMPLETE = "INSPECTION_COMPLETE"
@@ -7,6 +8,7 @@ class OrderReturnStatus(enum):
     RETURN_FAILED = "RETURN_FAILED"
     RETURN_REQUESTED = "RETURN_REQUESTED"
     RETURNED = "RETURNED"
+
 
 class OrderDisplayFulfillmentStatus(enum):
     FULFILLED = "FULFILLED"
@@ -19,6 +21,7 @@ class OrderDisplayFulfillmentStatus(enum):
     SCHEDULED = "SCHEDULED"
     UNFULFILLED = "UNFULFILLED"
 
+
 class OrderDisplayFinancialStatus(enum):
     AUTHORIZED = "AUTHORIZED"
     PAID = "PAID"
@@ -27,6 +30,7 @@ class OrderDisplayFinancialStatus(enum):
     PENDING = "PENDING"
     REFUNDED = "REFUNDED"
     VOIDED = "VOIDED"
+
 
 class FulfillmentOrderStatus(enum):
     CANCELLED = "CANCELLED"
@@ -37,9 +41,11 @@ class FulfillmentOrderStatus(enum):
     OPEN = "OPEN"
     SCHEDULED = "SCHEDULED"
 
+
 class ProductVariantInventoryPolicy(enum):
     CONTINUE = "CONTINUE"
     DENY = "DENY"
+
 
 class OrderSortKeys(enum):
     CREATED_AT = "CREATED_AT"
@@ -54,6 +60,7 @@ class WeightUnit(enum):
     KILOGRAMS = "KILOGRAMS"
     OUNCES = "OUNCES"
     POUNDS = "POUNDS"
+
 
 class OrderCancelReason(enum):
     CUSTOMER = "CUSTOMER"
@@ -123,7 +130,9 @@ class LocationSortKeys(enum):
 
 
 class ProductSetUserErrorCode(enum):
-    CANNOT_COMBINE_LINKED_AND_NONLINKED_OPTION_VALUES = "CANNOT_COMBINE_LINKED_AND_NONLINKED_OPTION_VALUES"
+    CANNOT_COMBINE_LINKED_AND_NONLINKED_OPTION_VALUES = (
+        "CANNOT_COMBINE_LINKED_AND_NONLINKED_OPTION_VALUES"
+    )
     CAPABILITY_VIOLATION = "CAPABILITY_VIOLATION"
     DUPLICATE_LINKED_OPTION = "DUPLICATE_LINKED_OPTION"
     DUPLICATED_METAFIELD_VALUE = "DUPLICATED_METAFIELD_VALUE"
@@ -138,7 +147,9 @@ class ProductSetUserErrorCode(enum):
     INPUT_MISMATCH = "INPUT_MISMATCH"
     INVALID_INPUT = "INVALID_INPUT"
     INVALID_METAFIELD = "INVALID_METAFIELD"
-    INVALID_METAFIELD_VALUE_FOR_LINKED_OPTION = "INVALID_METAFIELD_VALUE_FOR_LINKED_OPTION"
+    INVALID_METAFIELD_VALUE_FOR_LINKED_OPTION = (
+        "INVALID_METAFIELD_VALUE_FOR_LINKED_OPTION"
+    )
     INVALID_PRODUCT = "INVALID_PRODUCT"
     INVALID_VARIANT = "INVALID_VARIANT"
     INVENTORY_QUANTITIES_LIMIT_EXCEEDED = "INVENTORY_QUANTITIES_LIMIT_EXCEEDED"

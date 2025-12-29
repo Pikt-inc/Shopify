@@ -6,9 +6,7 @@ from shopify_sdk import client as default_client
 from shopify_sdk.gql.core.client import ShopifyClient
 from shopify_sdk.gql.core.query import Query
 from shopify_sdk.gql.mutations import bulkOperationRunQuery
-from shopify_sdk.gql.core.types.payload import (
-    BulkOperationRunQueryPayload
-)
+from shopify_sdk.gql.core.types.payload import BulkOperationRunQueryPayload
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +20,6 @@ if TYPE_CHECKING:
 
 
 class BulkQueryRunner:
-
     def __init__(
         self,
         query: Query,
@@ -34,7 +31,7 @@ class BulkQueryRunner:
     @cached_property
     def query(self) -> str:
         return self._query.inline_body()
-    
+
     @cached_property
     def operation_id(self) -> str:
         payload: BulkOperationRunQueryPayload = bulkOperationRunQuery(
@@ -47,9 +44,9 @@ class BulkQueryRunner:
         if not payload.bulkOperation:
             logger.error("bulkOperationRunQuery returned no bulk operation.", payload)
             raise ValueError("bulkOperationRunQuery returned no bulk operation.")
-        
+
         return payload.bulkOperation.id
-    
+
     def run(
         self,
     ) -> Iterator["BulkOperationResultPayload"]:

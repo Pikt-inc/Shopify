@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class ProductActionResponse(BaseModel):
     action: str
     success: bool

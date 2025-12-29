@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class ProductIdSkuResolver:
-
     def __init__(
         self,
         products: list[ProxyProduct],
@@ -23,7 +22,7 @@ class ProductIdSkuResolver:
     def id_sku_map(self) -> dict[str, str]:
         self._build_map()
         return self._map
-    
+
     @classmethod
     def from_products(
         cls,
@@ -64,9 +63,7 @@ class ProductIdSkuResolver:
                 "ProductVariant": ProductVariant.fields_except(
                     exclude={"sku", "product"}
                 ),
-                "Product": Product.fields_except(
-                    exclude={"id"}
-                ),
+                "Product": Product.fields_except(exclude={"id"}),
             },
         )
 

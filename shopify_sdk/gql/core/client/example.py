@@ -1,15 +1,15 @@
 def test():
-    domain = 'your-shop.myshopify.com'
-    at = 'shpat_your_token_here'
-    api_version = '2025-10'
+    domain = "your-shop.myshopify.com"
+    at = "shpat_your_token_here"
+    api_version = "2025-10"
 
-    query = '''
+    query = """
     query GetProductByHandle($handle: String!) {
         productByHandle(handle: $handle) {
             id
         }
     }
-    '''
+    """
     from . import client_context, client
 
     with client_context(shop_domain=domain, access_token=at, api_version=api_version):

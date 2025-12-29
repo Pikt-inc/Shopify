@@ -4,12 +4,8 @@ from typing import Optional, cast
 
 from shopify_sdk.common.store.locations import get_locations
 from shopify_sdk.common.store.inventory import update_inventory
-from shopify_sdk.common.product.query import (
-    variants_by_product
-)
-from shopify_sdk.common.product.publish import (
-    publish_product_to_all_publications
-)
+from shopify_sdk.common.product.query import variants_by_product
+from shopify_sdk.common.product.publish import publish_product_to_all_publications
 from shopify_sdk.common.product.media import set_product_images
 from shopify_sdk.common.variant.update_or_create import update_variant
 from shopify_sdk.common.product.create import (
@@ -33,25 +29,18 @@ def _calculate_inventory_delta(
         return 0
     return int(desired_quantity) - int(current_quantity or 0)
 
-def create_product(
-    product: ProxyProduct
-) -> str:
+
+def create_product(product: ProxyProduct) -> str:
     try:
-        pc = ProductCreate.execute(
-            proxy_product=product
-        )
+        pc = ProductCreate.execute(proxy_product=product)
         return pc.product_id
     except Exception as e:
         raise ValueError(f"Product creation failed: {e}")
 
 
-def update_product(
-    product: ProxyProduct
-) -> str:
+def update_product(product: ProxyProduct) -> str:
     try:
-        pu = ProductUpdate.execute(
-            proxy_product=product
-        )
+        pu = ProductUpdate.execute(proxy_product=product)
         return pu.product_id
     except Exception as e:
         raise ValueError(f"Product update failed: {e}")
@@ -60,10 +49,7 @@ def update_product(
 class ProductCreate:
     DEFAULT_LOCATION_NAME = "Shop location"
 
-    def __init__(
-        self,
-        proxy_product: ProxyProduct
-    ):
+    def __init__(self, proxy_product: ProxyProduct):
         self._proxy_product = proxy_product
 
     @cached_property
@@ -74,25 +60,23 @@ class ProductCreate:
         for location in locations:
             if location.name == self.DEFAULT_LOCATION_NAME:
                 return ID(str(location.id))
-        raise ValueError(f"Location with name '{self.DEFAULT_LOCATION_NAME}' not found.")
-        
+        raise ValueError(
+            f"Location with name '{self.DEFAULT_LOCATION_NAME}' not found."
+        )
 
     @cached_property
     def product_id(self) -> str:
         return self._get_product_id()
-    
+
     @cached_property
     def variant(self) -> ProductVariant:
-        variant_connection = variants_by_product(
-            product_id=self.product_id
-        )
+        variant_connection = variants_by_product(product_id=self.product_id)
         if not variant_connection or not variant_connection.nodes:
             raise ValueError(f"No variants found for product ID '{self.product_id}'.")
         variant = variant_connection.first
         if variant is None:
             raise ValueError(f"No variants found for product ID '{self.product_id}'.")
         return cast(ProductVariant, variant)
-
 
     @cached_property
     def _get_product_create_input(self) -> ProductCreateInput:
@@ -105,9 +89,9 @@ class ProductCreate:
             status=ProductStatus.ACTIVE,
             seo=SEOInput(
                 title=self._proxy_product.seo_title,
-                description=self._proxy_product.seo_description
+                description=self._proxy_product.seo_description,
             ),
-            metafields=self._proxy_product.metafields
+            metafields=self._proxy_product.metafields,
         )
 
     @cached_property
@@ -117,44 +101,33 @@ class ProductCreate:
             price=self._proxy_product.price,
             inventoryPolicy=ProductVariantInventoryPolicy.DENY,
             inventoryItem=InventoryItemInput(
-                sku=self._proxy_product.sku,
-                tracked=True,
-                requiresShipping=True
-            )
+                sku=self._proxy_product.sku, tracked=True, requiresShipping=True
+            ),
         )
-    
+
     @classmethod
-    def execute(
-        cls,
-        proxy_product: ProxyProduct
-    ) -> "ProductCreate":
-        instance = cls(
-            proxy_product=proxy_product
-        )
+    def execute(cls, proxy_product: ProxyProduct) -> "ProductCreate":
+        instance = cls(proxy_product=proxy_product)
         instance._set_variant()
         instance._set_inventory()
         instance._set_images()
-        publish_product_to_all_publications(
-            product_id=instance.product_id
-        )
+        publish_product_to_all_publications(product_id=instance.product_id)
         return instance
 
     def _set_variant(self) -> bool:
         success = update_variant(
             product_id=self.product_id,
-            variant_update_input=self._get_variant_create_input
+            variant_update_input=self._get_variant_create_input,
         )
         if not success:
             raise ValueError("Variant update failed.")
         return success
-    
+
     def _get_product_id(self) -> str:
         return self._set_product()
-    
+
     def _set_product(self) -> str:
-        product_id = create_product_mutation(
-            input=self._get_product_create_input
-        )
+        product_id = create_product_mutation(input=self._get_product_create_input)
         if not product_id:
             raise ValueError("Product creation failed.")
         return product_id
@@ -174,9 +147,9 @@ class ProductCreate:
                     InventoryChangeInput(
                         inventoryItemId=self.variant.inventoryItem.id,
                         locationId=self.shop_location_id,
-                        delta=delta
+                        delta=delta,
                     )
-                ]
+                ],
             )
         )
         if not success:
@@ -190,10 +163,7 @@ class ProductCreate:
 class ProductUpdate:
     DEFAULT_LOCATION_NAME = "Shop location"
 
-    def __init__(
-        self,
-        proxy_product: ProxyProduct
-    ):
+    def __init__(self, proxy_product: ProxyProduct):
         self._proxy_product = proxy_product
 
     @cached_property
@@ -204,27 +174,25 @@ class ProductUpdate:
         for location in locations:
             if location.name == self.DEFAULT_LOCATION_NAME:
                 return ID(str(location.id))
-        raise ValueError(f"Location with name '{self.DEFAULT_LOCATION_NAME}' not found.")
-        
+        raise ValueError(
+            f"Location with name '{self.DEFAULT_LOCATION_NAME}' not found."
+        )
 
     @cached_property
     def product_id(self) -> str:
         if not self._proxy_product.id:
             raise ValueError("Product ID is required for update.")
         return str(self._proxy_product.id)
-    
+
     @cached_property
     def variant(self) -> ProductVariant:
-        variant_connection = variants_by_product(
-            product_id=self.product_id
-        )
+        variant_connection = variants_by_product(product_id=self.product_id)
         if not variant_connection or not variant_connection.nodes:
             raise ValueError(f"No variants found for product ID '{self.product_id}'.")
         variant = variant_connection.first
         if variant is None:
             raise ValueError(f"No variants found for product ID '{self.product_id}'.")
         return cast(ProductVariant, variant)
-
 
     @cached_property
     def _get_product_update_input(self) -> ProductUpdateInput:
@@ -238,9 +206,9 @@ class ProductUpdate:
             status=ProductStatus.ACTIVE,
             seo=SEOInput(
                 title=self._proxy_product.seo_title,
-                description=self._proxy_product.seo_description
+                description=self._proxy_product.seo_description,
             ),
-            metafields=self._proxy_product.metafields
+            metafields=self._proxy_product.metafields,
         )
 
     @cached_property
@@ -250,42 +218,31 @@ class ProductUpdate:
             price=self._proxy_product.price,
             inventoryPolicy=ProductVariantInventoryPolicy.DENY,
             inventoryItem=InventoryItemInput(
-                sku=self._proxy_product.sku,
-                tracked=True,
-                requiresShipping=True
-            )
+                sku=self._proxy_product.sku, tracked=True, requiresShipping=True
+            ),
         )
-    
+
     @classmethod
-    def execute(
-        cls,
-        proxy_product: ProxyProduct
-    ) -> "ProductUpdate":
-        instance = cls(
-            proxy_product=proxy_product
-        )
+    def execute(cls, proxy_product: ProxyProduct) -> "ProductUpdate":
+        instance = cls(proxy_product=proxy_product)
         instance._update_product()
         instance._set_variant()
         instance._set_inventory()
         instance._set_images()
-        publish_product_to_all_publications(
-            product_id=instance.product_id
-        )
+        publish_product_to_all_publications(product_id=instance.product_id)
         return instance
 
     def _set_variant(self) -> bool:
         success = update_variant(
             product_id=self.product_id,
-            variant_update_input=self._get_variant_update_input
+            variant_update_input=self._get_variant_update_input,
         )
         if not success:
             raise ValueError("Variant update failed.")
         return success
-    
+
     def _update_product(self) -> str:
-        product_id = update_product_mutation(
-            input=self._get_product_update_input
-        )
+        product_id = update_product_mutation(input=self._get_product_update_input)
         if not product_id:
             raise ValueError("Product update failed.")
         self._proxy_product.id = product_id
@@ -306,9 +263,9 @@ class ProductUpdate:
                     InventoryChangeInput(
                         inventoryItemId=self.variant.inventoryItem.id,
                         locationId=self.shop_location_id,
-                        delta=delta
+                        delta=delta,
                     )
-                ]
+                ],
             )
         )
         if not success:

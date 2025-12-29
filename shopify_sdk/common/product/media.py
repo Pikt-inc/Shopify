@@ -15,10 +15,7 @@ from shopify_sdk.gql.queries import productByIdentifier
 MEDIA_PAGE_SIZE = 100
 
 
-def create_product_media(
-    product_id: str,
-    image_urls: list[str]
-) -> bool:
+def create_product_media(product_id: str, image_urls: list[str]) -> bool:
     """Create media (images) for a product using the provided image URLs."""
     if not image_urls:
         return True  # No images to add, return success
@@ -58,11 +55,7 @@ def _collect_media_ids(product_id: str) -> list[str]:
             break
 
         nodes = getattr(media_connection, "nodes", None) or []
-        media_ids.extend(
-            str(node.id)
-            for node in nodes
-            if getattr(node, "id", None)
-        )
+        media_ids.extend(str(node.id) for node in nodes if getattr(node, "id", None))
 
         page_info = getattr(media_connection, "pageInfo", None)
         if not page_info or not getattr(page_info, "hasNextPage", False):
@@ -118,7 +111,9 @@ def delete_product_media(product_id: str) -> bool:
 
     updated_files = result.get("files", [])
     if len(updated_files) != len(media_ids):
-        raise ValueError("Not all product media entries were disassociated from the product.")
+        raise ValueError(
+            "Not all product media entries were disassociated from the product."
+        )
 
     return True
 

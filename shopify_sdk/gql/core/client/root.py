@@ -7,14 +7,9 @@ from .types import (
     GQLResponse,
 )
 
-class RootClient(SingletonBase):
 
-    def __init__(
-        self,
-        shop_domain: str,
-        access_token: str,
-        api_version: str
-    ):
+class RootClient(SingletonBase):
+    def __init__(self, shop_domain: str, access_token: str, api_version: str):
         self._shop_domain = shop_domain
         self._access_token = access_token
         self._api_version = api_version
@@ -30,15 +25,17 @@ class RootClient(SingletonBase):
         if time_since_last_request < 0.5:  # 0.5 seconds = 2 requests per second
             time.sleep(0.5 - time_since_last_request)
 
-    def request(self, query: str, variables: Optional[Dict[Any, Any]] = None) -> GQLResponse:
+    def request(
+        self, query: str, variables: Optional[Dict[Any, Any]] = None
+    ) -> GQLResponse:
         self.check_limit()  # Ensure rate limit is respected
         _params = GQLRequestParams(query=query, variables=variables)
 
         headers = {
             "Content-Type": "application/json",
-            "X-Shopify-Access-Token": f"{self._access_token}"
+            "X-Shopify-Access-Token": f"{self._access_token}",
         }
-        
+
         payload: Dict[str, Any] = {"query": query}
         if variables:
             if not isinstance(variables, dict):
@@ -48,9 +45,7 @@ class RootClient(SingletonBase):
             payload["variables"] = {}
 
         response = requests.post(
-            self.graphql_request_url,
-            headers=headers,
-            json=payload
+            self.graphql_request_url, headers=headers, json=payload
         )
 
         self._last_request_time = int(time.time())
@@ -61,7 +56,7 @@ class RootClient(SingletonBase):
 
         _response = GQLResponse(**response_json)
         return _response
-    
+
     def _handle_errors(self, response: GQLResponse) -> None:
         if hasattr(response, "errors") and response.errors:
             error_messages = [error.message for error in response.errors]

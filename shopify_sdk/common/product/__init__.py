@@ -19,5 +19,5 @@ __all__ = [
     "ProductActionResponse",
     "product_details",
     "product_by_sku",
-    "variants_by_product"
+    "variants_by_product",
 ]

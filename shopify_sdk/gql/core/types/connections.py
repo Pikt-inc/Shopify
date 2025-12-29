@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .base import connection
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .edges import (
         CollectionEdge,
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
         ResourcePublicationEdge,
         SalesAgreementEdge,
         DeliveryProfileEdge,
-        ProductEdge
+        ProductEdge,
     )
     from .objects import (
         Collection,
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
         ResourcePublication,
         SalesAgreement,
         DeliveryProfile,
-        Product
+        Product,
     )
 
 

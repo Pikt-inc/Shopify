@@ -27,7 +27,7 @@ from .objects import (
     Metafield,
     MetafieldConnection,
     BulkOperation,
-    ProductSetOperation
+    ProductSetOperation,
 )
 from .connections import (
     OrderConnection,
@@ -35,9 +35,16 @@ from .connections import (
     FulfillmentOrderConnection,
     ProductVariantConnection,
     PublicationConnection,
-    ResourcePublicationConnection
+    ResourcePublicationConnection,
 )
-from .edges import OrderEdge, LineItemEdge, FulfillmentOrderEdge, ProductVariantEdge, PublicationEdge, ResourcePublicationEdge
+from .edges import (
+    OrderEdge,
+    LineItemEdge,
+    FulfillmentOrderEdge,
+    ProductVariantEdge,
+    PublicationEdge,
+    ResourcePublicationEdge,
+)
 from .input_objects import (
     OrderIdentifierInput,
     FulfillmentV2Input,
@@ -66,7 +73,7 @@ from .input_objects import (
     FulfillmentOrderLineItemInput,
     ProductIdentifierInput,
     MetafieldInput,
-    StagedUploadInput
+    StagedUploadInput,
 )
 from .enums import (
     OrderReturnStatus,

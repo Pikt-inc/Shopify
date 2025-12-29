@@ -16,7 +16,7 @@ def archive_product_by_sku(sku: str) -> ProductActionResponse:
         product = product_by_sku(sku)
         if not product:
             raise ValueError(f"No product found for SKU '{sku}'.")
-        
+
         product_id = product.id
         product_title = getattr(product, "title", None)
         update_input = ProductUpdateInput(id=product_id, status=ProductStatus.ARCHIVED)

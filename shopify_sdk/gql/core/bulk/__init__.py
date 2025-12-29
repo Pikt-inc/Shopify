@@ -9,30 +9,27 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 def bulk_mutation(
     mutations: list["Mutation"],
 ) -> Iterator["BulkOperationResultPayload"]:
-    
     from .mutation import BulkMutationRunner
-    bmr = BulkMutationRunner(
-        mutations=mutations
-    )
-    for line in  bmr.run():
+
+    bmr = BulkMutationRunner(mutations=mutations)
+    for line in bmr.run():
         yield line
 
 
-def bulk_query(
-    query: Query
-) -> Iterator["BulkOperationResultPayload"]:
+def bulk_query(query: Query) -> Iterator["BulkOperationResultPayload"]:
     from .query import BulkQueryRunner
+
     if not isinstance(query, Query):
         raise TypeError("query must be a Query instance.")
-    
-    bqr = BulkQueryRunner(
-        query=query
-    )
-    for line in  bqr.run():
+
+    bqr = BulkQueryRunner(query=query)
+    for line in bqr.run():
         yield line
+
 
 __all__ = [
     "bulk_mutation",

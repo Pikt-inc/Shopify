@@ -15,6 +15,7 @@ DOWNLOAD_TIMEOUT_S = 300  # 5 minutes
 UPLOAD_TIMEOUT_S = 600  # 10 minutes
 POLL_INTERVAL_S = 5  # 5 seconds
 
+
 class BulkActionResultManager:
     """
     Manages polling of bulk actions until completion.
@@ -53,9 +54,7 @@ class BulkActionResultManager:
             timeout_s=DOWNLOAD_TIMEOUT_S,
         )
 
-    def _poll_operation(
-        self
-    ) -> BulkOperation:
+    def _poll_operation(self) -> BulkOperation:
         terminal_statuses = {"COMPLETED", "FAILED", "CANCELED", "CANCELLED", "EXPIRED"}
         deadline = time.monotonic() + UPLOAD_TIMEOUT_S
         remaining = deadline - time.monotonic()
@@ -69,14 +68,16 @@ class BulkActionResultManager:
             time.sleep(min(POLL_INTERVAL_S, remaining))
         return successful_operation
 
-    def _get_operation_status(
-        self
-    ) -> BulkOperation:
-        operation: BulkOperation = bulkOperation(id=self._bulk_operation_id).execute(client=self._client)
+    def _get_operation_status(self) -> BulkOperation:
+        operation: BulkOperation = bulkOperation(id=self._bulk_operation_id).execute(
+            client=self._client
+        )
         if operation is None:
-            raise ValueError(f"No bulk operation found for id={self._bulk_operation_id!r}.")
+            raise ValueError(
+                f"No bulk operation found for id={self._bulk_operation_id!r}."
+            )
         return operation
-    
+
     def _iter_bulk_operation_results(
         self,
         results_url: str,
@@ -89,12 +90,17 @@ class BulkActionResultManager:
             response = requests.get(results_url, stream=True, timeout=timeout_s)
             response.raise_for_status()
 
-            for line_number, line in enumerate(response.iter_lines(decode_unicode=True), start=1):
+            for line_number, line in enumerate(
+                response.iter_lines(decode_unicode=True), start=1
+            ):
                 if not line:
                     continue
                 try:
                     payload_json = json.loads(line)
-                    if isinstance(payload_json, dict) and payload_json.get('__lineNumber') is not None:
+                    if (
+                        isinstance(payload_json, dict)
+                        and payload_json.get("__lineNumber") is not None
+                    ):
                         yield BulkOperationResultPayload.model_validate(payload_json)
                     else:
                         if not isinstance(payload_json, dict):
@@ -110,7 +116,9 @@ class BulkActionResultManager:
                         f"Invalid JSON in bulk results from {display_url} at line {line_number}: {snippet}"
                     ) from e
         except RequestException as e:
-            raise ValueError(f"Failed to download bulk results from {display_url}: {e}") from e
+            raise ValueError(
+                f"Failed to download bulk results from {display_url}: {e}"
+            ) from e
         finally:
             if response is not None:
                 response.close()
