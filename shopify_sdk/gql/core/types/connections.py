@@ -111,4 +111,4 @@ class DeliveryProfileConnection(connection):
 class ProductConnection(connection):
     edges: list[ProductEdge]
     nodes: list[Product]
-    pageInfo: "PageInfo"
+    pageInfo: PageInfo
