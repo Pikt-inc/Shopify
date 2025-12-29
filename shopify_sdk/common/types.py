@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Any, ClassVar, Optional, Type, Union
 from pydantic import BaseModel, Field, PrivateAttr
 
-from shopify_sdk.gql.core.types import Product, MetafieldInput
+from shopify_sdk.gql.core.types import MetafieldInput
 
 
 class MetafieldType(str, Enum):

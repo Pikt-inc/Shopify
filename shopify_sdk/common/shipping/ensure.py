@@ -1,5 +1,4 @@
 from shopify_sdk.gql.core.types import ID, String, Int
-from typing import Optional
 
 def ensure_order_gid(
     order_id: ID

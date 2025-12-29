@@ -3,7 +3,7 @@ import inspect
 import math
 import json
 from enum import Enum
-from typing import Optional, Dict, Any, Type, List, Tuple, Union, Set, get_args, get_origin, get_type_hints, cast, Iterator
+from typing import Optional, Dict, Any, Type, List, Tuple, Union, Set, get_args, get_origin, get_type_hints, cast
 import logging
 
 from pydantic import BaseModel

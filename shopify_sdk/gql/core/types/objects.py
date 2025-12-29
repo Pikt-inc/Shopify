@@ -10,8 +10,6 @@ if TYPE_CHECKING:
         FulfillmentOrderConnection,
         FulfillmentOrderLineItemConnection,
         LineItemConnection,
-        LocationConnection,
-        OrderConnection,
         ProductConnection,
         ProductBundleComponentConnection,
         ProductVariantConnection,

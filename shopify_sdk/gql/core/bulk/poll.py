@@ -1,4 +1,4 @@
-from typing import Optional, Iterator
+from typing import Iterator
 import requests
 from requests.exceptions import RequestException
 import json
