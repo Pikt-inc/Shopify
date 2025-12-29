@@ -4,3 +4,4 @@ mypy>=1.11.0
 types-requests>=2.32.0.20240622
 types-urllib3>=1.26.25.14
 strawberry-graphql
+ruff>=0.0.289
