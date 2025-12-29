@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from typing import Any, Mapping
 from functools import cached_property
-import logging
 
 import requests
 from requests.exceptions import RequestException
