@@ -29,8 +29,8 @@ class OrderManager:
                 )
             },
         )
-        response = cast(OrderConnection, query.bulk())
-        return response.nodes
+        response: OrderConnection = query.bulk()
+        return response
 
     def details(self, id: "ID") -> Optional["Order"]:
         from shopify_sdk.gql.queries import orderByIdentifier
