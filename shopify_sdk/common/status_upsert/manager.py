@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Optional, Set, Iterator, TYPE_CHECKING, cast
+from typing import Optional, Set, Iterator, cast
 
 from shopify_sdk.gql.core.types import (
     ID, Product, ProductStatus, ProductUpdateInput
@@ -8,9 +8,6 @@ from shopify_sdk.gql.core.types import (
 from shopify_sdk.gql.queries import products
 from shopify_sdk.gql.mutations import productUpdate
 from shopify_sdk.gql.core import Mutation
-
-if TYPE_CHECKING:
-    from shopify_sdk.gql.core.types.payload import ProductUpdatePayload
 
 from .input import InventorySyncInput
 

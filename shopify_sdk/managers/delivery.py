@@ -1,6 +1,4 @@
-from typing import List, TYPE_CHECKING, cast
-if TYPE_CHECKING:
-    from shopify_sdk.gql.core.types.connections import DeliveryProfileConnection
+from typing import List, cast
 
 from shopify_sdk.gql.core.types.objects import DeliveryProfile
 from shopify_sdk.gql.queries import deliveryProfiles
