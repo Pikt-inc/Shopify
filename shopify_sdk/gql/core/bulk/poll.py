@@ -1,4 +1,4 @@
-from typing import Optional, Iterator
+from typing import Iterator
 import requests
 from requests.exceptions import RequestException
 import json
@@ -24,16 +24,16 @@ class BulkActionResultManager:
     def __init__(
         self,
         bulk_operation_id: ID,
-        client: Optional["ShopifyClient"] = default_client,
+        client: "ShopifyClient" = default_client,
     ):
-        self._client = client
+        self._client: "ShopifyClient" = client
         self._bulk_operation_id = bulk_operation_id
 
     @classmethod
     def yield_results(
         cls,
         bulk_operation_id: ID,
-        client: Optional["ShopifyClient"] = default_client,
+        client: "ShopifyClient" = default_client,
     ) -> Iterator[BulkOperationResultPayload]:
         runner = cls(
             bulk_operation_id=bulk_operation_id,
@@ -44,8 +44,6 @@ class BulkActionResultManager:
             raise ValueError(
                 f"Bulk operation did not complete successfully. "
                 f"Status: {operation.status}, "
-                f"Error Code: {operation.error_code}, "
-                f"Message: {operation.error_message}"
             )
         if not operation.url:
             return None
@@ -61,17 +59,20 @@ class BulkActionResultManager:
         terminal_statuses = {"COMPLETED", "FAILED", "CANCELED", "CANCELLED", "EXPIRED"}
         deadline = time.monotonic() + UPLOAD_TIMEOUT_S
         remaining = deadline - time.monotonic()
+        successful_operation: BulkOperation
         while remaining > 0:
             operation = self._get_operation_status()
             if operation.status in terminal_statuses:
-                return operation
+                successful_operation = operation
+                break
             remaining = deadline - time.monotonic()
-        time.sleep(min(POLL_INTERVAL_S, remaining))
+            time.sleep(min(POLL_INTERVAL_S, remaining))
+        return successful_operation
 
     def _get_operation_status(
         self
     ) -> BulkOperation:
-        operation = bulkOperation(id=self._bulk_operation_id).execute(client=self._client)
+        operation: BulkOperation = bulkOperation(id=self._bulk_operation_id).execute(client=self._client)
         if operation is None:
             raise ValueError(f"No bulk operation found for id={self._bulk_operation_id!r}.")
         return operation
@@ -92,12 +93,17 @@ class BulkActionResultManager:
                 if not line:
                     continue
                 try:
-                    if json.loads(line).get('__lineNumber'):  # Mutation
-                        yield BulkOperationResultPayload.model_validate_json(
-                            line.strip()
+                    payload_json = json.loads(line)
+                    if isinstance(payload_json, dict) and payload_json.get('__lineNumber') is not None:
+                        yield BulkOperationResultPayload.model_validate(payload_json)
+                    else:
+                        if not isinstance(payload_json, dict):
+                            raise ValueError(
+                                f"Bulk results from {display_url} must be JSON objects; got {type(payload_json).__name__}"
+                            )
+                        yield BulkOperationResultPayload.model_validate(
+                            {"data": payload_json, "__lineNumber": line_number}
                         )
-                    else:  # Query
-                        yield line
                 except json.JSONDecodeError as e:
                     snippet = line[:500]
                     raise ValueError(
@@ -108,5 +114,3 @@ class BulkActionResultManager:
         finally:
             if response is not None:
                 response.close()
-
-

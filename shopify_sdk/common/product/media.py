@@ -133,7 +133,7 @@ def set_product_images(product_id: str, images: Optional[list[str]]) -> bool:
     if not images:
         return True  # Images explicitly cleared
 
-    success = create_product_media(
+    create_product_media(
         product_id=product_id,
         image_urls=images,
     )

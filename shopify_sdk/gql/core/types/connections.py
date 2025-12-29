@@ -15,6 +15,8 @@ if TYPE_CHECKING:
         PublicationEdge,
         ResourcePublicationEdge,
         SalesAgreementEdge,
+        DeliveryProfileEdge,
+        ProductEdge
     )
     from .objects import (
         Collection,
@@ -29,6 +31,8 @@ if TYPE_CHECKING:
         Publication,
         ResourcePublication,
         SalesAgreement,
+        DeliveryProfile,
+        Product
     )
 
 
@@ -95,4 +99,16 @@ class CollectionConnection(connection):
 class LocationConnection(connection):
     edges: list[LocationEdge]
     nodes: list[Location]
+    pageInfo: PageInfo
+
+
+class DeliveryProfileConnection(connection):
+    edges: list[DeliveryProfileEdge]
+    nodes: list[DeliveryProfile]
+    pageInfo: PageInfo
+
+
+class ProductConnection(connection):
+    edges: list[ProductEdge]
+    nodes: list[Product]
     pageInfo: PageInfo

@@ -36,7 +36,7 @@ class RootClient(SingletonBase):
 
         headers = {
             "Content-Type": "application/json",
-            f"X-Shopify-Access-Token": f"{self._access_token}"
+            "X-Shopify-Access-Token": f"{self._access_token}"
         }
         
         payload: Dict[str, Any] = {"query": query}

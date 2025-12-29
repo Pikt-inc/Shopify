@@ -8,7 +8,6 @@ This script shows how to:
 """
 
 from shopify_sdk.common import ProxyProduct
-from shopify_sdk.common.product import product_details
 
 
 # Example 1: Create a new product with metafields

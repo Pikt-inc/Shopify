@@ -9,10 +9,8 @@ from shopify_sdk.gql import (
 )
 from shopify_sdk.gql.core.types import (
     ProductCreateInput,
-    ProductUpdateInput,
-    Product
+    ProductUpdateInput
 )
-from .query import product_details
 
 
 def create_product(
