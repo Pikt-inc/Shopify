@@ -1,4 +1,5 @@
 import logging
+from typing import cast
 from pydantic import model_validator, Field, BaseModel
 
 from shopify_sdk.gql.core.types import ID, Product
@@ -28,6 +29,7 @@ class InventorySyncInput(BaseModel):
         We need to validate that all provided IDs are valid Shopify Product IDs.
         We can do this via a bulk query to fetch all product IDs.
         """
+        from shopify_sdk.gql.core.types.connections import ProductConnection
         query = products(
             field_exclusions={
                 "Product": Product.fields_except(
@@ -36,12 +38,12 @@ class InventorySyncInput(BaseModel):
             }
         )
         _ids: list[ID] = []
-        for line in query.bulk():
-            product_id = line.get('id', None)
-            if not product_id:
+        prod_connect = cast(ProductConnection, query.bulk())
+        for product in prod_connect.nodes:
+            if not product.id:
                 logger.warning("Encountered product with no ID during validation.")
                 raise ValueError("Encountered product with no ID during validation.")
-            _ids.append(product_id)
+            _ids.append(product.id)
         return _ids
 
     @model_validator(mode="before")

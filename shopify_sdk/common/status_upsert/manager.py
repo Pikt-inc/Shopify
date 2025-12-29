@@ -1,12 +1,16 @@
 import logging
 from functools import cached_property
-from typing import Optional, Set
+from typing import Optional, Set, Iterator, TYPE_CHECKING, cast
 
 from shopify_sdk.gql.core.types import (
     ID, Product, ProductStatus, ProductUpdateInput
 )
 from shopify_sdk.gql.queries import products
 from shopify_sdk.gql.mutations import productUpdate
+from shopify_sdk.gql.core import Mutation
+
+if TYPE_CHECKING:
+    from shopify_sdk.gql.core.types.payload import ProductUpdatePayload
 
 from .input import InventorySyncInput
 
@@ -53,15 +57,11 @@ class StatusUpsertManager:
             if not id_list:
                 continue
 
-            success = manager._bulk_set_status(
+            manager._bulk_set_status(
                 status=status,
                 id_list=id_list
             )
 
-            if not success:
-                logger.error(f"Failed to set status '{status}' for IDs: {id_list}")
-                raise ValueError(f"Failed to set status '{status}' for IDs: {id_list}")
-            
         # Handle diff IDs (default to ARCHIVED)
         if manager.diff_ids:
             fallback = fallback_status or ProductStatus.ARCHIVED
@@ -76,7 +76,8 @@ class StatusUpsertManager:
         
     @cached_property
     def valid_ids(self) -> list[ID]:
-        bulk_query = products(
+        from shopify_sdk.gql.core.types.connections import ProductConnection
+        query = products(
             field_exclusions={
                 "Product": Product.fields_except(
                     exclude={"id"}
@@ -84,12 +85,11 @@ class StatusUpsertManager:
             }
         )
         _ids: list[ID] = []
-        for line in bulk_query(bulk_query, verbose=True):
-            product_id = line.get('id', None)
-            if not product_id:
-                logger.warning("Encountered product with no ID during validation.")
-                raise ValueError("Encountered product with no ID during validation.")
-            _ids.append(product_id)
+        prod_connect = cast(ProductConnection, query.bulk())
+        if not prod_connect.nodes:
+            logger.warning("No products found in store during validation of valid IDs.")
+            raise ValueError("No products found in store during validation of valid IDs.")
+        _ids = [product.id for product in prod_connect.nodes if product.id]
         return _ids
     
     @cached_property
@@ -113,21 +113,26 @@ class StatusUpsertManager:
     ) -> bool:
         if not id_list:
             return True
-        mutations: list[productUpdate] = []
+        
+        mutations: list[Mutation] = []
         for product_id in id_list:
             mutations.append(
                 productUpdate(
                     product = ProductUpdateInput(
                         id=product_id,
                         status=status
-                    )
+                    ),
+                    field_exclusions={
+                        "Product": Product.fields_except(
+                            exclude={"id"}
+                        )
+                    }
                 )
             )
             
-        result = productUpdate.bulk(mutations)
-        for res in result:
-            if res.user_errors or res.top_errors:
-                logger.error(f"Failed to update product ID in bulk mutation: {res.user_errors} {res.top_errors}")
-                return False
+        from shopify_sdk.gql.core.types.payload import ProductUpdatePayload
+        result = cast(Iterator[ProductUpdatePayload], productUpdate.bulk(mutations))
+        for r in result:
+            if r.userErrors:
+                logger.error(f"Errors encountered during bulk status update: {r.userErrors}")
         return True
-
