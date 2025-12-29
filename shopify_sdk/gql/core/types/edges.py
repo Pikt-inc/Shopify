@@ -66,7 +66,6 @@ class LocationEdge(edge):
 
 
 class ProductEdge(edge):
-    cursor: String
     node: Product
 
 
