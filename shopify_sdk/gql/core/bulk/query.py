@@ -1,4 +1,4 @@
-from typing import Any, Iterator, Mapping
+from typing import Any, Iterator, TYPE_CHECKING
 from functools import cached_property
 import logging
 
@@ -16,6 +16,9 @@ MAX_JSONL_BYTES = 5 * 1024 * 1024  # 5 MB
 UPLOAD_TIMEOUT_S = 300  # 5 minutes
 DOWNLOAD_TIMEOUT_S = 300  # 5 minutes
 POLL_INTERVAL_S = 5  # seconds
+
+if TYPE_CHECKING:
+    from shopify_sdk.gql.core.types.payload import BulkOperationResultPayload
 
 
 class BulkQueryRunner:
@@ -49,7 +52,7 @@ class BulkQueryRunner:
     
     def run(
         self,
-    ) -> Iterator[Mapping[str, Any]]:
+    ) -> Iterator["BulkOperationResultPayload"]:
         from .poll import BulkActionResultManager
 
         for result in BulkActionResultManager.yield_results(

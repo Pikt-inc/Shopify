@@ -52,7 +52,7 @@ class BulkMutationRunner:
     
     @cached_property
     def variables(self) -> list[Mapping[str, Any]]:
-        serialized_vars = []
+        serialized_vars: list[Mapping[str, Any]] = []
         for mutation in self.mutations:
             variables = {
                 name: mutation._serialize_value(value)

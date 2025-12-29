@@ -433,18 +433,20 @@ class Query:
             f"{' ' * self._indent}}}",
             "}",
         ])
+
+    def _serialize_value(self, value: Any) -> Any:
+        if hasattr(value, "to_graphql"):
+            return value.to_graphql()
+        if isinstance(value, list):
+            return [self._serialize_value(item) for item in value]
+        if isinstance(value, dict):
+            return {k: self._serialize_value(v) for k, v in value.items()}
+        return value
     
     def execute(self, client: ShopifyClient):
         variables: Dict[str, Any] = {}
         for name, value in self._input_arguments.items():
-            if value is None:
-                variables[name] = None
-            elif hasattr(value, "to_graphql"):
-                variables[name] = value.to_graphql()
-            elif isinstance(value, Enum):
-                variables[name] = value.value
-            else:
-                variables[name] = value
+            variables[name] = self._serialize_value(value)
  
         response = client.request(
             query=self.body,
@@ -477,15 +479,25 @@ class Query:
         Execute the query as a bulk operation, returning data in the defined query return type.
         """
         from .bulk import bulk_query
-        objects = []
+        return_type = self.return_type
+        if return_type is None:
+            raise ValueError("return_type must be defined to cast the response.")
+        if not isinstance(return_type, type):
+            raise TypeError("return_type must be a class type derived from BaseModel.")
+        objects: list[BaseModel] = []
         cast_type = self._get_bulk_base_type()
-        for line in bulk_query(
+        for result in bulk_query(
             query=self
         ):
-            objects.append( 
-                self._build_partial_model(json.loads(line), cast_type)
-            )
-        return self.return_type(
+            payload_data = result.data
+            if payload_data is None:
+                raise ValueError("Bulk query result payload is missing data.")
+            if not isinstance(payload_data, dict):
+                raise TypeError(
+                    f"Bulk query result payload must be a dictionary, got {type(payload_data).__name__}."
+                )
+            objects.append(self._build_partial_model(payload_data, cast_type))
+        return return_type(
             edges=[],
             nodes=objects, 
             pageInfo=self._fake_page_info()
@@ -497,11 +509,13 @@ class Query:
         """
         if self.return_type is None:
             raise ValueError("return_type must be defined to access bulk base type.")
-        node_list_annotation = self.return_type.model_fields.get('nodes').annotation
-        inner_type_list = get_args(node_list_annotation)
-        if not inner_type_list:
+        type_hints = self._get_type_hints(self.return_type)
+        node_list_annotation = type_hints.get("nodes")
+        if node_list_annotation is None:
+            raise ValueError("return_type must define a nodes field for bulk results.")
+        inner_type = self._unwrap_annotation(node_list_annotation)
+        if not isinstance(inner_type, type) or not issubclass(inner_type, BaseModel):
             raise ValueError("Unable to determine bulk base type from return_type.")
-        inner_type = inner_type_list[0]
         return inner_type
     
     def _fake_page_info(self) -> BaseModel:

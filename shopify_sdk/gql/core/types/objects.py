@@ -12,6 +12,7 @@ if TYPE_CHECKING:
         LineItemConnection,
         LocationConnection,
         OrderConnection,
+        ProductConnection,
         ProductBundleComponentConnection,
         ProductVariantConnection,
         PublicationConnection,
@@ -97,10 +98,6 @@ class ProductOption(AutoRegisterModel):
 class ProductVariantContextualPricing(AutoRegisterModel):
     compareAtPrice: MoneyV2
     price: MoneyV2
-
-
-class DeliveryProfile(AutoRegisterModel):
-    id: ID
 
 
 class Event(AutoRegisterModel):
@@ -314,17 +311,6 @@ class CountryHarmonizedSystemCodeEdge(AutoRegisterModel):
 class CountryHarmonizedSystemCodeConnection(connection):
     edges: List[CountryHarmonizedSystemCodeEdge]
     nodes: List[CountryHarmonizedSystemCode]
-    pageInfo: "PageInfo"
-
-
-class ProductEdge(AutoRegisterModel):
-    cursor: String
-    node: Product
-
-
-class ProductConnection(connection):
-    edges: List[ProductEdge]
-    nodes: List[Product]
     pageInfo: "PageInfo"
 
 
@@ -1019,3 +1005,22 @@ class StagedMediaUploadTarget(AutoRegisterModel):
     parameters: List[StagedUploadParameter]
     resourceUrl: Optional[URL]
     url: Optional[URL]
+
+
+class ShippingRate(AutoRegisterModel):
+    handle: String
+    price: MoneyV2
+    title: String
+
+
+class DeliveryProfile(AutoRegisterModel):
+    activeMethodDefinitionsCount: Int
+    default: Boolean
+    id: ID
+    locationsWithoutRatesCount: Int
+    name: String
+    originLocationCount: Int
+    productVariantsCount: Optional[Count] = Field(default=None)
+    unassignedLocations: List[Location]
+    version: Int
+    zoneCountryCount: Int

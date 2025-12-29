@@ -17,6 +17,8 @@ if TYPE_CHECKING:
         Publication,
         ResourcePublication,
         SalesAgreement,
+        Product,
+        DeliveryProfile
     )
 
 
@@ -61,3 +63,12 @@ class CollectionEdge(edge):
 
 class LocationEdge(edge):
     node: Location
+
+
+class ProductEdge(edge):
+    cursor: String
+    node: Product
+
+
+class DeliveryProfileEdge(edge):
+    node: DeliveryProfile
