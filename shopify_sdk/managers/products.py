@@ -7,6 +7,7 @@ from shopify_sdk.gql.core.types.objects import Product
 
 if TYPE_CHECKING:
     from shopify_sdk.gql.core.types.payload import ProductUpdatePayload
+    from shopify_sdk.gql.core.types.connections import ProductConnection
 
 
 class BulkProductManager(BaseModel):
@@ -45,7 +46,7 @@ class ProductManager(BaseModel):
     bulk: BulkProductManager = Field(default_factory=BulkProductManager)
 
     @property
-    def archived(self) -> List[Product]:
+    def archived(self) -> "ProductConnection":
         from shopify_sdk.gql.queries import products
         from shopify_sdk.gql.core.types.connections import ProductConnection
 
@@ -70,10 +71,10 @@ class ProductManager(BaseModel):
             },
         )
         response = cast(ProductConnection, query.bulk())
-        return response.nodes
+        return response
 
     @property
-    def active(self) -> List[Product]:
+    def active(self) -> "ProductConnection":
         from shopify_sdk.gql.queries import products
         from shopify_sdk.gql.core.types.connections import ProductConnection
 
@@ -98,14 +99,14 @@ class ProductManager(BaseModel):
             },
         )
         response = cast(ProductConnection, query.bulk())
-        return response.nodes
+        return response
 
     @property
-    def draft(self) -> List[Product]:
+    def draft(self) -> "ProductConnection":
         return self.drafted
 
     @property
-    def drafted(self) -> List[Product]:
+    def drafted(self) -> "ProductConnection":
         from shopify_sdk.gql.queries import products
         from shopify_sdk.gql.core.types.connections import ProductConnection
 
@@ -130,7 +131,7 @@ class ProductManager(BaseModel):
             },
         )
         response = cast(ProductConnection, query.bulk())
-        return response.nodes
+        return response
 
     def set_status(
         self, id: ID, status: ProductStatus
