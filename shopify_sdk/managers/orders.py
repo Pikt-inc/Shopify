@@ -1,4 +1,4 @@
-from typing import List, TYPE_CHECKING, cast
+from typing import List, Optional, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from shopify_sdk.gql.core.types.objects import Order
@@ -24,7 +24,7 @@ class OrderManager:
         response = cast(OrderConnection, query.bulk())
         return response.nodes
     
-    def details(self, id: "ID"):
+    def details(self, id: "ID") -> Optional["Order"]:
         from shopify_sdk.gql.queries import orderByIdentifier
         from shopify_sdk.gql.core.types.input_objects import OrderIdentifierInput
         from shopify_sdk import client
@@ -59,5 +59,5 @@ class OrderManager:
                 ),
             },
         )
-        result = query.execute(client)
+        result: Optional["Order"] = query.execute(client)
         return result

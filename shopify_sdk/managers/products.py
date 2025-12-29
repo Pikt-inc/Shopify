@@ -1,9 +1,12 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, cast
+from typing import List, Optional, TYPE_CHECKING, cast
 
 from shopify_sdk.gql.core.types.base import ID
 from shopify_sdk.gql.core.types.enums import ProductStatus
 from shopify_sdk.gql.core.types.objects import Product
+
+if TYPE_CHECKING:
+    from shopify_sdk.gql.core.types.payload import ProductUpdatePayload
 
 class BulkProductManager(BaseModel):
 
@@ -104,7 +107,7 @@ class ProductManager(BaseModel):
         response = cast(ProductConnection, query.bulk())
         return response.nodes
 
-    def set_status(self, id: ID, status: ProductStatus):
+    def set_status(self, id: ID, status: ProductStatus) -> Optional["ProductUpdatePayload"]:
         from shopify_sdk.gql.mutations import productUpdate
         from shopify_sdk.gql.core.types import ProductUpdateInput
         from shopify_sdk import client
@@ -112,7 +115,7 @@ class ProductManager(BaseModel):
             id=id,
             status=status,
         )
-        return productUpdate(
+        result = productUpdate(
             product=input_data,
             field_inclusions={
                 "Product": set(
@@ -122,12 +125,16 @@ class ProductManager(BaseModel):
                 )
             }
         ).execute(client)
+        return cast(Optional["ProductUpdatePayload"], result)
     
-    def exchange(
+    def find_product_id(
         self,
         sku: Optional[str] = None,
         handle: Optional[str] = None,
     ) -> Optional[ID]:
+        """
+        Look up a product ID by SKU or handle.
+        """
         from shopify_sdk.gql.queries import products
         from shopify_sdk import client
         from shopify_sdk.gql.core.types.connections import ProductConnection
@@ -153,4 +160,11 @@ class ProductManager(BaseModel):
         if not product_connection.nodes:
             return None
         return product_connection.nodes[0].id
+
+    def exchange(
+        self,
+        sku: Optional[str] = None,
+        handle: Optional[str] = None,
+    ) -> Optional[ID]:
+        return self.find_product_id(sku=sku, handle=handle)
         
