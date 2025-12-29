@@ -6,7 +6,6 @@ from typing import Type, Dict, Set, Optional
 
 
 class productUnpublish(Mutation):
-
     def __init__(
         self,
         input: ProductUnpublishInput,
@@ -30,10 +29,11 @@ class productUpdate(Mutation):
         self.product: ProductUpdateInput = product
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
-    
+
 
 class productCreate(Mutation):
     return_type: Type[BaseModel] = ProductCreatePayload
+
     def __init__(
         self,
         product: ProductCreateInput,

@@ -6,31 +6,33 @@ from shopify_sdk.gql.core.types import *
 
 logger = logging.getLogger(__name__)
 
-def product_details(
-    product_id: str
-) -> Product:
+
+def product_details(product_id: str) -> Product:
     product: Product = productByIdentifier(
-        identifier=ProductIdentifierInput(
-            id=product_id,
-            handle=None
-        ),
+        identifier=ProductIdentifierInput(id=product_id, handle=None),
         field_exclusions={
             "Product": Product.fields_except(
                 exclude={
-                    "id", "title", "descriptionHtml", "vendor", "productType", "tags",
-                    "seo", "metafields", "status", "variants"
+                    "id",
+                    "title",
+                    "descriptionHtml",
+                    "vendor",
+                    "productType",
+                    "tags",
+                    "seo",
+                    "metafields",
+                    "status",
+                    "variants",
                 }
             ),
             "ProductVariant": ProductVariant.fields_except(
                 exclude={"id", "title", "sku", "price"}
             ),
-            "MetafieldConnection": MetafieldConnection.fields_except(
-                exclude={"nodes"}
-            ),
+            "MetafieldConnection": MetafieldConnection.fields_except(exclude={"nodes"}),
             "Metafield": Metafield.fields_except(
                 exclude={"id", "key", "namespace", "type", "value"}
             ),
-        }
+        },
     ).execute(client=client)
 
     if not product:
@@ -39,28 +41,29 @@ def product_details(
 
     return product
 
+
 def variants_by_product(
     product_id: str,
 ) -> ProductVariantConnection:
     """Return all variants for the given product ID."""
     product: Product = productByIdentifier(
-        identifier=ProductIdentifierInput(
-            id=product_id,
-            handle=None
-        ),
+        identifier=ProductIdentifierInput(id=product_id, handle=None),
         field_exclusions={
-            "Product": Product.fields_except(
-                exclude={"id", "variants"}
-            ),
+            "Product": Product.fields_except(exclude={"id", "variants"}),
             "ProductVariantConnection": ProductVariantConnection.fields_except(
                 exclude={"nodes"}
             ),
             "ProductVariant": ProductVariant.fields_except(
-                exclude={"id", "title", "sku", "price", "inventoryItem", "inventoryQuantity"}
+                exclude={
+                    "id",
+                    "title",
+                    "sku",
+                    "price",
+                    "inventoryItem",
+                    "inventoryQuantity",
+                }
             ),
-            "InventoryItem": InventoryItem.fields_except(
-                exclude={"id"}
-            ),
+            "InventoryItem": InventoryItem.fields_except(exclude={"id"}),
         },
     ).execute(client=client)
 
@@ -80,17 +83,26 @@ def product_by_sku(
         query=f"sku:{sku}",
         field_inclusions={
             "ProductVariant": {"sku", "product"},
-            "Product": {"id", "title", "descriptionHtml", "vendor", "productType", "tags", "seo", "metafields"},
+            "Product": {
+                "id",
+                "title",
+                "descriptionHtml",
+                "vendor",
+                "productType",
+                "tags",
+                "seo",
+                "metafields",
+            },
             "MetafieldConnection": {"nodes"},
             "Metafield": {"id", "key", "namespace", "type", "value"},
-            "SEO": {"title", "description"}
+            "SEO": {"title", "description"},
         },
     ).execute(client=client)
 
     if not variant_connection or not getattr(variant_connection, "nodes", None):
         logger.error(f"No product variant found for SKU '{sku}'.")
         raise ValueError(f"No product variant found for SKU '{sku}'.")
-    
+
     variant = variant_connection.nodes[0]
     product = variant.product
     if not product or not getattr(product, "id", None):

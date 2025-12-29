@@ -19,6 +19,7 @@ UPLOAD_TIMEOUT_S = 300  # 5 minutes
 
 logger = logging.getLogger(__name__)
 
+
 class JSONUploadManager:
     """
     Manager for uploading JSONL content via staged uploads.
@@ -55,14 +56,16 @@ class JSONUploadManager:
         if not staged:
             logger.error(f"stagedUploadsCreate returned no payload: {staged}")
             raise ValueError("stagedUploadsCreate returned no payload.")
-        
+
         return staged
 
     @property
     def target(self) -> StagedMediaUploadTarget:
         staged_targets = self.stage.stagedTargets
         if not staged_targets:
-            raise ValueError("No staged upload targets available from stagedUploadsCreate response.")
+            raise ValueError(
+                "No staged upload targets available from stagedUploadsCreate response."
+            )
         return staged_targets[0]
 
     @cached_property
@@ -74,13 +77,13 @@ class JSONUploadManager:
             if isinstance(name, str) and isinstance(value, str):
                 params[name] = value
         return params
-    
+
     def upload(self) -> bool:
         try:
             if not self.target.url:
                 logger.error("No upload URL available in staged upload target.")
                 raise ValueError("No upload URL available in staged upload target.")
-            
+
             response = requests.post(
                 self.target.url,
                 data=self.params,
@@ -92,7 +95,7 @@ class JSONUploadManager:
         except RequestException as e:
             logging.error(f"Upload failed: {e}")
             return False
-        
+
     @cached_property
     def staged_upload_path(self) -> str:
         key: str | None = self.params.get("key")
@@ -117,6 +120,5 @@ def _derive_staged_upload_path(resource_url: str) -> str:
             path = path.removeprefix("bulk/")
         except AttributeError:
             if path.startswith("bulk/"):
-                path = path[len("bulk/"):]
+                path = path[len("bulk/") :]
     return path
-        

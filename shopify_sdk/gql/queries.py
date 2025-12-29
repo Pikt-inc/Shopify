@@ -7,6 +7,7 @@ from .core.types.connections import *
 from typing import Type, Optional, Dict, Set, Any
 from pydantic import BaseModel
 
+
 class orderByIdentifier(Query):
     return_type: Type[BaseModel] = Order
 
@@ -20,7 +21,9 @@ class orderByIdentifier(Query):
         self.identifier: OrderIdentifierInput = identifier
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
-        self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)
+        self._connection_arguments = connection_arguments or dict(
+            self.__class__._connection_arguments
+        )
 
 
 class orders(Query):
@@ -44,7 +47,9 @@ class orders(Query):
         self.after: Optional[str] = after
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
-        self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)
+        self._connection_arguments = connection_arguments or dict(
+            self.__class__._connection_arguments
+        )
 
 
 class productVariants(Query):
@@ -68,7 +73,9 @@ class productVariants(Query):
         self.after: Optional[str] = after
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
-        self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)
+        self._connection_arguments = connection_arguments or dict(
+            self.__class__._connection_arguments
+        )
 
 
 class products(Query):
@@ -92,7 +99,9 @@ class products(Query):
         self.after: Optional[str] = after
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
-        self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)
+        self._connection_arguments = connection_arguments or dict(
+            self.__class__._connection_arguments
+        )
 
 
 class publications(Query):
@@ -110,7 +119,9 @@ class publications(Query):
         self.after: Optional[str] = after
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
-        self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)
+        self._connection_arguments = connection_arguments or dict(
+            self.__class__._connection_arguments
+        )
 
 
 class productByIdentifier(Query):
@@ -126,7 +137,9 @@ class productByIdentifier(Query):
         self.identifier: ProductIdentifierInput = identifier
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
-        self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)
+        self._connection_arguments = connection_arguments or dict(
+            self.__class__._connection_arguments
+        )
 
 
 class locations(Query):
@@ -158,7 +171,9 @@ class locations(Query):
         self.sortKey: LocationSortKeys = sortKey
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
-        self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)
+        self._connection_arguments = connection_arguments or dict(
+            self.__class__._connection_arguments
+        )
 
 
 class bulkOperation(Query):
@@ -181,7 +196,9 @@ class bulkOperation(Query):
         self.id: ID = id
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
-        self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)
+        self._connection_arguments = connection_arguments or dict(
+            self.__class__._connection_arguments
+        )
 
     @property
     def fields(self) -> str:
@@ -215,8 +232,12 @@ class productSetOperation(Query):
             "ProductSetOperation": {"id", "status", "product", "userErrors"},
             "Product": {"id"},
         }
-        self._field_inclusions = default_inclusions if field_inclusions is None else field_inclusions
-        self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)
+        self._field_inclusions = (
+            default_inclusions if field_inclusions is None else field_inclusions
+        )
+        self._connection_arguments = connection_arguments or dict(
+            self.__class__._connection_arguments
+        )
 
 
 class deliveryProfiles(Query):
@@ -234,4 +255,6 @@ class deliveryProfiles(Query):
         self.after: Optional[str] = after
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
-        self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)
+        self._connection_arguments = connection_arguments or dict(
+            self.__class__._connection_arguments
+        )

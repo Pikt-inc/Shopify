@@ -5,7 +5,7 @@ from shopify_sdk import client as default_client
 from shopify_sdk.gql.core.mutation import Mutation
 from shopify_sdk.gql.core.types.payload import (
     BulkOperationRunMutationPayload,
-    BulkOperationResultPayload
+    BulkOperationResultPayload,
 )
 from .chunker import iter_jsonl_chunks, JsonlChunk
 
@@ -16,7 +16,6 @@ POLL_INTERVAL_S = 5  # seconds
 
 
 class BulkMutationRunner:
-
     def __init__(
         self,
         mutations: list["Mutation"],
@@ -45,11 +44,11 @@ class BulkMutationRunner:
             if not mutation.arguments:
                 raise ValueError("All mutations must be instantiated with arguments.")
         return self._mutations
-    
+
     @property
     def inner_mutation(self) -> str:
         return self.mutations[0].body
-    
+
     @cached_property
     def variables(self) -> list[Mapping[str, Any]]:
         serialized_vars: list[Mapping[str, Any]] = []
@@ -60,7 +59,7 @@ class BulkMutationRunner:
             }
             serialized_vars.append(variables)
         return serialized_vars
-    
+
     @property
     def chunks(
         self,
@@ -72,11 +71,10 @@ class BulkMutationRunner:
         self,
     ) -> Iterator[BulkOperationResultPayload]:
         return self._upload_chunks()
-    
-    def _upload_chunks(
-        self
-    ) -> Iterator[BulkOperationResultPayload]:
+
+    def _upload_chunks(self) -> Iterator[BulkOperationResultPayload]:
         from .upload import JSONUploadManager
+
         for chunk in self.chunks:
             um = JSONUploadManager(
                 content=chunk.content,
@@ -86,27 +84,27 @@ class BulkMutationRunner:
             )
             success = um.upload()
             if not success:
-                raise ValueError(f"Failed to upload chunk starting at line {chunk.start_line_index} JSONL data.")
+                raise ValueError(
+                    f"Failed to upload chunk starting at line {chunk.start_line_index} JSONL data."
+                )
             operation_id = self._start_mutation(
                 staged_upload_path=um.staged_upload_path
             )
             from .poll import BulkActionResultManager as Poller
+
             for res_chunk in Poller.yield_results(
                 bulk_operation_id=operation_id,
                 client=self._client,
             ):
                 yield res_chunk
 
-    def _start_mutation(
-        self,
-        staged_upload_path: str
-    ) -> str:
+    def _start_mutation(self, staged_upload_path: str) -> str:
         from shopify_sdk.gql.mutations import bulkOperationRunMutation
+
         response: BulkOperationRunMutationPayload = bulkOperationRunMutation(
-            mutation=self.inner_mutation,
-            stagedUploadPath=staged_upload_path
+            mutation=self.inner_mutation, stagedUploadPath=staged_upload_path
         ).execute(client=self._client)
         if not response.bulkOperation:
             raise ValueError("No bulk operation was created.")
-        
+
         return response.bulkOperation.id

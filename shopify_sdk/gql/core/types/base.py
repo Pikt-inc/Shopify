@@ -23,7 +23,9 @@ class AutoRegisterModel(BaseModel):
         type_registry.register(cls)
 
     @classmethod
-    def fields_except(cls, exclude: Iterable[str] = (), ordered: bool = False) -> "Set[str]":
+    def fields_except(
+        cls, exclude: Iterable[str] = (), ordered: bool = False
+    ) -> "Set[str]":
         """Return the model's field names excluding those in `exclude`.
 
         - `exclude` may be any iterable of field names to remove.
@@ -42,8 +44,6 @@ class AutoRegisterModel(BaseModel):
             return set([n for n in names if n not in exclude_set])
         return set(names) - exclude_set
 
-    
-
 
 class connection(AutoRegisterModel):
     edges: list[Any]
@@ -58,22 +58,23 @@ class connection(AutoRegisterModel):
     @property
     def count(self) -> int:
         return len(self.validated_nodes)
-    
+
     @property
     def first(self) -> "Any | None":
         return self.validated_nodes[0] if self.validated_nodes else None
-    
+
     @property
     def second(self) -> "Any | None":
         return self.validated_nodes[1] if len(self.validated_nodes) > 1 else None
-    
+
     @property
     def third(self) -> "Any | None":
         return self.validated_nodes[2] if len(self.validated_nodes) > 2 else None
-    
+
     @property
     def last(self) -> "Any | None":
         return self.validated_nodes[-1] if self.validated_nodes else None
+
 
 Boolean = bool
 ID = str
@@ -89,6 +90,7 @@ Money = String  # Scalar
 class edge(AutoRegisterModel):
     cursor: String
     node: Any
+
 
 class Weight(AutoRegisterModel):
     unit: "WeightUnit"

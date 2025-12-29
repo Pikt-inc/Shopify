@@ -1,4 +1,3 @@
-
 from shopify_sdk.gql.core.types import (
     OrderIdentifierInput,
     Order,
@@ -13,25 +12,16 @@ from shopify_sdk.gql.core.types import (
 )
 from shopify_sdk.gql.core.types.objects import FulfillmentOrder
 from shopify_sdk.gql import fulfillmentCreateV2
-from shopify_sdk.gql import (
-    orderByIdentifier
-)
+from shopify_sdk.gql import orderByIdentifier
 from shopify_sdk import client
-from .ensure import (
-    ensure_line_item_gid,
-    ensure_order_gid
-)
+from .ensure import ensure_line_item_gid, ensure_order_gid
 
 
-def get_fulfillments_by_order_id(
-    order_id: ID
-    ) -> list[FulfillmentOrder]:
+def get_fulfillments_by_order_id(order_id: ID) -> list[FulfillmentOrder]:
     identifier = OrderIdentifierInput(id=order_id)
     res: Order = orderByIdentifier(
         identifier=identifier,
-        field_inclusions={
-            "Order": {"fulfillmentOrders"}
-        },
+        field_inclusions={"Order": {"fulfillmentOrders"}},
         field_exclusions={
             "FulfillmentOrder": {"channelId", "createdAt", "fulfillAt", "fulfillBy"},
             "FulfillmentOrderLineItem": set(
@@ -41,8 +31,7 @@ def get_fulfillments_by_order_id(
         },
         connection_arguments={
             "fulfillmentOrders": {"first": 100},
-        }
-
+        },
     ).execute(client=client)
     return res.fulfillmentOrders.nodes
 
@@ -52,7 +41,7 @@ def set_order_line_item_tracking(
     line_item_id: ID,
     tracking_number: String,
     carrier: String,
-    quantity: int = 1
+    quantity: int = 1,
 ) -> None:
     order_id = ensure_order_gid(order_id)
     line_item_id = ensure_line_item_gid(line_item_id)
@@ -69,27 +58,19 @@ def set_order_line_item_tracking(
             break
 
     if not valid_fli:
-        raise ValueError(f"Line item {line_item_id} not found in order {order_id} fulfillment orders.")
+        raise ValueError(
+            f"Line item {line_item_id} not found in order {order_id} fulfillment orders."
+        )
 
-    tracking = FulfillmentTrackingInput(
-        company=carrier,
-        number=tracking_number
-    )
+    tracking = FulfillmentTrackingInput(company=carrier, number=tracking_number)
     f: FulfillmentOrderLineItemsInput = FulfillmentOrderLineItemsInput(
         fulfillmentOrderId=fulfillment_id,
         fulfillmentOrderLineItems=[
-            FulfillmentOrderLineItemInput(
-                id=valid_fli.id,
-                quantity=quantity
-            )
-        ]
+            FulfillmentOrderLineItemInput(id=valid_fli.id, quantity=quantity)
+        ],
     )
     fulfillment_input = FulfillmentV2Input(
-        lineItemsByFulfillmentOrder=[f],
-        trackingInfo=tracking
+        lineItemsByFulfillmentOrder=[f], trackingInfo=tracking
     )
 
-    fulfillmentCreateV2(
-        fulfillment=fulfillment_input
-    ).execute(client=client)
-    
+    fulfillmentCreateV2(fulfillment=fulfillment_input).execute(client=client)

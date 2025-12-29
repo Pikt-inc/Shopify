@@ -4,26 +4,34 @@ if TYPE_CHECKING:
     from shopify_sdk.gql.core.types.objects import Order
     from shopify_sdk.gql.core.types.base import ID
 
+
 class OrderManager:
-    
     @property
     def all(self) -> List["Order"]:
         from shopify_sdk.gql.queries import orders
         from shopify_sdk.gql.core.types.connections import OrderConnection
+
         query = orders(
             field_inclusions={
                 "Order": set(
                     {
-                        "id", "name", "email", "createdAt",
-                        "totalPriceSet", "financialStatus", "fulfillmentStatus",
-                        "shippingAddress", "billingAddress", "tags"
+                        "id",
+                        "name",
+                        "email",
+                        "createdAt",
+                        "totalPriceSet",
+                        "financialStatus",
+                        "fulfillmentStatus",
+                        "shippingAddress",
+                        "billingAddress",
+                        "tags",
                     }
                 )
             },
         )
         response = cast(OrderConnection, query.bulk())
         return response.nodes
-    
+
     def details(self, id: "ID") -> Optional["Order"]:
         from shopify_sdk.gql.queries import orderByIdentifier
         from shopify_sdk.gql.core.types.input_objects import OrderIdentifierInput
@@ -35,28 +43,35 @@ class OrderManager:
             field_inclusions={
                 "Order": set(
                     {
-                        "id", "name", "email", "createdAt",
-                        "totalPriceSet", "financialStatus", "fulfillmentStatus",
-                        "shippingAddress", "billingAddress", "tags",
-                        "lineItems", "customer", "discountApplications"
+                        "id",
+                        "name",
+                        "email",
+                        "createdAt",
+                        "totalPriceSet",
+                        "financialStatus",
+                        "fulfillmentStatus",
+                        "shippingAddress",
+                        "billingAddress",
+                        "tags",
+                        "lineItems",
+                        "customer",
+                        "discountApplications",
                     }
                 ),
-                "LineItemConnection": set(
-                    {
-                        "nodes"
-                    }
-                ),
+                "LineItemConnection": set({"nodes"}),
                 "LineItem": set(
                     {
-                        "id", "sku", "title", "quantity", "priceSet", "totalDiscountSet",
-                        "taxLines", "product"
+                        "id",
+                        "sku",
+                        "title",
+                        "quantity",
+                        "priceSet",
+                        "totalDiscountSet",
+                        "taxLines",
+                        "product",
                     }
                 ),
-                "Product": set(
-                    {
-                        "id"
-                    }
-                ),
+                "Product": set({"id"}),
             },
         )
         result: Optional["Order"] = query.execute(client)

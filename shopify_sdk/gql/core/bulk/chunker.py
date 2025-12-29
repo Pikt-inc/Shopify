@@ -14,7 +14,9 @@ class JsonlChunk(BaseModel):
 
 
 def _json_line_bytes(line: Mapping[str, Any]) -> bytes:
-    return (json.dumps(line, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
+    return (json.dumps(line, ensure_ascii=False, separators=(",", ":")) + "\n").encode(
+        "utf-8"
+    )
 
 
 class JsonlChunker:
@@ -43,7 +45,9 @@ class JsonlChunker:
                 snippet = str(line)
                 if len(snippet) > 200:
                     snippet = snippet[:200] + "...(truncated)"
-                raise ValueError(f"Failed to JSON-encode JSONL line {line_index}: {e}; line={snippet}") from e
+                raise ValueError(
+                    f"Failed to JSON-encode JSONL line {line_index}: {e}; line={snippet}"
+                ) from e
             if len(encoded) > self._max_bytes:
                 raise ValueError(
                     f"JSONL line {line_index} is {len(encoded)} bytes, which exceeds max_bytes={self._max_bytes}."

@@ -18,8 +18,7 @@ class Mutation(Query):
 
     @classmethod
     def bulk(  # type: ignore[override]
-        cls,
-        mutations: List["Mutation"]
+        cls, mutations: List["Mutation"]
     ) -> Iterator[BaseModel]:
         """
         Execute a bulk mutation operation.
@@ -29,6 +28,7 @@ class Mutation(Query):
             Iterator[BaseModel]: An iterator over the payload models returned by the bulk operation.
         """
         from .bulk import bulk_mutation
+
         responses: Iterator["BulkOperationResultPayload"] = bulk_mutation(
             mutations=mutations,
         )
@@ -45,12 +45,11 @@ class Mutation(Query):
                 )
             mutation_data = response_data.get(cls.__name__)
             if mutation_data is None:
-                raise ValueError(f"Bulk mutation result payload missing key '{cls.__name__}'.")
+                raise ValueError(
+                    f"Bulk mutation result payload missing key '{cls.__name__}'."
+                )
             if not isinstance(mutation_data, dict):
                 raise TypeError(
                     f"Bulk mutation result payload for '{cls.__name__}' must be a dictionary, got {type(mutation_data).__name__}."
                 )
-            yield mutations[0]._build_partial_model(
-                mutation_data,
-                return_type
-            )
+            yield mutations[0]._build_partial_model(mutation_data, return_type)

@@ -8,8 +8,8 @@ from shopify_sdk.gql.core.types.objects import Product
 if TYPE_CHECKING:
     from shopify_sdk.gql.core.types.payload import ProductUpdatePayload
 
-class BulkProductManager(BaseModel):
 
+class BulkProductManager(BaseModel):
     def set_status(
         self,
         to_active: Optional[list[ID]] = None,
@@ -26,6 +26,7 @@ class BulkProductManager(BaseModel):
             fallback_status (ProductStatus): Fallback status for products not in the above lists.
         """
         from shopify_sdk.common.status_upsert import upsert_inventory_status
+
         if to_active is None:
             to_active = []
         if to_archive is None:
@@ -42,40 +43,56 @@ class BulkProductManager(BaseModel):
 
 class ProductManager(BaseModel):
     bulk: BulkProductManager = Field(default_factory=BulkProductManager)
-    
+
     @property
     def archived(self) -> List[Product]:
         from shopify_sdk.gql.queries import products
         from shopify_sdk.gql.core.types.connections import ProductConnection
+
         query = products(
             query=f"status:{ProductStatus.ARCHIVED.value}",
             field_inclusions={
                 "Product": set(
                     {
-                        "status", "id", "title", "tags",
-                        "productType", "seo", "vendor",
-                        "totalInventory", "handle", "description",
-                        "descriptionHtml"
+                        "status",
+                        "id",
+                        "title",
+                        "tags",
+                        "productType",
+                        "seo",
+                        "vendor",
+                        "totalInventory",
+                        "handle",
+                        "description",
+                        "descriptionHtml",
                     }
                 )
             },
         )
         response = cast(ProductConnection, query.bulk())
         return response.nodes
-    
+
     @property
     def active(self) -> List[Product]:
         from shopify_sdk.gql.queries import products
         from shopify_sdk.gql.core.types.connections import ProductConnection
+
         query = products(
             query=f"status:{ProductStatus.ACTIVE.value}",
             field_inclusions={
                 "Product": set(
                     {
-                        "status", "id", "title", "tags",
-                        "productType", "seo", "vendor",
-                        "totalInventory", "handle", "description",
-                        "descriptionHtml"
+                        "status",
+                        "id",
+                        "title",
+                        "tags",
+                        "productType",
+                        "seo",
+                        "vendor",
+                        "totalInventory",
+                        "handle",
+                        "description",
+                        "descriptionHtml",
                     }
                 )
             },
@@ -91,15 +108,23 @@ class ProductManager(BaseModel):
     def drafted(self) -> List[Product]:
         from shopify_sdk.gql.queries import products
         from shopify_sdk.gql.core.types.connections import ProductConnection
+
         query = products(
             query=f"status:{ProductStatus.DRAFT.value}",
             field_inclusions={
                 "Product": set(
                     {
-                        "status", "id", "title", "tags",
-                        "productType", "seo", "vendor",
-                        "totalInventory", "handle", "description",
-                        "descriptionHtml"
+                        "status",
+                        "id",
+                        "title",
+                        "tags",
+                        "productType",
+                        "seo",
+                        "vendor",
+                        "totalInventory",
+                        "handle",
+                        "description",
+                        "descriptionHtml",
                     }
                 )
             },
@@ -107,26 +132,22 @@ class ProductManager(BaseModel):
         response = cast(ProductConnection, query.bulk())
         return response.nodes
 
-    def set_status(self, id: ID, status: ProductStatus) -> Optional["ProductUpdatePayload"]:
+    def set_status(
+        self, id: ID, status: ProductStatus
+    ) -> Optional["ProductUpdatePayload"]:
         from shopify_sdk.gql.mutations import productUpdate
         from shopify_sdk.gql.core.types import ProductUpdateInput
         from shopify_sdk import client
+
         input_data = ProductUpdateInput(
             id=id,
             status=status,
         )
         result = productUpdate(
-            product=input_data,
-            field_inclusions={
-                "Product": set(
-                    {
-                        "status", "id"
-                    }
-                )
-            }
+            product=input_data, field_inclusions={"Product": set({"status", "id"})}
         ).execute(client)
         return cast(Optional["ProductUpdatePayload"], result)
-    
+
     def find_product_id(
         self,
         sku: Optional[str] = None,
@@ -138,6 +159,7 @@ class ProductManager(BaseModel):
         from shopify_sdk.gql.queries import products
         from shopify_sdk import client
         from shopify_sdk.gql.core.types.connections import ProductConnection
+
         if not sku and not handle:
             raise ValueError("Either sku or handle must be provided.")
 
@@ -149,9 +171,7 @@ class ProductManager(BaseModel):
         query = products(
             first=1,
             query=" ".join(terms),
-            field_inclusions={
-                "Product": {"id"}
-            },
+            field_inclusions={"Product": {"id"}},
         )
         response = query.execute(client)
         if response is None:
@@ -167,4 +187,3 @@ class ProductManager(BaseModel):
         handle: Optional[str] = None,
     ) -> Optional[ID]:
         return self.find_product_id(sku=sku, handle=handle)
-        

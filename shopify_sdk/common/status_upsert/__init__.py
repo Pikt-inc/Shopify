@@ -3,6 +3,7 @@ from typing import Optional
 from shopify_sdk.gql.core.types import ID, ProductStatus
 from .manager import StatusUpsertManager
 
+
 def upsert_inventory_status(
     to_active: Optional[list[ID]] = None,
     to_archive: Optional[list[ID]] = None,
@@ -40,5 +41,6 @@ def upsert_inventory_status(
         to_draft=to_draft,
         fallback_status=fallback_status,
     )
+
 
 __all__ = ["upsert_inventory_status"]

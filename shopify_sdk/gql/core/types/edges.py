@@ -4,6 +4,7 @@ from __future__ import annotations
 from .base import edge
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .objects import (
         Collection,
@@ -18,12 +19,13 @@ if TYPE_CHECKING:
         ResourcePublication,
         SalesAgreement,
         Product,
-        DeliveryProfile
+        DeliveryProfile,
     )
 
 
 class OrderEdge(edge):
     node: Order
+
 
 class LineItemEdge(edge):
     node: LineItem

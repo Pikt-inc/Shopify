@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, List, Optional
 from pydantic import Field
 
 from .base import *
+
 if TYPE_CHECKING:
     from .connections import (
         CollectionConnection,
@@ -18,7 +19,6 @@ if TYPE_CHECKING:
         SalesAgreementConnection,
     )
     from .enums import *
-
 
 
 class input_object(AutoRegisterModel):
@@ -49,6 +49,7 @@ class DiscountApplication(AutoRegisterModel):
     allocationMethod: String
     targetSelection: String
     targetType: String
+
 
 # GraphQL often returns formatted strings; alias to simple String for typing.
 FormattedString = String
@@ -140,9 +141,6 @@ class LineItemGroup(AutoRegisterModel):
     id: ID
 
 
-
-
-
 class InventoryLevel(AutoRegisterModel):
     canDeactivate: Boolean
     createdAt: DateTime
@@ -170,9 +168,11 @@ class LineItemSellingPlan(AutoRegisterModel):
     name: String
     sellingPlanId: ID
 
+
 class SEO(AutoRegisterModel):
     description: String
     title: String
+
 
 class TaxonomyCategory(AutoRegisterModel):
     ancestorIds: List[ID]
@@ -184,7 +184,6 @@ class TaxonomyCategory(AutoRegisterModel):
     isRoot: Boolean
     level: Int
     parentId: Optional[ID] = Field(default=None)
-
 
 
 class Product(AutoRegisterModel):
@@ -423,7 +422,6 @@ class AdditionalFee(AutoRegisterModel):
 class SalesAgreement(AutoRegisterModel):
     happenedAt: DateTime
     id: ID
-    
 
 
 class ResourceAlert(AutoRegisterModel):
@@ -903,6 +901,7 @@ class ProductBundleComponent(AutoRegisterModel):
     quantity: Int
     quantityOption: ProductBundleComponentQuantityOption
 
+
 class Collection(AutoRegisterModel):
     availablePublicationsCount: Optional[Count] = Field(default=None)
     description: String
@@ -979,6 +978,7 @@ class ProductSetOperation(AutoRegisterModel):
 class UserError(AutoRegisterModel):
     field: Optional[List[String]] = Field(default=None)
     message: String
+
 
 class BulkOperationUserError(AutoRegisterModel):
     code: BulkOperationUserErrorCode

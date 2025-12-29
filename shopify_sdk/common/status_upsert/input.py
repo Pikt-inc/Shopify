@@ -7,10 +7,12 @@ from shopify_sdk.gql.queries import products
 
 logger = logging.getLogger(__name__)
 
+
 class InventorySyncInput(BaseModel):
     """
     Input object used to sync shopify inventory based on product status.
     """
+
     active: list[ID] = Field(default_factory=list)
     archived: list[ID] = Field(default_factory=list)
     draft: list[ID] = Field(default_factory=list)
@@ -20,8 +22,12 @@ class InventorySyncInput(BaseModel):
         """
         Returns a merged list of all IDs in the input object.
         """
-        return list(set(values.get("active", [])) | set(values.get("archived", [])) | set(values.get("draft", [])))
-    
+        return list(
+            set(values.get("active", []))
+            | set(values.get("archived", []))
+            | set(values.get("draft", []))
+        )
+
     @classmethod
     def valid_ids(cls) -> list[ID]:
         """
@@ -30,12 +36,9 @@ class InventorySyncInput(BaseModel):
         We can do this via a bulk query to fetch all product IDs.
         """
         from shopify_sdk.gql.core.types.connections import ProductConnection
+
         query = products(
-            field_exclusions={
-                "Product": Product.fields_except(
-                    exclude={"id"}
-                )
-            }
+            field_exclusions={"Product": Product.fields_except(exclude={"id"})}
         )
         _ids: list[ID] = []
         prod_connect = cast(ProductConnection, query.bulk())
@@ -55,24 +58,36 @@ class InventorySyncInput(BaseModel):
         Raises ValueError if any ID is invalid.
         Validate that IDs are not shared between lists.
         """
-        for field_name in ['active', 'archived', 'draft']:
+        for field_name in ["active", "archived", "draft"]:
             status_id_list = values.get(field_name, [])
             for _id in status_id_list:
-                if not isinstance(_id, str) or not _id.startswith("gid://shopify/Product"):
+                if not isinstance(_id, str) or not _id.startswith(
+                    "gid://shopify/Product"
+                ):
                     logger.error(f"Invalid Shopify ID in '{field_name}': {_id}")
                     raise ValueError(f"Invalid Shopify ID in '{field_name}': {_id}")
 
             values[field_name] = list(set(status_id_list))
-                
+
         merged = set(cls.merged_ids(values))
         diff = merged - set(cls.valid_ids())
         if diff:
-            raise ValueError(f"The following IDs were not found in the target store: {diff}")
-        
-        for field_a, field_b in [('active', 'archived'), ('active', 'draft'), ('archived', 'draft')]:
+            raise ValueError(
+                f"The following IDs were not found in the target store: {diff}"
+            )
+
+        for field_a, field_b in [
+            ("active", "archived"),
+            ("active", "draft"),
+            ("archived", "draft"),
+        ]:
             overlap = set(values.get(field_a, [])) & set(values.get(field_b, []))
             if overlap:
-                logger.error(f"The following IDs are present in both '{field_a}' and '{field_b}': {overlap}")
-                raise ValueError(f"The following IDs are present in both '{field_a}' and '{field_b}': {overlap}")
-                
+                logger.error(
+                    f"The following IDs are present in both '{field_a}' and '{field_b}': {overlap}"
+                )
+                raise ValueError(
+                    f"The following IDs are present in both '{field_a}' and '{field_b}': {overlap}"
+                )
+
         return values

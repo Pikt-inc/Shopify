@@ -131,22 +131,24 @@ class ProxyProduct(BaseModel):
 
         self.id = product_id
         return product_id
-    
+
     @classmethod
     def get(cls, sku: str) -> Optional["ProxyProduct"]:
         """Return a hydrated product for the SKU or an empty proxy if lookup fails."""
         from shopify_sdk.common.product import product_by_sku
+
         product = product_by_sku(sku)
         if not product:
             return None
-        
+
         return cls(id=product.id).hydrate()
-    
+
     def hydrate(self) -> Optional["ProxyProduct"]:
         from shopify_sdk.common.product.query import product_details
+
         if not self.id:
             raise ValueError("Cannot hydrate ProxyProduct without an ID")
-        
+
         target_product = product_details(self.id)
         if target_product is None:
             raise ValueError(f"Failed to fetch product details for ID '{self.id}'")
@@ -160,23 +162,26 @@ class ProxyProduct(BaseModel):
             self.tags = list(target_product.tags)
             self.seo_title = target_product.seo.title
             self.seo_description = target_product.seo.description
-            
+
             # Hydrate metafields if present
             hydrated_metafields: list[MetafieldInput] = []
-            if hasattr(target_product, 'metafields') and target_product.metafields:
-                if hasattr(target_product.metafields, 'nodes') and target_product.metafields.nodes:
+            if hasattr(target_product, "metafields") and target_product.metafields:
+                if (
+                    hasattr(target_product.metafields, "nodes")
+                    and target_product.metafields.nodes
+                ):
                     hydrated_metafields = [
                         MetafieldInput(
                             id=mf.id,
                             key=mf.key,
                             namespace=mf.namespace,
                             type=mf.type,
-                            value=mf.value
+                            value=mf.value,
                         )
                         for mf in target_product.metafields.nodes
                     ]
             self._set_metafields(hydrated_metafields)
-            
+
             first_variant = None
             variants = target_product.variants
             if variants and variants.nodes:
@@ -184,17 +189,21 @@ class ProxyProduct(BaseModel):
 
             if not first_variant:
                 raise ValueError("No variants found for the product.")
-            
+
             self.sku = first_variant.sku
             self.price = first_variant.price
             self.quantity = first_variant.inventoryQuantity
-            
+
             # Load images from product media
-            if hasattr(target_product, 'media') and target_product.media and hasattr(target_product.media, 'nodes'):
+            if (
+                hasattr(target_product, "media")
+                and target_product.media
+                and hasattr(target_product.media, "nodes")
+            ):
                 image_urls = []
                 for media_node in target_product.media.nodes:
-                    if hasattr(media_node, 'image') and media_node.image:
-                        if hasattr(media_node.image, 'originalSrc'):
+                    if hasattr(media_node, "image") and media_node.image:
+                        if hasattr(media_node.image, "originalSrc"):
                             image_urls.append(str(media_node.image.originalSrc))
                 if image_urls:
                     self.images = image_urls

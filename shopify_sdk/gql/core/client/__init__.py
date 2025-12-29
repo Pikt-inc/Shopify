@@ -17,24 +17,30 @@ from .types import (
 
 load_dotenv()
 
+
 def _build_env_client() -> ShopifyClient:
     return ShopifyClient(
         shop_domain=os.getenv("SHOPIFY_SHOP_DOMAIN") or "",
         access_token=os.getenv("SHOPIFY_ACCESS_TOKEN") or "",
     )
 
+
 _current_client: ContextVar[ShopifyClient] = ContextVar(
     "shopify_client",
     default=_build_env_client(),
 )
 
+
 def _get_current_client() -> ShopifyClient:
     return _current_client.get()
+
 
 class _ClientProxy:
     __slots__ = ()
 
-    def request(self, query: str, variables: Optional[Dict[Any, Any]] = None) -> GQLResponse:
+    def request(
+        self, query: str, variables: Optional[Dict[Any, Any]] = None
+    ) -> GQLResponse:
         return _get_current_client().request(query=query, variables=variables)
 
     def __getattr__(self, name: str):
@@ -48,6 +54,7 @@ class _ClientProxy:
 
     def __str__(self) -> str:
         return str(_get_current_client())
+
 
 @contextmanager
 def client_context(
@@ -72,6 +79,7 @@ def client_context(
         yield wrapper
     finally:
         _current_client.reset(token)
+
 
 client = cast(ShopifyClient, _ClientProxy())
 

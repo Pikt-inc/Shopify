@@ -3,7 +3,15 @@ from typing import Iterable, Optional
 
 from shopify_sdk import client
 from shopify_sdk.gql import orders as OrdersQuery
-from shopify_sdk.gql.core.types import Order, OrderConnection, OrderSortKeys, LineItem, ProductVariant, ShippingLine, Fulfillment
+from shopify_sdk.gql.core.types import (
+    Order,
+    OrderConnection,
+    OrderSortKeys,
+    LineItem,
+    ProductVariant,
+    ShippingLine,
+    Fulfillment,
+)
 
 
 def _build_processed_at_query(days: int) -> str:
@@ -41,33 +49,71 @@ def iter_orders_from_last_n_days(
             field_exclusions={
                 "OrderConnection": {"edges"},
                 "LineItemConnection": {"edges"},
-                "Order": set(Order.fields_except(
-                    exclude={
-                        "id", "shippingLines", "lineItems", "fulfillments", "legacyResourceId",
-                        "name", "tags", "note", "sourceName", "presentmentCurrencyCode", "currencyCode",
-                        "processedAt", "createdAt", "updatedAt", "cancelledAt", "cancelReason", "confirmed",
-                        "displayFinancialStatus", "displayFulfillmentStatus", "subtotalPriceSet",
-                        "totalPriceSet", "totalShippingPriceSet", "totalTaxSet", "totalDiscountsSet",
-                        "transactions", "refunds"
-                    }
-                )),
-                "LineItem": set(LineItem.fields_except(
-                    exclude={
-                        "id", "sku", "name", "title", "quantity",
-                        "fulfillableQuantity", "fulfillmentStatus", "variantTitle",
-                        "customAttributes", "discountedTotalSet", "originalUnitPriceSet",
-                        "discountedUnitPriceSet", "variant", "taxLines"
-                    }
-                )),
-                "ProductVariant": set(ProductVariant.fields_except(
-                    exclude={"id", "sku"}
-                )),
-                "Fulfillment": set(Fulfillment.fields_except(
-                    exclude={"id", "trackingInfo", "fulfillmentLineItems"}
-                )),
-                "ShippingLine": set(ShippingLine.fields_except(
-                    exclude={"title", "code", "originalPriceSet"}
-                )),
+                "Order": set(
+                    Order.fields_except(
+                        exclude={
+                            "id",
+                            "shippingLines",
+                            "lineItems",
+                            "fulfillments",
+                            "legacyResourceId",
+                            "name",
+                            "tags",
+                            "note",
+                            "sourceName",
+                            "presentmentCurrencyCode",
+                            "currencyCode",
+                            "processedAt",
+                            "createdAt",
+                            "updatedAt",
+                            "cancelledAt",
+                            "cancelReason",
+                            "confirmed",
+                            "displayFinancialStatus",
+                            "displayFulfillmentStatus",
+                            "subtotalPriceSet",
+                            "totalPriceSet",
+                            "totalShippingPriceSet",
+                            "totalTaxSet",
+                            "totalDiscountsSet",
+                            "transactions",
+                            "refunds",
+                        }
+                    )
+                ),
+                "LineItem": set(
+                    LineItem.fields_except(
+                        exclude={
+                            "id",
+                            "sku",
+                            "name",
+                            "title",
+                            "quantity",
+                            "fulfillableQuantity",
+                            "fulfillmentStatus",
+                            "variantTitle",
+                            "customAttributes",
+                            "discountedTotalSet",
+                            "originalUnitPriceSet",
+                            "discountedUnitPriceSet",
+                            "variant",
+                            "taxLines",
+                        }
+                    )
+                ),
+                "ProductVariant": set(
+                    ProductVariant.fields_except(exclude={"id", "sku"})
+                ),
+                "Fulfillment": set(
+                    Fulfillment.fields_except(
+                        exclude={"id", "trackingInfo", "fulfillmentLineItems"}
+                    )
+                ),
+                "ShippingLine": set(
+                    ShippingLine.fields_except(
+                        exclude={"title", "code", "originalPriceSet"}
+                    )
+                ),
             },
         ).execute(client=client)
 
@@ -92,9 +138,6 @@ def get_orders_from_last_n_days(
     """
     return list(
         iter_orders_from_last_n_days(
-            days=days,
-            page_size=page_size,
-            sort_key=sort_key,
-            reverse=reverse
+            days=days, page_size=page_size, sort_key=sort_key, reverse=reverse
         )
     )

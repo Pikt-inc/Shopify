@@ -10,7 +10,9 @@ class TypeRegistry:
 
     def register(self, cls: Type[Any]) -> Type[Any]:
         """Register a Pydantic model or enum class by name for forward-ref resolution."""
-        if isinstance(cls, type) and (issubclass(cls, BaseModel) or issubclass(cls, PyEnum)):
+        if isinstance(cls, type) and (
+            issubclass(cls, BaseModel) or issubclass(cls, PyEnum)
+        ):
             self._types[cls.__name__] = cls
         return cls
 
@@ -29,7 +31,6 @@ class TypeRegistry:
                 except Exception:
                     # Best-effort; individual models may fail if incomplete.
                     continue
-
 
 
 type_registry = TypeRegistry()

@@ -1,17 +1,11 @@
 from functools import cached_property
 
-from shopify_sdk.gql.core.types import (
-    ProductVariant,
-    ProductVariantsBulkInput,
-    ID
-)
-from shopify_sdk.gql.core.types.input_objects import (
-    InventoryItemInput
-)
+from shopify_sdk.gql.core.types import ProductVariant, ProductVariantsBulkInput, ID
+from shopify_sdk.gql.core.types.input_objects import InventoryItemInput
 from shopify_sdk.gql.core.types.enums import ProductVariantInventoryPolicy
 from shopify_sdk.gql.mutations import (
     productVariantsBulkUpdate,
-    productVariantsBulkCreate
+    productVariantsBulkCreate,
 )
 from shopify_sdk import client
 
@@ -25,9 +19,10 @@ def update_variant(
         productId=product_id,
         variants=[variant_update_input],
     ).execute(client=client)
-    if result and result.get('userErrors') == []:
+    if result and result.get("userErrors") == []:
         success = True
     return success
+
 
 def create_variant(
     product_id: str,
@@ -38,29 +33,20 @@ def create_variant(
         productId=product_id,
         variants=[variant_create_input],
     ).execute(client=client)
-    if result and result.get('userErrors') == []:
+    if result and result.get("userErrors") == []:
         success = True
     return success
 
-def update_or_create_variant(
-    variant: ProductVariant,
-    product_id: str
-) -> bool:
+
+def update_or_create_variant(variant: ProductVariant, product_id: str) -> bool:
     """
     Update an existing product variant or create a new one if it does not exist.
     """
-    return UpdateOrCreateVariant(
-        variant=variant,
-        product_id=product_id
-    ).execute()
+    return UpdateOrCreateVariant(variant=variant, product_id=product_id).execute()
+
 
 class UpdateOrCreateVariant:
-
-    def __init__(
-        self,
-        variant: ProductVariant,
-        product_id: ID
-    ):
+    def __init__(self, variant: ProductVariant, product_id: ID):
         self._variant = variant
         self._product_id = product_id
 
@@ -69,15 +55,15 @@ class UpdateOrCreateVariant:
         if not self.variant.id:
             return False
         return True
-    
+
     @cached_property
     def variant(self) -> ProductVariant:
         return self._variant
-    
+
     @cached_property
     def variant_create_input(self) -> ProductVariantsBulkInput:
         return self._build_bulk_input(include_id=False)
-    
+
     @cached_property
     def variant_update_input(self) -> ProductVariantsBulkInput:
         return self._build_bulk_input(include_id=True)
@@ -111,7 +97,7 @@ class UpdateOrCreateVariant:
             productId=self._product_id,
             variants=[self.variant_update_input],
         ).execute(client=client)
-        if result and result.get('userErrors') == []:
+        if result and result.get("userErrors") == []:
             success = True
         return success
 
@@ -121,10 +107,10 @@ class UpdateOrCreateVariant:
             productId=self._product_id,
             variants=[self.variant_create_input],
         ).execute(client=client)
-        if result and result.get('userErrors') == []:
+        if result and result.get("userErrors") == []:
             success = True
         return success
-    
+
     def execute(self) -> bool:
         if self.variant_exists:
             return self._update_variant()
