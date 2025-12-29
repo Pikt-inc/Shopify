@@ -81,9 +81,12 @@ class ProductManager(BaseModel):
         return response.nodes
 
     @property
+    def draft(self) -> List[Product]:
+        return self.drafted
+
+    @property
     def drafted(self) -> List[Product]:
         from shopify_sdk.gql.queries import products
-        from shopify_sdk.gql.core.types import ProductStatus
         from shopify_sdk.gql.core.types.connections import ProductConnection
         query = products(
             query=f"status:{ProductStatus.DRAFT.value}",

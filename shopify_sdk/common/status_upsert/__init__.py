@@ -23,10 +23,10 @@ def upsert_inventory_status(
             are not in any provided list ("diff IDs"). Defaults to ProductStatus.ARCHIVED.
 
     Returns:
-        bool: True if all operations were successful; False if the fallback status update fails.
+        bool: True if all operations were successful; False if any bulk status update fails.
 
     Raises:
-        ValueError: If validation fails or a bulk status update fails.
+        ValueError: If validation fails.
     """
     if to_active is None:
         to_active = []

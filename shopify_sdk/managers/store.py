@@ -50,7 +50,7 @@ class StoreManager(BaseModel):
                 )
             },
         )
-        response: PublicationConnection =  query.execute(client)
+        response: "PublicationConnection" = query.execute(client)
         return response
 
 

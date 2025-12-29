@@ -54,10 +54,13 @@ class StatusUpsertManager:
             if not id_list:
                 continue
 
-            manager._bulk_set_status(
+            success = manager._bulk_set_status(
                 status=status,
                 id_list=id_list
             )
+            if not success:
+                logger.error(f"Failed to set status '{status}' for IDs: {id_list}")
+                return False
 
         # Handle diff IDs (default to ARCHIVED)
         if manager.diff_ids:
@@ -129,7 +132,9 @@ class StatusUpsertManager:
             
         from shopify_sdk.gql.core.types.payload import ProductUpdatePayload
         result = cast(Iterator[ProductUpdatePayload], productUpdate.bulk(mutations))
+        has_errors = False
         for r in result:
             if r.userErrors:
                 logger.error(f"Errors encountered during bulk status update: {r.userErrors}")
-        return True
+                has_errors = True
+        return not has_errors
