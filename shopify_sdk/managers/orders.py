@@ -1,4 +1,4 @@
-from typing import List, Optional, TYPE_CHECKING, cast
+from typing import Optional, TYPE_CHECKING, cast
 import datetime
 
 if TYPE_CHECKING:
