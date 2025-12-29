@@ -1,4 +1,4 @@
-from typing import Any, Iterator, TYPE_CHECKING
+from typing import Iterator, TYPE_CHECKING
 from functools import cached_property
 import logging
 
