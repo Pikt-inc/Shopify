@@ -217,3 +217,21 @@ class productSetOperation(Query):
         }
         self._field_inclusions = default_inclusions if field_inclusions is None else field_inclusions
         self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)
+
+
+class deliveryProfiles(Query):
+    return_type: Type[BaseModel] = DeliveryProfileConnection
+
+    def __init__(
+        self,
+        first: int = 20,
+        after: Optional[str] = None,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
+        connection_arguments: Optional[Dict[str, Dict[str, Any]]] = None,
+    ):
+        self.first: int = first
+        self.after: Optional[str] = after
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
+        self._connection_arguments = connection_arguments or dict(self.__class__._connection_arguments)

@@ -2,7 +2,7 @@ name: Run Mypy
 
 on:
   pull_request:
-    branches: [dev, main]
+    branches: [main]
     types: [opened, synchronize, reopened]
 
 jobs:

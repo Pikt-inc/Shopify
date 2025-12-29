@@ -1,7 +1,5 @@
-from typing import List, Optional, Union
 
 from shopify_sdk.gql.core.types.input_objects import (
-    InventoryChangeInput,
     InventoryAdjustQuantitiesInput,
 )
 from shopify_sdk.gql.mutations import inventoryAdjustQuantities

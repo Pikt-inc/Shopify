@@ -1,4 +1,3 @@
-from typing import Optional
 
 from shopify_sdk.gql.core.types import (
     OrderIdentifierInput,
@@ -8,7 +7,6 @@ from shopify_sdk.gql.core.types import (
     FulfillmentTrackingInput,
     FulfillmentV2Input,
     ID,
-    Boolean,
     String,
     FulfillmentOrderLineItemsInput,
     FulfillmentOrderLineItemInput,

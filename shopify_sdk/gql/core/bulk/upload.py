@@ -17,6 +17,8 @@ from shopify_sdk.gql.core.types.input_objects import StagedUploadInput
 
 UPLOAD_TIMEOUT_S = 300  # 5 minutes
 
+logger = logging.getLogger(__name__)
+
 class JSONUploadManager:
     """
     Manager for uploading JSONL content via staged uploads.
@@ -36,7 +38,7 @@ class JSONUploadManager:
 
     @cached_property
     def stage(self) -> StagedUploadsCreatePayload:
-        staged = stagedUploadsCreate(
+        staged: StagedUploadsCreatePayload = stagedUploadsCreate(
             input=[
                 StagedUploadInput(
                     resource="BULK_MUTATION_VARIABLES",
@@ -44,17 +46,21 @@ class JSONUploadManager:
                     mimeType=self._mime_type,
                     httpMethod="POST",
                     fileSize=len(self._content),
-                ).to_graphql()
+                )
             ],
             field_inclusions={
-                "StagedUploadsCreatePayload": ["stagedTargets", "userErrors"],
+                "StagedUploadsCreatePayload": set(["stagedTargets", "userErrors"]),
             },
         ).execute(client=self._client)
+        if not staged:
+            logger.error(f"stagedUploadsCreate returned no payload: {staged}")
+            raise ValueError("stagedUploadsCreate returned no payload.")
+        
         return staged
 
     @property
     def target(self) -> StagedMediaUploadTarget:
-        staged_targets = getattr(self.stage, "stagedTargets", None)
+        staged_targets = self.stage.stagedTargets
         if not staged_targets:
             raise ValueError("No staged upload targets available from stagedUploadsCreate response.")
         return staged_targets[0]
@@ -71,6 +77,10 @@ class JSONUploadManager:
     
     def upload(self) -> bool:
         try:
+            if not self.target.url:
+                logger.error("No upload URL available in staged upload target.")
+                raise ValueError("No upload URL available in staged upload target.")
+            
             response = requests.post(
                 self.target.url,
                 data=self.params,
@@ -85,8 +95,7 @@ class JSONUploadManager:
         
     @cached_property
     def staged_upload_path(self) -> str:
-        # Prefer an explicit key parameter, otherwise derive from resourceUrl
-        key = self.params.get("key")
+        key: str | None = self.params.get("key")
         if key:
             return key
         resource_url = getattr(self.target, "resourceUrl", None)
