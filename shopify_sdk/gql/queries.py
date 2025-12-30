@@ -5,7 +5,7 @@ from .core.types.objects import *
 from .core.types.connections import *
 
 from typing import Type, Optional, Dict, Set, Any
-from pydantic import BaseModel
+from shopify_sdk.gql.core.client import ShopifyClient
 
 
 class orderByIdentifier(Query):
@@ -24,6 +24,10 @@ class orderByIdentifier(Query):
         self._connection_arguments = connection_arguments or dict(
             self.__class__._connection_arguments
         )
+
+    def execute(self, client: ShopifyClient) -> Optional[Order]:
+        result: Optional[Order] = super().execute(client=client)
+        return result
 
 
 class orders(Query):
@@ -51,6 +55,10 @@ class orders(Query):
             self.__class__._connection_arguments
         )
 
+    def execute(self, client: ShopifyClient) -> OrderConnection:
+        result: OrderConnection = super().execute(client=client)
+        return result
+
 
 class productVariants(Query):
     return_type: Type[BaseModel] = ProductVariantConnection
@@ -76,6 +84,10 @@ class productVariants(Query):
         self._connection_arguments = connection_arguments or dict(
             self.__class__._connection_arguments
         )
+
+    def execute(self, client: ShopifyClient) -> ProductVariantConnection:
+        result: ProductVariantConnection = super().execute(client=client)
+        return result
 
 
 class products(Query):
@@ -103,6 +115,10 @@ class products(Query):
             self.__class__._connection_arguments
         )
 
+    def execute(self, client: ShopifyClient) -> ProductConnection:
+        result: ProductConnection = super().execute(client=client)
+        return result
+
 
 class publications(Query):
     return_type: Type[BaseModel] = PublicationConnection
@@ -123,6 +139,10 @@ class publications(Query):
             self.__class__._connection_arguments
         )
 
+    def execute(self, client: ShopifyClient) -> PublicationConnection:
+        result: PublicationConnection = super().execute(client=client)
+        return result
+
 
 class productByIdentifier(Query):
     return_type: Type[BaseModel] = Product
@@ -140,6 +160,10 @@ class productByIdentifier(Query):
         self._connection_arguments = connection_arguments or dict(
             self.__class__._connection_arguments
         )
+
+    def execute(self, client: ShopifyClient) -> Optional[Product]:
+        result: Optional[Product] = super().execute(client=client)
+        return result
 
 
 class locations(Query):
@@ -174,6 +198,10 @@ class locations(Query):
         self._connection_arguments = connection_arguments or dict(
             self.__class__._connection_arguments
         )
+
+    def execute(self, client: ShopifyClient) -> LocationConnection:
+        result: LocationConnection = super().execute(client=client)
+        return result
 
 
 class bulkOperation(Query):
@@ -215,6 +243,10 @@ class bulkOperation(Query):
             ]
         )
 
+    def execute(self, client: ShopifyClient) -> Optional[BulkOperation]:
+        result: Optional[BulkOperation] = super().execute(client=client)
+        return result
+
 
 class productSetOperation(Query):
     return_type: Type[BaseModel] = ProductSetOperation
@@ -239,6 +271,10 @@ class productSetOperation(Query):
             self.__class__._connection_arguments
         )
 
+    def execute(self, client: ShopifyClient) -> Optional[ProductSetOperation]:
+        result: Optional[ProductSetOperation] = super().execute(client=client)
+        return result
+
 
 class deliveryProfiles(Query):
     return_type: Type[BaseModel] = DeliveryProfileConnection
@@ -258,3 +294,7 @@ class deliveryProfiles(Query):
         self._connection_arguments = connection_arguments or dict(
             self.__class__._connection_arguments
         )
+
+    def execute(self, client: ShopifyClient) -> Optional[DeliveryProfileConnection]:
+        result: Optional[DeliveryProfileConnection] = super().execute(client=client)
+        return result

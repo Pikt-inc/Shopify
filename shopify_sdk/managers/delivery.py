@@ -4,11 +4,11 @@ import logging
 from shopify_sdk.gql.core.types.base import ID
 from shopify_sdk.gql.core.types.objects import DeliveryProfile
 from shopify_sdk.gql.queries import deliveryProfiles
+from shopify_sdk.gql.core.types import CountryCode
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from shopify_sdk.gql.core.types import CountryCode
     from shopify_sdk.gql.core.types.connections import DeliveryProfileConnection
 
 
@@ -42,7 +42,9 @@ class BulkDeliveryManager:
                     "ProductVariant": {"id"},
                 },
             ).execute(client)
-            variants = getattr(getattr(product, "variants", None), "nodes", None) or []
+            if not product:
+                raise ValueError(f"Product with ID '{product_id}' not found.")
+            variants = product.variants.nodes if product.variants else []
             if not variants:
                 raise ValueError(f"No variants found for product '{product_id}'.")
             for variant in variants:
@@ -68,12 +70,20 @@ class BulkDeliveryManager:
                 )
             )
         for index, payload in enumerate(deliveryProfileUpdate.bulk(mutations), start=1):
-            if hasattr(payload, "userErrors"):
+            if payload is None:
+                raise ValueError(
+                    f"Delivery profile assignment failed; no payload returned for chunk {index}."
+                )
+            user_errors = getattr(payload, "userErrors", []) or []
+            if user_errors:
+                messages = ", ".join(error.message for error in user_errors)
                 logger.error(
-                    f"Delivery profile assignment failed {payload.userErrors} in bulk operation at chunk {index}."
+                    "Delivery profile assignment failed %s in bulk operation at chunk %s.",
+                    messages,
+                    index,
                 )
                 raise ValueError(
-                    f"Delivery profile assignment failed {payload.userErrors} in bulk operation at chunk {index}."
+                    f"Delivery profile assignment failed {messages} in bulk operation at chunk {index}."
                 )
 
         return list(product_ids)

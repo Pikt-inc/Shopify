@@ -75,7 +75,7 @@ class StoreManager(BaseModel):
                 "Publication": set({"id", "name", "status", "publishedAt", "updatedAt"})
             },
         )
-        response: "PublicationConnection" = query.execute(client)
+        response = query.execute(client)
         return response
 
 

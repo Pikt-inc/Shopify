@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 def product_details(product_id: str) -> Product:
-    product: Product = productByIdentifier(
+    product = productByIdentifier(
         identifier=ProductIdentifierInput(id=product_id, handle=None),
         field_exclusions={
             "Product": Product.fields_except(
@@ -46,7 +46,7 @@ def variants_by_product(
     product_id: str,
 ) -> ProductVariantConnection:
     """Return all variants for the given product ID."""
-    product: Product = productByIdentifier(
+    product = productByIdentifier(
         identifier=ProductIdentifierInput(id=product_id, handle=None),
         field_exclusions={
             "Product": Product.fields_except(exclude={"id", "variants"}),
@@ -78,7 +78,7 @@ def product_by_sku(
     sku: str,
 ) -> Product:
     """Return (product_id, product_title) for the first variant matching sku."""
-    variant_connection: ProductVariantConnection = productVariants(
+    variant_connection = productVariants(
         first=1,
         query=f"sku:{sku}",
         field_inclusions={

@@ -69,7 +69,7 @@ class BulkActionResultManager:
         return successful_operation
 
     def _get_operation_status(self) -> BulkOperation:
-        operation: BulkOperation = bulkOperation(id=self._bulk_operation_id).execute(
+        operation = bulkOperation(id=self._bulk_operation_id).execute(
             client=self._client
         )
         if operation is None:

@@ -5,7 +5,6 @@ from shopify_sdk import client
 from shopify_sdk.gql import orders as OrdersQuery
 from shopify_sdk.gql.core.types import (
     Order,
-    OrderConnection,
     OrderSortKeys,
     LineItem,
     ProductVariant,
@@ -40,7 +39,7 @@ def iter_orders_from_last_n_days(
     cursor: Optional[str] = None
 
     while True:
-        page: OrderConnection = OrdersQuery(
+        page = OrdersQuery(
             first=page_size,
             after=cursor,
             sortKey=sort_key,
