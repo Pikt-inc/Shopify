@@ -6,3 +6,4 @@ types-urllib3>=1.26.25.14
 strawberry-graphql
 ruff>=0.0.289
 pytest
+dotenv
