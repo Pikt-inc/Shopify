@@ -16,8 +16,9 @@ class TestStoreManager(unittest.TestCase):
             yield object()
 
         manager = StoreManager()
-        with patch.dict(os.environ, {}, clear=True), patch(
-            "shopify_sdk.client_context", fake_client_context
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("shopify_sdk.client_context", fake_client_context),
         ):
             with manager.credentials_context(
                 shop_domain="example.myshopify.com",
@@ -36,8 +37,9 @@ class TestStoreManager(unittest.TestCase):
             yield object()
 
         manager = StoreManager()
-        with patch.dict(os.environ, {"SHOPIFY_API_VERSION": "2024-10"}), patch(
-            "shopify_sdk.client_context", fake_client_context
+        with (
+            patch.dict(os.environ, {"SHOPIFY_API_VERSION": "2024-10"}),
+            patch("shopify_sdk.client_context", fake_client_context),
         ):
             with manager.credentials_context(
                 shop_domain="example.myshopify.com",
@@ -56,8 +58,9 @@ class TestStoreManager(unittest.TestCase):
             yield object()
 
         manager = StoreManager()
-        with patch.dict(os.environ, {"SHOPIFY_API_VERSION": "2024-10"}), patch(
-            "shopify_sdk.client_context", fake_client_context
+        with (
+            patch.dict(os.environ, {"SHOPIFY_API_VERSION": "2024-10"}),
+            patch("shopify_sdk.client_context", fake_client_context),
         ):
             with manager.credentials_context(
                 shop_domain="example.myshopify.com",

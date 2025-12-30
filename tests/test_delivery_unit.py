@@ -30,11 +30,14 @@ class TestBulkDeliveryManager(unittest.TestCase):
                     yield SimpleNamespace(userErrors=[])
 
         manager = BulkDeliveryManager()
-        with patch(
-            "shopify_sdk.gql.queries.productByIdentifier", new=fake_product_query
-        ), patch(
-            "shopify_sdk.gql.mutations.deliveryProfileUpdate",
-            DummyDeliveryProfileUpdate,
+        with (
+            patch(
+                "shopify_sdk.gql.queries.productByIdentifier", new=fake_product_query
+            ),
+            patch(
+                "shopify_sdk.gql.mutations.deliveryProfileUpdate",
+                DummyDeliveryProfileUpdate,
+            ),
         ):
             result = manager.assign_products(
                 profile_id="profile",
@@ -44,6 +47,7 @@ class TestBulkDeliveryManager(unittest.TestCase):
 
         self.assertEqual(result, product_ids)
         self.assertIsNotNone(DummyDeliveryProfileUpdate.seen_mutations)
+        assert DummyDeliveryProfileUpdate.seen_mutations is not None
         self.assertEqual(len(DummyDeliveryProfileUpdate.seen_mutations), 2)
 
     def test_assign_products_raises_on_user_errors(self) -> None:
@@ -62,11 +66,14 @@ class TestBulkDeliveryManager(unittest.TestCase):
                 yield SimpleNamespace(userErrors=[SimpleNamespace(message="bad")])
 
         manager = BulkDeliveryManager()
-        with patch(
-            "shopify_sdk.gql.queries.productByIdentifier", new=fake_product_query
-        ), patch(
-            "shopify_sdk.gql.mutations.deliveryProfileUpdate",
-            DummyDeliveryProfileUpdate,
+        with (
+            patch(
+                "shopify_sdk.gql.queries.productByIdentifier", new=fake_product_query
+            ),
+            patch(
+                "shopify_sdk.gql.mutations.deliveryProfileUpdate",
+                DummyDeliveryProfileUpdate,
+            ),
         ):
             with self.assertRaises(ValueError) as ctx:
                 manager.assign_products(profile_id="profile", product_ids=["p1"])
@@ -86,11 +93,14 @@ class TestDeliveryManager(unittest.TestCase):
             return SimpleNamespace(execute=lambda client: None)
 
         manager = DeliveryManager()
-        with patch(
-            "shopify_sdk.gql.queries.productByIdentifier", new=fake_product_query
-        ), patch(
-            "shopify_sdk.gql.mutations.deliveryProfileUpdate",
-            new=fake_delivery_update,
+        with (
+            patch(
+                "shopify_sdk.gql.queries.productByIdentifier", new=fake_product_query
+            ),
+            patch(
+                "shopify_sdk.gql.mutations.deliveryProfileUpdate",
+                new=fake_delivery_update,
+            ),
         ):
             with self.assertRaises(ValueError) as ctx:
                 manager.assign_products(profile_id="profile", product_ids=["p1"])

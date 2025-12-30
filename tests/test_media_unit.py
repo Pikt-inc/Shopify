@@ -40,12 +40,15 @@ class TestProductMedia(unittest.TestCase):
                 execute=lambda client: {"files": [{"id": "gid://shopify/Media/1"}]}
             )
 
-        with patch(
-            "shopify_sdk.common.product.media._collect_media_ids",
-            return_value=["1", "2"],
-        ), patch(
-            "shopify_sdk.common.product.media.fileUpdate",
-            new=fake_file_update,
+        with (
+            patch(
+                "shopify_sdk.common.product.media._collect_media_ids",
+                return_value=["1", "2"],
+            ),
+            patch(
+                "shopify_sdk.common.product.media.fileUpdate",
+                new=fake_file_update,
+            ),
         ):
             with self.assertRaises(ValueError) as ctx:
                 delete_product_media("gid://shopify/Product/1")
@@ -53,27 +56,29 @@ class TestProductMedia(unittest.TestCase):
         self.assertIn("Not all product media entries", str(ctx.exception))
 
     def test_set_product_images_no_update(self) -> None:
-        with patch(
-            "shopify_sdk.common.product.media.delete_product_media"
-        ) as mock_delete, patch(
-            "shopify_sdk.common.product.media.create_product_media"
-        ) as mock_create:
-            self.assertTrue(
-                set_product_images("gid://shopify/Product/1", None)
-            )
+        with (
+            patch(
+                "shopify_sdk.common.product.media.delete_product_media"
+            ) as mock_delete,
+            patch(
+                "shopify_sdk.common.product.media.create_product_media"
+            ) as mock_create,
+        ):
+            self.assertTrue(set_product_images("gid://shopify/Product/1", None))
 
         mock_delete.assert_not_called()
         mock_create.assert_not_called()
 
     def test_set_product_images_empty_list_clears_only(self) -> None:
-        with patch(
-            "shopify_sdk.common.product.media.delete_product_media"
-        ) as mock_delete, patch(
-            "shopify_sdk.common.product.media.create_product_media"
-        ) as mock_create:
-            self.assertTrue(
-                set_product_images("gid://shopify/Product/1", [])
-            )
+        with (
+            patch(
+                "shopify_sdk.common.product.media.delete_product_media"
+            ) as mock_delete,
+            patch(
+                "shopify_sdk.common.product.media.create_product_media"
+            ) as mock_create,
+        ):
+            self.assertTrue(set_product_images("gid://shopify/Product/1", []))
 
         mock_delete.assert_called_once_with("gid://shopify/Product/1")
         mock_create.assert_not_called()

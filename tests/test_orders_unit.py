@@ -26,9 +26,7 @@ class TestOrderManager(unittest.TestCase):
 
         manager = OrderManager()
         line_items = [OrderCreateLineItemInput(quantity=1)]
-        with patch(
-            "shopify_sdk.gql.mutations.orderCreate", new=fake_order_create
-        ):
+        with patch("shopify_sdk.gql.mutations.orderCreate", new=fake_order_create):
             with self.assertRaises(ValueError) as ctx:
                 manager.create(line_items=line_items)
 
@@ -57,10 +55,9 @@ class TestOrderManager(unittest.TestCase):
             return SimpleNamespace(execute=lambda client: None)
 
         manager = OrderManager()
-        with patch(
-            "shopify_sdk.gql.orderByIdentifier", new=fake_order_by_identifier
-        ), patch(
-            "shopify_sdk.gql.fulfillmentCreate", new=fake_fulfillment_create
+        with (
+            patch("shopify_sdk.gql.orderByIdentifier", new=fake_order_by_identifier),
+            patch("shopify_sdk.gql.fulfillmentCreate", new=fake_fulfillment_create),
         ):
             with self.assertRaises(ValueError) as ctx:
                 manager.mark_fulfilled(
@@ -98,10 +95,9 @@ class TestOrderManager(unittest.TestCase):
             return SimpleNamespace(execute=lambda client: payload)
 
         manager = OrderManager()
-        with patch(
-            "shopify_sdk.gql.orderByIdentifier", new=fake_order_by_identifier
-        ), patch(
-            "shopify_sdk.gql.fulfillmentCreate", new=fake_fulfillment_create
+        with (
+            patch("shopify_sdk.gql.orderByIdentifier", new=fake_order_by_identifier),
+            patch("shopify_sdk.gql.fulfillmentCreate", new=fake_fulfillment_create),
         ):
             with self.assertRaises(ValueError) as ctx:
                 manager.mark_fulfilled(
@@ -122,10 +118,13 @@ class TestOrderManager(unittest.TestCase):
             )
 
         manager = OrderManager()
-        with patch(
-            "shopify_sdk.common.shipping.ensure.ensure_order_gid",
-            return_value="gid://shopify/Order/1",
-        ), patch("shopify_sdk.gql.mutations.orderCancel", new=fake_order_cancel):
+        with (
+            patch(
+                "shopify_sdk.common.shipping.ensure.ensure_order_gid",
+                return_value="gid://shopify/Order/1",
+            ),
+            patch("shopify_sdk.gql.mutations.orderCancel", new=fake_order_cancel),
+        ):
             self.assertTrue(manager.cancel(order_id="1"))
 
         self.assertEqual(calls.get("orderId"), "gid://shopify/Order/1")

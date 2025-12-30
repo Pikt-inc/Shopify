@@ -29,9 +29,7 @@ class TestBulkProductManager(unittest.TestCase):
                 )
 
         manager = BulkProductManager()
-        with patch(
-            "shopify_sdk.gql.mutations.productCreate", DummyProductCreate
-        ):
+        with patch("shopify_sdk.gql.mutations.productCreate", DummyProductCreate):
             result = manager.create(inputs)
 
         self.assertEqual(
@@ -54,9 +52,7 @@ class TestBulkProductManager(unittest.TestCase):
                 )
 
         manager = BulkProductManager()
-        with patch(
-            "shopify_sdk.gql.mutations.productCreate", DummyProductCreate
-        ):
+        with patch("shopify_sdk.gql.mutations.productCreate", DummyProductCreate):
             with self.assertRaises(ValueError) as ctx:
                 manager.create(inputs)
 
@@ -72,9 +68,7 @@ class TestBulkProductManager(unittest.TestCase):
                 yield SimpleNamespace(userErrors=[], deletedProductId=None)
 
         manager = BulkProductManager()
-        with patch(
-            "shopify_sdk.gql.mutations.productDelete", DummyProductDelete
-        ):
+        with patch("shopify_sdk.gql.mutations.productDelete", DummyProductDelete):
             with self.assertRaises(ValueError) as ctx:
                 manager.delete(["gid://shopify/Product/1"])
 
@@ -92,11 +86,10 @@ class TestProductManager(unittest.TestCase):
             return SimpleNamespace(execute=lambda client: payload)
 
         manager = ProductManager()
-        with patch(
-            "shopify_sdk.gql.mutations.productCreate", new=fake_product_create
-        ), patch(
-            "shopify_sdk.common.product.media.set_product_images"
-        ) as mock_images:
+        with (
+            patch("shopify_sdk.gql.mutations.productCreate", new=fake_product_create),
+            patch("shopify_sdk.common.product.media.set_product_images") as mock_images,
+        ):
             product_id = manager.create(
                 title="With Images",
                 images=["https://example.com/a.jpg"],
@@ -118,9 +111,7 @@ class TestProductManager(unittest.TestCase):
             return SimpleNamespace(execute=lambda client: payload)
 
         manager = ProductManager()
-        with patch(
-            "shopify_sdk.gql.mutations.productCreate", new=fake_product_create
-        ):
+        with patch("shopify_sdk.gql.mutations.productCreate", new=fake_product_create):
             with self.assertRaises(ValueError) as ctx:
                 manager.create(title="Bad")
 
@@ -131,9 +122,7 @@ class TestProductManager(unittest.TestCase):
             return SimpleNamespace(execute=lambda client: None)
 
         manager = ProductManager()
-        with patch(
-            "shopify_sdk.gql.mutations.productDelete", new=fake_product_delete
-        ):
+        with patch("shopify_sdk.gql.mutations.productDelete", new=fake_product_delete):
             with self.assertRaises(ValueError) as ctx:
                 manager.delete("gid://shopify/Product/1")
 
