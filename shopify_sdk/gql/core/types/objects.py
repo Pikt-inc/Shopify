@@ -962,8 +962,19 @@ class BulkOperation(AutoRegisterModel):
     url: Optional[URL] = Field(default=None)
 
 
+class Job(AutoRegisterModel):
+    done: Boolean
+    id: ID
+
+
 class ProductSetUserError(AutoRegisterModel):
     code: ProductSetUserErrorCode
+    field: Optional[List[String]] = Field(default=None)
+    message: String
+
+
+class OrderCancelUserError(AutoRegisterModel):
+    code: Optional[OrderCancelUserErrorCode] = Field(default=None)
     field: Optional[List[String]] = Field(default=None)
     message: String
 

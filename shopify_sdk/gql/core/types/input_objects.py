@@ -1,5 +1,10 @@
 from .objects import input_object
-from .enums import ProductStatus, ProductVariantInventoryPolicy, CombinedListingsRole
+from .enums import (
+    ProductStatus,
+    ProductVariantInventoryPolicy,
+    CombinedListingsRole,
+    CountryCode,
+)
 from .base import (
     ID,
     Boolean,
@@ -15,6 +20,18 @@ from pydantic import Field, field_serializer
 
 
 class OrderIdentifierInput(input_object):
+    id: ID
+
+
+class OrderCloseInput(input_object):
+    id: ID
+
+
+class OrderOpenInput(input_object):
+    id: ID
+
+
+class OrderMarkAsPaidInput(input_object):
     id: ID
 
 
@@ -72,6 +89,13 @@ class FulfillmentOrderLineItemsInput(input_object):
 
 
 class FulfillmentV2Input(input_object):
+    lineItemsByFulfillmentOrder: List[FulfillmentOrderLineItemsInput]
+    notifyCustomer: Optional[Boolean] = Field(default=None)
+    originAddress: Optional[FulfillmentOriginAddressInput] = Field(default=None)
+    trackingInfo: Optional[FulfillmentTrackingInput] = Field(default=None)
+
+
+class FulfillmentInput(input_object):
     lineItemsByFulfillmentOrder: List[FulfillmentOrderLineItemsInput]
     notifyCustomer: Optional[Boolean] = Field(default=None)
     originAddress: Optional[FulfillmentOriginAddressInput] = Field(default=None)
@@ -158,6 +182,75 @@ class ProductUpdateInput(input_object):
     templateSuffix: Optional[String] = Field(default=None)
     title: Optional[String] = Field(default=None)
     vendor: Optional[String] = Field(default=None)
+
+
+class ProductDeleteInput(input_object):
+    id: ID
+
+
+class DeliveryProvinceInput(input_object):
+    code: String
+
+
+class DeliveryCountryInput(input_object):
+    code: Optional["CountryCode"] = Field(default=None)
+    restOfWorld: Optional[Boolean] = Field(default=None)
+    provinces: Optional[List[DeliveryProvinceInput]] = Field(default=None)
+    includeAllProvinces: Optional[Boolean] = Field(default=None)
+
+
+class MoneyInput(input_object):
+    amount: String
+    currencyCode: String
+
+
+class DeliveryRateDefinitionInput(input_object):
+    price: MoneyInput
+    id: Optional[ID] = Field(default=None)
+
+
+class DeliveryMethodDefinitionInput(input_object):
+    name: Optional[String] = Field(default=None)
+    description: Optional[String] = Field(default=None)
+    active: Optional[Boolean] = Field(default=None)
+    rateDefinition: Optional[DeliveryRateDefinitionInput] = Field(default=None)
+    id: Optional[ID] = Field(default=None)
+
+
+class DeliveryLocationGroupZoneInput(input_object):
+    name: Optional[String] = Field(default=None)
+    countries: List[DeliveryCountryInput] = Field(default_factory=list)
+    methodDefinitionsToCreate: List[DeliveryMethodDefinitionInput] = Field(
+        default_factory=list
+    )
+    id: Optional[ID] = Field(default=None)
+
+
+class DeliveryProfileLocationGroupInput(input_object):
+    locations: List[ID] = Field(default_factory=list)
+    zonesToCreate: List[DeliveryLocationGroupZoneInput] = Field(default_factory=list)
+    id: Optional[ID] = Field(default=None)
+
+
+class DeliveryProfileInput(input_object):
+    name: Optional[String] = Field(default=None)
+    profileLocationGroups: Optional[List[DeliveryProfileLocationGroupInput]] = Field(
+        default=None
+    )
+    locationGroupsToCreate: Optional[List[DeliveryProfileLocationGroupInput]] = Field(
+        default=None
+    )
+    locationGroupsToUpdate: Optional[List[DeliveryProfileLocationGroupInput]] = Field(
+        default=None
+    )
+    locationGroupsToDelete: Optional[List[ID]] = Field(default=None)
+    variantsToAssociate: Optional[List[ID]] = Field(default=None)
+    variantsToDissociate: Optional[List[ID]] = Field(default=None)
+    zonesToDelete: Optional[List[ID]] = Field(default=None)
+    methodDefinitionsToDelete: Optional[List[ID]] = Field(default=None)
+    conditionsToDelete: Optional[List[ID]] = Field(default=None)
+    sellingPlanGroupsToAssociate: Optional[List[ID]] = Field(default=None)
+    sellingPlanGroupsToDissociate: Optional[List[ID]] = Field(default=None)
 
 
 class ProductInput(input_object):
@@ -300,10 +393,42 @@ class AttributeInput(input_object):
     value: String
 
 
+class OrderLineItemInput(input_object):
+    variantId: Optional[ID] = Field(default=None)
+    quantity: Int
+    title: Optional[String] = Field(default=None)
+    price: Optional[String] = Field(default=None)
+    sku: Optional[String] = Field(default=None)
+    requiresShipping: Optional[Boolean] = Field(default=None)
+    taxable: Optional[Boolean] = Field(default=None)
+
+
+class OrderCreateLineItemInput(input_object):
+    variantId: Optional[ID] = Field(default=None)
+    quantity: Int
+    title: Optional[String] = Field(default=None)
+    price: Optional[String] = Field(default=None)
+    sku: Optional[String] = Field(default=None)
+    requiresShipping: Optional[Boolean] = Field(default=None)
+    taxable: Optional[Boolean] = Field(default=None)
+
+
+class OrderCreateOrderInput(input_object):
+    customAttributes: Optional[AttributeInput] = Field(default=None)
+    email: Optional[String] = Field(default=None)
+    lineItems: Optional[List[OrderCreateLineItemInput]] = Field(default=None)
+    note: Optional[String] = Field(default=None)
+    shippingAddress: Optional[MailingAddressInput] = Field(default=None)
+    billingAddress: Optional[MailingAddressInput] = Field(default=None)
+    tags: List[String] = Field(default_factory=list)
+    metafields: Optional[MetafieldInput] = Field(default=None)
+
+
 class OrderInput(input_object):
     customAttributes: Optional[AttributeInput] = Field(default=None)
     email: Optional[String] = Field(default=None)
     id: ID
+    lineItems: Optional[List[OrderLineItemInput]] = Field(default=None)
     localizedFields: Optional[LocalizedFieldInput] = Field(default=None)
     metafields: Optional[MetafieldInput] = Field(default=None)
     note: Optional[String] = Field(default=None)
