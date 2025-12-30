@@ -123,6 +123,11 @@ class DeliveryManager:
         )
         from shopify_sdk.gql.mutations import deliveryProfileCreate
 
+        if not location_ids:
+            raise ValueError(
+                "At least one location_id must be provided to create a delivery profile."
+            )
+
         profile_input = DeliveryProfileInput(
             name=name,
             locationGroupsToCreate=[
@@ -229,7 +234,9 @@ class DeliveryManager:
                     "ProductVariant": {"id"},
                 },
             ).execute(client)
-            variants = getattr(getattr(product, "variants", None), "nodes", None) or []
+            if not product:
+                raise ValueError(f"Product with ID '{product_id}' not found.")
+            variants = product.variants.nodes if product.variants else []
             if not variants:
                 raise ValueError(f"No variants found for product '{product_id}'.")
             for variant in variants:

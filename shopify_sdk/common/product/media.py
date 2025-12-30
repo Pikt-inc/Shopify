@@ -50,7 +50,7 @@ def create_product_media(product_id: str, image_urls: list[str]) -> bool:
 
         return True
     except Exception as e:
-        raise ValueError(f"Product media creation failed: {e}")
+        raise ValueError(f"Product media creation failed: {e}") from e
 
 
 def _collect_media_ids(product_id: str) -> list[str]:
@@ -116,7 +116,7 @@ def delete_product_media(product_id: str) -> bool:
             files=file_inputs,
         ).execute(client=client)
     except Exception as e:
-        raise ValueError(f"Product media deletion failed: {e}")
+        raise ValueError(f"Product media deletion failed: {e}") from e
 
     updated_files = result.get("files", [])
     if len(updated_files) != len(media_ids):
