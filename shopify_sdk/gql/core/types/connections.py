@@ -8,21 +8,25 @@ if TYPE_CHECKING:
         CollectionEdge,
         FulfillmentOrderEdge,
         FulfillmentOrderLineItemEdge,
+        FulfillmentLineItemEdge,
         LineItemEdge,
         LocationEdge,
         OrderEdge,
         ProductBundleComponentEdge,
         ProductVariantEdge,
         PublicationEdge,
+        RefundLineItemEdge,
         ResourcePublicationEdge,
         SalesAgreementEdge,
         DeliveryProfileEdge,
         ProductEdge,
+        OrderTransactionEdge,
     )
     from .objects import (
         Collection,
         FulfillmentOrder,
         FulfillmentOrderLineItem,
+        FulfillmentLineItem,
         LineItem,
         Location,
         Order,
@@ -30,10 +34,12 @@ if TYPE_CHECKING:
         ProductBundleComponent,
         ProductVariant,
         Publication,
+        RefundLineItem,
         ResourcePublication,
         SalesAgreement,
         DeliveryProfile,
         Product,
+        OrderTransaction,
     )
 
 
@@ -64,6 +70,24 @@ class FulfillmentOrderConnection(connection):
 class FulfillmentOrderLineItemConnection(connection):
     edges: list[FulfillmentOrderLineItemEdge]
     nodes: list[FulfillmentOrderLineItem]
+    pageInfo: PageInfo
+
+
+class FulfillmentLineItemConnection(connection):
+    edges: list[FulfillmentLineItemEdge]
+    nodes: list[FulfillmentLineItem]
+    pageInfo: PageInfo
+
+
+class RefundLineItemConnection(connection):
+    edges: list[RefundLineItemEdge]
+    nodes: list[RefundLineItem]
+    pageInfo: PageInfo
+
+
+class OrderTransactionConnection(connection):
+    edges: list[OrderTransactionEdge]
+    nodes: list[OrderTransaction]
     pageInfo: PageInfo
 
 

@@ -8,6 +8,11 @@ if TYPE_CHECKING:
         OrderDisplayFulfillmentStatus,
         OrderDisplayFinancialStatus,
     )
+    from shopify_sdk.gql.core.types.enums import OrderCancelReason
+    from shopify_sdk.gql.core.types.input_objects import (
+        MailingAddressInput,
+        OrderCreateLineItemInput,
+    )
     from shopify_sdk.gql.core.types.connections import OrderConnection
 
 
@@ -157,16 +162,38 @@ class OrderManager:
                 "Order": set(
                     {
                         "id",
+                        "legacyResourceId",
                         "name",
                         "email",
                         "createdAt",
+                        "updatedAt",
+                        "processedAt",
+                        "cancelledAt",
+                        "cancelReason",
                         "totalPriceSet",
+                        "subtotalPriceSet",
+                        "totalTaxSet",
+                        "totalDiscountsSet",
+                        "totalShippingPriceSet",
                         "financialStatus",
                         "fulfillmentStatus",
+                        "displayFinancialStatus",
+                        "displayFulfillmentStatus",
                         "shippingAddress",
                         "billingAddress",
                         "tags",
+                        "note",
+                        "sourceName",
+                        "paymentGatewayNames",
+                        "currencyCode",
+                        "presentmentCurrencyCode",
+                        "customerLocale",
+                        "confirmed",
                         "lineItems",
+                        "shippingLines",
+                        "transactions",
+                        "refunds",
+                        "fulfillments",
                         "customer",
                         "discountApplications",
                     }
@@ -177,15 +204,271 @@ class OrderManager:
                         "id",
                         "sku",
                         "title",
+                        "name",
                         "quantity",
                         "priceSet",
                         "totalDiscountSet",
                         "taxLines",
                         "product",
+                        "variant",
+                        "variantTitle",
+                        "customAttributes",
+                        "discountedTotalSet",
+                        "originalUnitPriceSet",
+                        "discountedUnitPriceSet",
+                        "fulfillmentStatus",
                     }
                 ),
                 "Product": set({"id"}),
+                "ProductVariant": set({"id", "sku"}),
+                "Attribute": set({"key", "value"}),
+                "TaxLine": set({"title", "rate", "priceSet"}),
+                "ShippingLineConnection": set({"nodes"}),
+                "ShippingLine": set({"title", "code", "originalPriceSet"}),
+                "OrderTransaction": set(
+                    {
+                        "id",
+                        "kind",
+                        "status",
+                        "processedAt",
+                        "gateway",
+                        "amountSet",
+                    }
+                ),
+                "Refund": set({"id", "createdAt", "refundLineItems", "transactions"}),
+                "RefundLineItemConnection": set({"edges"}),
+                "RefundLineItemEdge": set({"node"}),
+                "RefundLineItem": set({"lineItem", "quantity", "subtotalSet"}),
+                "Fulfillment": set({"id", "trackingInfo", "fulfillmentLineItems"}),
+                "FulfillmentTrackingInfo": set({"company", "number"}),
+                "FulfillmentLineItemConnection": set({"edges"}),
+                "FulfillmentLineItemEdge": set({"node"}),
+                "FulfillmentLineItem": set({"lineItem"}),
             },
         )
         result: Optional["Order"] = query.execute(client)
         return result
+
+    def create(
+        self,
+        line_items: list["OrderCreateLineItemInput"],
+        *,
+        email: Optional[str] = None,
+        shipping_address: Optional["MailingAddressInput"] = None,
+        note: Optional[str] = None,
+        tags: Optional[list[str]] = None,
+    ) -> "ID":
+        from shopify_sdk import client
+        from shopify_sdk.gql.core.types import OrderCreateOrderInput
+        from shopify_sdk.gql.mutations import orderCreate
+
+        if not line_items:
+            raise ValueError("At least one line item is required to create an order.")
+
+        input_data = OrderCreateOrderInput(
+            lineItems=line_items,
+            email=email,
+            shippingAddress=shipping_address,
+            note=note,
+            tags=tags or [],
+        )
+        payload = orderCreate(
+            order=input_data,
+            field_inclusions={
+                "OrderCreatePayload": {"order", "userErrors"},
+                "Order": {"id"},
+                "UserError": {"field", "message"},
+            },
+        ).execute(client)
+        if payload is None:
+            raise ValueError("Order creation failed; no payload returned.")
+        user_errors = getattr(payload, "userErrors", []) or []
+        if user_errors:
+            messages = ", ".join(error.message for error in user_errors)
+            raise ValueError(f"Order creation failed: {messages}")
+        order = getattr(payload, "order", None)
+        order_id = getattr(order, "id", None)
+        if not order_id:
+            raise ValueError("Order creation failed; no order returned.")
+        return cast("ID", order_id)
+
+    def close(self, order_id: "ID") -> bool:
+        from shopify_sdk import client
+        from shopify_sdk.common.shipping.ensure import ensure_order_gid
+        from shopify_sdk.gql.core.types import OrderCloseInput
+        from shopify_sdk.gql.mutations import orderClose
+
+        order_gid = ensure_order_gid(order_id)
+        payload = orderClose(
+            input=OrderCloseInput(id=order_gid),
+            field_inclusions={
+                "OrderClosePayload": {"order", "userErrors"},
+                "Order": {"id"},
+                "UserError": {"field", "message"},
+            },
+        ).execute(client)
+        if payload is None:
+            raise ValueError("Order close failed; no payload returned.")
+        user_errors = getattr(payload, "userErrors", []) or []
+        if user_errors:
+            messages = ", ".join(error.message for error in user_errors)
+            raise ValueError(f"Order close failed: {messages}")
+        order = getattr(payload, "order", None)
+        if not getattr(order, "id", None):
+            raise ValueError("Order close failed; no order returned.")
+        return True
+
+    def mark_fulfilled(
+        self,
+        order_id: "ID",
+        line_item_id: "ID",
+        *,
+        tracking_number: str,
+        tracking_company: str,
+        notify_customer: bool = False,
+        message: str = "",
+    ) -> bool:
+        from shopify_sdk import client
+        from shopify_sdk.common.shipping.ensure import (
+            ensure_line_item_gid,
+            ensure_order_gid,
+        )
+        from shopify_sdk.gql import fulfillmentCreate, orderByIdentifier
+        from shopify_sdk.gql.core.types import (
+            FulfillmentInput,
+            FulfillmentOrderLineItemInput,
+            FulfillmentOrderLineItemsInput,
+            FulfillmentTrackingInput,
+            OrderIdentifierInput,
+        )
+
+        order_gid = ensure_order_gid(order_id)
+        line_item_gid = ensure_line_item_gid(line_item_id)
+        order = orderByIdentifier(
+            identifier=OrderIdentifierInput(id=order_gid),
+            field_inclusions={
+                "Order": {"fulfillmentOrders"},
+                "FulfillmentOrderConnection": {"nodes"},
+                "FulfillmentOrder": {"id", "lineItems"},
+                "FulfillmentOrderLineItemConnection": {"nodes"},
+                "FulfillmentOrderLineItem": {"id", "remainingQuantity", "lineItem"},
+                "LineItem": {"id"},
+            },
+            connection_arguments={
+                "fulfillmentOrders": {"first": 50},
+                "lineItems": {"first": 250},
+            },
+        ).execute(client=client)
+        if order is None:
+            raise ValueError("Order fulfillment failed; order not found.")
+
+        line_items_by_fulfillment: list[FulfillmentOrderLineItemsInput] = []
+        matched_line_item = False
+        fulfillment_orders = getattr(order, "fulfillmentOrders", None)
+        for fulfillment_order in getattr(fulfillment_orders, "nodes", []) or []:
+            items: list[FulfillmentOrderLineItemInput] = []
+            fulfillment_order_id = getattr(fulfillment_order, "id", None)
+            if not fulfillment_order_id:
+                continue
+            line_items = getattr(fulfillment_order, "lineItems", None)
+            for line_item in getattr(line_items, "nodes", []) or []:
+                fulfillment_line_item_id = getattr(line_item, "id", None)
+                if not fulfillment_line_item_id:
+                    continue
+                order_line_item = getattr(line_item, "lineItem", None)
+                order_line_item_id = getattr(order_line_item, "id", None)
+                if order_line_item_id != line_item_gid:
+                    continue
+                matched_line_item = True
+                quantity = getattr(line_item, "remainingQuantity", None)
+                if quantity is None:
+                    quantity = 1
+                if quantity <= 0:
+                    continue
+                items.append(
+                    FulfillmentOrderLineItemInput(
+                        id=fulfillment_line_item_id, quantity=int(quantity)
+                    )
+                )
+            if items:
+                line_items_by_fulfillment.append(
+                    FulfillmentOrderLineItemsInput(
+                        fulfillmentOrderId=fulfillment_order_id,
+                        fulfillmentOrderLineItems=items,
+                    )
+                )
+
+        if not matched_line_item:
+            raise ValueError("Order fulfillment failed; line item not found.")
+        if not line_items_by_fulfillment:
+            raise ValueError(
+                "Order fulfillment failed; line item has no fulfillable quantity."
+            )
+
+        tracking_info = FulfillmentTrackingInput(
+            company=tracking_company,
+            number=tracking_number,
+        )
+
+        fulfillment_input = FulfillmentInput(
+            lineItemsByFulfillmentOrder=line_items_by_fulfillment,
+            notifyCustomer=notify_customer,
+            trackingInfo=tracking_info,
+        )
+        payload = fulfillmentCreate(
+            fulfillment=fulfillment_input,
+            message=message,
+            field_inclusions={
+                "FulfillmentCreatePayload": {"fulfillment", "userErrors"},
+                "Fulfillment": {"id"},
+                "UserError": {"field", "message"},
+            },
+        ).execute(client=client)
+        if payload is None:
+            raise ValueError("Order fulfillment failed; no payload returned.")
+        user_errors = getattr(payload, "userErrors", []) or []
+        if user_errors:
+            messages = ", ".join(error.message for error in user_errors)
+            raise ValueError(f"Order fulfillment failed: {messages}")
+        fulfillment = getattr(payload, "fulfillment", None)
+        if not getattr(fulfillment, "id", None):
+            raise ValueError("Order fulfillment failed; no fulfillment returned.")
+        return True
+
+    def cancel(
+        self,
+        order_id: "ID",
+        *,
+        reason: Optional["OrderCancelReason"] = None,
+        restock: bool = False,
+        notify_customer: Optional[bool] = None,
+        staff_note: Optional[str] = None,
+    ) -> bool:
+        from shopify_sdk import client
+        from shopify_sdk.common.shipping.ensure import ensure_order_gid
+        from shopify_sdk.gql.core.types.enums import OrderCancelReason
+        from shopify_sdk.gql.mutations import orderCancel
+
+        if reason is None:
+            reason = OrderCancelReason.OTHER
+
+        order_gid = ensure_order_gid(order_id)
+        payload = orderCancel(
+            orderId=order_gid,
+            restock=restock,
+            reason=reason,
+            notifyCustomer=notify_customer,
+            staffNote=staff_note,
+            field_inclusions={
+                "OrderCancelPayload": {"job", "orderCancelUserErrors"},
+                "Job": {"id", "done"},
+                "OrderCancelUserError": {"code", "field", "message"},
+            },
+        ).execute(client)
+        if payload is None:
+            raise ValueError("Order cancel failed; no payload returned.")
+        cancel_errors = getattr(payload, "orderCancelUserErrors", []) or []
+        if cancel_errors:
+            messages = ", ".join(error.message for error in cancel_errors)
+            raise ValueError(f"Order cancel failed: {messages}")
+        return True

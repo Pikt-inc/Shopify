@@ -10,13 +10,16 @@ if TYPE_CHECKING:
         CollectionConnection,
         FulfillmentOrderConnection,
         FulfillmentOrderLineItemConnection,
+        FulfillmentLineItemConnection,
         LineItemConnection,
         ProductConnection,
         ProductBundleComponentConnection,
         ProductVariantConnection,
         PublicationConnection,
+        RefundLineItemConnection,
         ResourcePublicationConnection,
         SalesAgreementConnection,
+        OrderTransactionConnection,
     )
     from .enums import *
 
@@ -501,6 +504,7 @@ class Fulfillment(AutoRegisterModel):
     createdAt: DateTime
     id: ID
     status: String
+    fulfillmentLineItems: FulfillmentLineItemConnection
     trackingInfo: List[FulfillmentTrackingInfo]
 
 
@@ -591,11 +595,19 @@ class PurchasingEntity(AutoRegisterModel):
     typename: Optional[String] = Field(default=None, alias="__typename")
 
 
+class RefundLineItem(AutoRegisterModel):
+    lineItem: LineItem
+    quantity: Int
+    subtotalSet: MoneyBag
+
+
 class Refund(AutoRegisterModel):
     createdAt: DateTime
     id: ID
     note: String
+    refundLineItems: RefundLineItemConnection
     totalRefundedSet: MoneyBag
+    transactions: OrderTransactionConnection
 
 
 class Return(AutoRegisterModel):
@@ -684,6 +696,9 @@ class OrderTransaction(AutoRegisterModel):
     createdAt: DateTime
     gateway: String
     id: ID
+    kind: String
+    processedAt: DateTime
+    status: String
 
 
 class Order(AutoRegisterModel):
@@ -833,6 +848,7 @@ class LineItem(AutoRegisterModel):
     originalUnitPriceSet: MoneyBag
     product: Product
     quantity: Int
+    fulfillmentStatus: String
     refundableQuantity: Int
     requiresShipping: Boolean
     restockable: Boolean
@@ -848,6 +864,11 @@ class LineItem(AutoRegisterModel):
     variant: ProductVariant
     variantTitle: String
     vendor: String
+
+
+class FulfillmentLineItem(AutoRegisterModel):
+    lineItem: LineItem
+    quantity: Int
 
 
 class FulfillmentOrderLineItem(AutoRegisterModel):
@@ -962,8 +983,19 @@ class BulkOperation(AutoRegisterModel):
     url: Optional[URL] = Field(default=None)
 
 
+class Job(AutoRegisterModel):
+    done: Boolean
+    id: ID
+
+
 class ProductSetUserError(AutoRegisterModel):
     code: ProductSetUserErrorCode
+    field: Optional[List[String]] = Field(default=None)
+    message: String
+
+
+class OrderCancelUserError(AutoRegisterModel):
+    code: Optional[OrderCancelUserErrorCode] = Field(default=None)
     field: Optional[List[String]] = Field(default=None)
     message: String
 

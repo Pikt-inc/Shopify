@@ -33,3 +33,58 @@ class BulkOperationResultPayload(AutoRegisterModel):
 class ProductUpdatePayload(AutoRegisterModel):
     product: Optional[Product] = Field(default=None)
     userErrors: List[UserError]
+
+
+class ProductCreateMediaPayload(AutoRegisterModel):
+    media: List[Media]
+    mediaUserErrors: List[UserError]
+
+
+class ProductDeletePayload(AutoRegisterModel):
+    deletedProductId: Optional[ID] = Field(default=None)
+    userErrors: List[UserError]
+
+
+class FulfillmentCreatePayload(AutoRegisterModel):
+    fulfillment: Optional[Fulfillment] = Field(default=None)
+    userErrors: List[UserError]
+
+
+class OrderCreatePayload(AutoRegisterModel):
+    order: Optional[Order] = Field(default=None)
+    userErrors: List[UserError]
+
+
+class DeliveryProfileUpdatePayload(AutoRegisterModel):
+    profile: Optional[DeliveryProfile] = Field(default=None)
+    userErrors: List[UserError]
+
+
+class DeliveryProfileCreatePayload(AutoRegisterModel):
+    profile: Optional[DeliveryProfile] = Field(default=None)
+    userErrors: List[UserError]
+
+
+class DeliveryProfileRemovePayload(AutoRegisterModel):
+    job: Optional[Job] = Field(default=None)
+    userErrors: List[UserError]
+
+
+class OrderClosePayload(AutoRegisterModel):
+    order: Optional[Order] = Field(default=None)
+    userErrors: List[UserError]
+
+
+class OrderOpenPayload(AutoRegisterModel):
+    order: Optional[Order] = Field(default=None)
+    userErrors: List[UserError]
+
+
+class OrderMarkAsPaidPayload(AutoRegisterModel):
+    order: Optional[Order] = Field(default=None)
+    userErrors: List[UserError]
+
+
+class OrderCancelPayload(AutoRegisterModel):
+    job: Optional[Job] = Field(default=None)
+    orderCancelUserErrors: List[OrderCancelUserError]

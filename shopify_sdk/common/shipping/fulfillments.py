@@ -1,6 +1,5 @@
 from shopify_sdk.gql.core.types import (
     OrderIdentifierInput,
-    Order,
     LineItem,
     FulfillmentOrderLineItem,
     FulfillmentTrackingInput,
@@ -19,7 +18,7 @@ from .ensure import ensure_line_item_gid, ensure_order_gid
 
 def get_fulfillments_by_order_id(order_id: ID) -> list[FulfillmentOrder]:
     identifier = OrderIdentifierInput(id=order_id)
-    res: Order = orderByIdentifier(
+    res = orderByIdentifier(
         identifier=identifier,
         field_inclusions={"Order": {"fulfillmentOrders"}},
         field_exclusions={
@@ -33,6 +32,8 @@ def get_fulfillments_by_order_id(order_id: ID) -> list[FulfillmentOrder]:
             "fulfillmentOrders": {"first": 100},
         },
     ).execute(client=client)
+    if not res or not res.fulfillmentOrders:
+        raise ValueError(f"No fulfillment orders found for order ID '{order_id}'.")
     return res.fulfillmentOrders.nodes
 
 

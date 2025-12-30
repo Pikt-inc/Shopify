@@ -31,3 +31,10 @@ jobs:
 
       - name: Ruff Format
         run: ruff format --check .
+
+      - name: Run Tests
+        run: python -m pytest
+        env:
+          TEST_SHOPIFY_SHOP_DOMAIN: ${{ secrets.TEST_SHOPIFY_SHOP_DOMAIN }}
+          TEST_SHOPIFY_ACCESS_TOKEN: ${{ secrets.TEST_SHOPIFY_ACCESS_TOKEN }}
+          TEST_SHOPIFY_API_VERSION: ${{ secrets.TEST_SHOPIFY_API_VERSION }}

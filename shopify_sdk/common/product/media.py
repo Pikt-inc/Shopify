@@ -31,17 +31,26 @@ def create_product_media(product_id: str, image_urls: list[str]) -> bool:
         )
 
     try:
-        result: dict[str, Any] = productCreateMedia(
+        payload = productCreateMedia(
             media=media_inputs,
             productId=ID(product_id),
         ).execute(client=client)
 
-        media_result = result.get("media")
+        if payload is None:
+            raise ValueError("Product media creation returned no payload.")
+
+        media_result = getattr(payload, "media", None)
         if media_result is None:
             raise ValueError("Product media creation returned no media payload.")
+
+        user_errors = getattr(payload, "mediaUserErrors", []) or []
+        if user_errors:
+            messages = ", ".join(error.message for error in user_errors)
+            raise ValueError(f"Product media creation errors: {messages}")
+
         return True
     except Exception as e:
-        raise ValueError(f"Product media creation failed: {e}")
+        raise ValueError(f"Product media creation failed: {e}") from e
 
 
 def _collect_media_ids(product_id: str) -> list[str]:
@@ -107,7 +116,7 @@ def delete_product_media(product_id: str) -> bool:
             files=file_inputs,
         ).execute(client=client)
     except Exception as e:
-        raise ValueError(f"Product media deletion failed: {e}")
+        raise ValueError(f"Product media deletion failed: {e}") from e
 
     updated_files = result.get("files", [])
     if len(updated_files) != len(media_ids):

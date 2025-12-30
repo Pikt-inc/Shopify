@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, TYPE_CHECKING, cast
+from typing import Optional, TYPE_CHECKING, cast, Sequence
 
 from shopify_sdk.gql.core.types.base import ID
 from shopify_sdk.gql.core.types.enums import ProductStatus
@@ -7,9 +7,95 @@ from shopify_sdk.gql.core.types.enums import ProductStatus
 if TYPE_CHECKING:
     from shopify_sdk.gql.core.types.payload import ProductUpdatePayload
     from shopify_sdk.gql.core.types.connections import ProductConnection
+    from shopify_sdk.gql.core.types import MetafieldInput
+    from shopify_sdk.gql.core.types import ProductCreateInput
 
 
 class BulkProductManager(BaseModel):
+    def create(self, products: Sequence["ProductCreateInput"]) -> list[ID]:
+        from shopify_sdk.gql.core.mutation import Mutation
+        from shopify_sdk.gql.mutations import productCreate
+
+        if not products:
+            return []
+
+        mutations: list[Mutation] = []
+        for input_data in products:
+            mutations.append(
+                productCreate(
+                    product=input_data,
+                    field_inclusions={
+                        "ProductCreatePayload": {"product", "userErrors"},
+                        "Product": {"id", "handle"},
+                        "UserError": {"field", "message"},
+                    },
+                )
+            )
+
+        created_ids: list[ID] = []
+        errors: list[str] = []
+        for index, payload in enumerate(productCreate.bulk(mutations), start=1):
+            user_errors = getattr(payload, "userErrors", []) or []
+            if user_errors:
+                messages = ", ".join(error.message for error in user_errors)
+                errors.append(f"{index}: {messages}")
+                continue
+            product_obj = getattr(payload, "product", None)
+            product_id = getattr(product_obj, "id", None)
+            if not product_id:
+                errors.append(f"{index}: no product id returned")
+                continue
+            created_ids.append(cast(ID, product_id))
+
+        if errors:
+            details = "; ".join(errors[:5])
+            if len(errors) > 5:
+                details = f"{details}; ... ({len(errors)} total failures)"
+            raise ValueError(f"Bulk product creation failed: {details}")
+
+        return created_ids
+
+    def delete(self, ids: Sequence[ID]) -> list[ID]:
+        from shopify_sdk.gql.core.mutation import Mutation
+        from shopify_sdk.gql.core.types.input_objects import ProductDeleteInput
+        from shopify_sdk.gql.mutations import productDelete
+
+        if not ids:
+            return []
+
+        mutations: list[Mutation] = [
+            productDelete(
+                input=ProductDeleteInput(id=product_id),
+                field_inclusions={
+                    "ProductDeletePayload": {"deletedProductId", "userErrors"},
+                    "UserError": {"field", "message"},
+                },
+            )
+            for product_id in ids
+        ]
+
+        deleted_ids: list[ID] = []
+        errors: list[str] = []
+        for index, payload in enumerate(productDelete.bulk(mutations), start=1):
+            user_errors = getattr(payload, "userErrors", []) or []
+            if user_errors:
+                messages = ", ".join(error.message for error in user_errors)
+                errors.append(f"{index}: {messages}")
+                continue
+            deleted_id = getattr(payload, "deletedProductId", None)
+            if not deleted_id:
+                errors.append(f"{index}: no deleted product id returned")
+                continue
+            deleted_ids.append(cast(ID, deleted_id))
+
+        if errors:
+            details = "; ".join(errors[:5])
+            if len(errors) > 5:
+                details = f"{details}; ... ({len(errors)} total failures)"
+            raise ValueError(f"Bulk product deletion failed: {details}")
+
+        return deleted_ids
+
     def set_status(
         self,
         to_active: Optional[list[ID]] = None,
@@ -43,6 +129,72 @@ class BulkProductManager(BaseModel):
 
 class ProductManager(BaseModel):
     bulk: BulkProductManager = Field(default_factory=BulkProductManager)
+
+    def create(
+        self,
+        title: str,
+        handle: Optional[str] = None,
+        status: ProductStatus = ProductStatus.DRAFT,
+        tags: Optional[list[str]] = None,
+        vendor: Optional[str] = None,
+        product_type: Optional[str] = None,
+        description_html: Optional[str] = None,
+        images: Optional[list[str]] = None,
+        metafields: Optional[list["MetafieldInput"]] = None,
+    ) -> ID:
+        from shopify_sdk import client
+        from shopify_sdk.common.product.media import set_product_images
+        from shopify_sdk.gql.core.types import ProductCreateInput
+        from shopify_sdk.gql.mutations import productCreate
+
+        input_data = ProductCreateInput(
+            title=title,
+            handle=handle,
+            status=status,
+            tags=tags or [],
+            vendor=vendor,
+            productType=product_type,
+            descriptionHtml=description_html,
+            metafields=metafields or [],
+        )
+        payload = productCreate(
+            product=input_data,
+            field_inclusions={
+                "ProductCreatePayload": {"product", "userErrors"},
+                "Product": {"id", "status", "handle"},
+            },
+        ).execute(client)
+        if payload is None or payload.product is None or not payload.product.id:
+            raise ValueError("Product creation failed; no product ID returned.")
+        if payload.userErrors:
+            messages = ", ".join(error.message for error in payload.userErrors)
+            raise ValueError(f"Product creation failed: {messages}")
+        if images is not None:
+            set_product_images(product_id=payload.product.id, images=images)
+        return cast(ID, payload.product.id)
+
+    def delete(self, id: ID) -> bool:
+        from shopify_sdk import client
+        from shopify_sdk.gql.core.types.input_objects import ProductDeleteInput
+        from shopify_sdk.gql.mutations import productDelete
+
+        payload = productDelete(
+            input=ProductDeleteInput(id=id),
+            field_inclusions={
+                "ProductDeletePayload": {"deletedProductId", "userErrors"},
+                "UserError": {"field", "message"},
+            },
+        ).execute(client)
+        if payload is None:
+            raise ValueError("Product deletion failed; no payload returned.")
+        user_errors = getattr(payload, "userErrors", []) or []
+        if user_errors:
+            messages = ", ".join(error.message for error in user_errors)
+            raise ValueError(f"Product deletion failed: {messages}")
+        deleted_id = getattr(payload, "deletedProductId", None)
+        if not deleted_id:
+            raise ValueError("Product deletion failed; no deleted product ID returned.")
+        return True
 
     @property
     def archived(self) -> "ProductConnection":
@@ -187,3 +339,27 @@ class ProductManager(BaseModel):
         handle: Optional[str] = None,
     ) -> Optional[ID]:
         return self.find_product_id(sku=sku, handle=handle)
+
+    def first_variant_id(self, product_id: ID) -> ID:
+        """
+        Return the first variant ID for a product.
+        """
+        from shopify_sdk import client
+        from shopify_sdk.gql.core.types import ProductIdentifierInput
+        from shopify_sdk.gql.queries import productByIdentifier
+
+        product = productByIdentifier(
+            identifier=ProductIdentifierInput(id=product_id, handle=None),
+            field_inclusions={
+                "Product": {"variants"},
+                "ProductVariantConnection": {"nodes"},
+                "ProductVariant": {"id"},
+            },
+        ).execute(client)
+        variants = getattr(getattr(product, "variants", None), "nodes", None) or []
+        if not variants:
+            raise ValueError(f"No variants found for product '{product_id}'.")
+        variant_id = getattr(variants[0], "id", None)
+        if not variant_id:
+            raise ValueError(f"No variant id returned for product '{product_id}'.")
+        return cast(ID, variant_id)

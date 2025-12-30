@@ -10,16 +10,19 @@ if TYPE_CHECKING:
         Collection,
         FulfillmentOrder,
         FulfillmentOrderLineItem,
+        FulfillmentLineItem,
         LineItem,
         Location,
         Order,
         ProductBundleComponent,
         ProductVariant,
         Publication,
+        RefundLineItem,
         ResourcePublication,
         SalesAgreement,
         Product,
         DeliveryProfile,
+        OrderTransaction,
     )
 
 
@@ -37,6 +40,18 @@ class FulfillmentOrderEdge(edge):
 
 class FulfillmentOrderLineItemEdge(edge):
     node: FulfillmentOrderLineItem
+
+
+class FulfillmentLineItemEdge(edge):
+    node: FulfillmentLineItem
+
+
+class RefundLineItemEdge(edge):
+    node: RefundLineItem
+
+
+class OrderTransactionEdge(edge):
+    node: OrderTransaction
 
 
 class SalesAgreementEdge(edge):

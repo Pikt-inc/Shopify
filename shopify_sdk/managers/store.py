@@ -1,4 +1,6 @@
-from typing import TYPE_CHECKING
+import os
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Iterator, Optional
 from pydantic import BaseModel, Field
 
 from .products import ProductManager
@@ -19,6 +21,23 @@ class StoreManager(BaseModel):
     model_config = {
         "arbitrary_types_allowed": True,
     }
+
+    @contextmanager
+    def credentials_context(
+        self,
+        shop_domain: str,
+        access_token: str,
+        api_version: Optional[str] = None,
+    ) -> Iterator["StoreManager"]:
+        from shopify_sdk import client_context
+
+        version = api_version or os.getenv("SHOPIFY_API_VERSION") or "2025-10"
+        with client_context(
+            shop_domain=shop_domain,
+            access_token=access_token,
+            api_version=version,
+        ):
+            yield self
 
     @property
     def locations(self) -> "LocationConnection":
@@ -56,7 +75,7 @@ class StoreManager(BaseModel):
                 "Publication": set({"id", "name", "status", "publishedAt", "updatedAt"})
             },
         )
-        response: "PublicationConnection" = query.execute(client)
+        response = query.execute(client)
         return response
 
 
