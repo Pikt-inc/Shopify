@@ -268,8 +268,8 @@ class OrderManager:
         self,
         order_id: "ID",
         *,
-        tracking_number: Optional[str] = None,
-        tracking_company: Optional[str] = None,
+        tracking_number: str,
+        tracking_company: str,
         notify_customer: bool = False,
         message: str = "",
     ) -> bool:
@@ -335,16 +335,10 @@ class OrderManager:
         if not line_items_by_fulfillment:
             raise ValueError("Order fulfillment failed; no fulfillable line items.")
 
-        tracking_info = None
-        if tracking_number or tracking_company:
-            if not tracking_number or not tracking_company:
-                raise ValueError(
-                    "tracking_number and tracking_company must be provided together."
-                )
-            tracking_info = FulfillmentTrackingInput(
-                company=tracking_company,
-                number=tracking_number,
-            )
+        tracking_info = FulfillmentTrackingInput(
+            company=tracking_company,
+            number=tracking_number,
+        )
 
         fulfillment_input = FulfillmentInput(
             lineItemsByFulfillmentOrder=line_items_by_fulfillment,

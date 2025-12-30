@@ -1,18 +1,15 @@
-from typing import Optional, Sequence, TYPE_CHECKING, cast
+from typing import Sequence, TYPE_CHECKING, cast
+import logging
 
 from shopify_sdk.gql.core.types.base import ID
 from shopify_sdk.gql.core.types.objects import DeliveryProfile
 from shopify_sdk.gql.queries import deliveryProfiles
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from shopify_sdk.gql.core.types import CountryCode
     from shopify_sdk.gql.core.types.connections import DeliveryProfileConnection
-
-
-def _chunked(values: Sequence[ID], size: int) -> list[list[ID]]:
-    if size <= 0:
-        raise ValueError("chunk_size must be greater than 0.")
-    return [list(values[i : i + size]) for i in range(0, len(values), size)]
 
 
 class BulkDeliveryManager:
@@ -53,7 +50,10 @@ class BulkDeliveryManager:
                 if variant_id:
                     variant_ids.append(variant_id)
 
-        chunks = _chunked(variant_ids, chunk_size)
+        chunks = [
+            variant_ids[i : i + chunk_size]
+            for i in range(0, len(variant_ids), chunk_size)
+        ]
         mutations: list[Mutation] = []
         for chunk in chunks:
             mutations.append(
@@ -67,20 +67,14 @@ class BulkDeliveryManager:
                     },
                 )
             )
-
-        errors: list[str] = []
         for index, payload in enumerate(deliveryProfileUpdate.bulk(mutations), start=1):
-            user_errors = getattr(payload, "userErrors", []) or []
-            if user_errors:
-                messages = ", ".join(error.message for error in user_errors)
-                errors.append(f"{index}: {messages}")
-                continue
-
-        if errors:
-            details = "; ".join(errors[:5])
-            if len(errors) > 5:
-                details = f"{details}; ... ({len(errors)} total failures)"
-            raise ValueError(f"Bulk delivery profile assignment failed: {details}")
+            if hasattr(payload, "userErrors"):
+                logger.error(
+                    f"Delivery profile assignment failed {payload.userErrors} in bulk operation at chunk {index}."
+                )
+                raise ValueError(
+                    f"Delivery profile assignment failed {payload.userErrors} in bulk operation at chunk {index}."
+                )
 
         return list(product_ids)
 
@@ -101,15 +95,14 @@ class DeliveryManager:
         name: str,
         location_ids: Sequence[ID],
         *,
-        country_code: Optional["CountryCode"] = None,
-        currency_code: str | None = None,
+        country_code: "CountryCode" = CountryCode.US,
+        currency_code: str = "USD",
         rate_name: str = "Standard",
         rate_price: str = "0.00",
         zone_name: str = "Default",
     ) -> ID:
         from shopify_sdk import client
         from shopify_sdk.gql.core.types import (
-            CountryCode,
             DeliveryCountryInput,
             DeliveryLocationGroupZoneInput,
             DeliveryMethodDefinitionInput,
@@ -119,37 +112,6 @@ class DeliveryManager:
             MoneyInput,
         )
         from shopify_sdk.gql.mutations import deliveryProfileCreate
-
-        if not location_ids:
-            raise ValueError(
-                "At least one location id is required to create a profile."
-            )
-
-        shop_query = """
-        query GetShopDeliveryDefaults {
-          shop {
-            currencyCode
-            shipsToCountries
-          }
-        }
-        """
-        if currency_code is None or country_code is None:
-            response = client.request(query=shop_query, variables={})
-            shop = (response.data or {}).get("shop", {})
-            if currency_code is None:
-                currency_code = shop.get("currencyCode")
-            if country_code is None:
-                countries = shop.get("shipsToCountries") or []
-                if countries:
-                    code = countries[0]
-                    try:
-                        country_code = CountryCode(code)
-                    except Exception:
-                        country_code = CountryCode.US
-        if currency_code is None:
-            currency_code = "USD"
-        if country_code is None:
-            country_code = CountryCode.US
 
         profile_input = DeliveryProfileInput(
             name=name,

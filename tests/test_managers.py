@@ -324,7 +324,13 @@ class TestOrderManager(unittest.TestCase):
                     note="Codex test order",
                 )
                 self.assertIsNotNone(fulfilled_order_id)
-                self.assertTrue(order_manager.mark_fulfilled(fulfilled_order_id))
+                self.assertTrue(
+                    order_manager.mark_fulfilled(
+                        order_id=fulfilled_order_id,
+                        tracking_company="UPS",
+                        tracking_number="1Z999AA10023456784",
+                    )
+                )
 
                 cancel_order_id = order_manager.create(
                     line_items=line_items,
