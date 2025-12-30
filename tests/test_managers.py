@@ -102,6 +102,24 @@ def _wait_for_profile_absence(
     )
 
 
+def _wait_for_order_line_item_id(
+    order_manager,
+    order_id: str,
+    timeout_s: float = 20.0,
+) -> str:
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        order = order_manager.details(order_id)
+        line_items = getattr(order, "lineItems", None)
+        nodes = getattr(line_items, "nodes", None) or []
+        if nodes:
+            line_item_id = getattr(nodes[0], "id", None)
+            if line_item_id:
+                return line_item_id
+        time.sleep(1.0)
+    raise AssertionError(f"Timed out waiting for line items on order '{order_id}'.")
+
+
 class TestProductManager(unittest.TestCase):
     def test_create_find_exchange_set_status_delete(self) -> None:
         with _test_store(self) as test_store:
@@ -324,9 +342,13 @@ class TestOrderManager(unittest.TestCase):
                     note="Codex test order",
                 )
                 self.assertIsNotNone(fulfilled_order_id)
+                line_item_id = _wait_for_order_line_item_id(
+                    order_manager, fulfilled_order_id
+                )
                 self.assertTrue(
                     order_manager.mark_fulfilled(
                         order_id=fulfilled_order_id,
+                        line_item_id=line_item_id,
                         tracking_company="UPS",
                         tracking_number="1Z999AA10023456784",
                     )

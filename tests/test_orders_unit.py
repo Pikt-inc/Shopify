@@ -40,7 +40,13 @@ class TestOrderManager(unittest.TestCase):
                         id="fo1",
                         lineItems=SimpleNamespace(
                             nodes=[
-                                SimpleNamespace(id="li1", remainingQuantity=0),
+                                SimpleNamespace(
+                                    id="fli1",
+                                    remainingQuantity=0,
+                                    lineItem=SimpleNamespace(
+                                        id="gid://shopify/LineItem/1"
+                                    ),
+                                ),
                             ]
                         ),
                     )
@@ -62,11 +68,12 @@ class TestOrderManager(unittest.TestCase):
             with self.assertRaises(ValueError) as ctx:
                 manager.mark_fulfilled(
                     order_id="gid://shopify/Order/1",
+                    line_item_id="gid://shopify/LineItem/1",
                     tracking_number="1Z999",
                     tracking_company="UPS",
                 )
 
-        self.assertIn("no fulfillable line items", str(ctx.exception).lower())
+        self.assertIn("no fulfillable", str(ctx.exception).lower())
 
     def test_mark_fulfilled_raises_on_user_errors(self) -> None:
         order = SimpleNamespace(
@@ -76,7 +83,13 @@ class TestOrderManager(unittest.TestCase):
                         id="fo1",
                         lineItems=SimpleNamespace(
                             nodes=[
-                                SimpleNamespace(id="li1", remainingQuantity=1),
+                                SimpleNamespace(
+                                    id="fli1",
+                                    remainingQuantity=1,
+                                    lineItem=SimpleNamespace(
+                                        id="gid://shopify/LineItem/1"
+                                    ),
+                                ),
                             ]
                         ),
                     )
@@ -102,6 +115,7 @@ class TestOrderManager(unittest.TestCase):
             with self.assertRaises(ValueError) as ctx:
                 manager.mark_fulfilled(
                     order_id="gid://shopify/Order/1",
+                    line_item_id="gid://shopify/LineItem/1",
                     tracking_number="1Z999",
                     tracking_company="UPS",
                 )

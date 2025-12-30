@@ -267,6 +267,7 @@ class OrderManager:
     def mark_fulfilled(
         self,
         order_id: "ID",
+        line_item_id: "ID",
         *,
         tracking_number: str,
         tracking_company: str,
@@ -274,7 +275,10 @@ class OrderManager:
         message: str = "",
     ) -> bool:
         from shopify_sdk import client
-        from shopify_sdk.common.shipping.ensure import ensure_order_gid
+        from shopify_sdk.common.shipping.ensure import (
+            ensure_line_item_gid,
+            ensure_order_gid,
+        )
         from shopify_sdk.gql import fulfillmentCreate, orderByIdentifier
         from shopify_sdk.gql.core.types import (
             FulfillmentInput,
@@ -285,6 +289,7 @@ class OrderManager:
         )
 
         order_gid = ensure_order_gid(order_id)
+        line_item_gid = ensure_line_item_gid(line_item_id)
         order = orderByIdentifier(
             identifier=OrderIdentifierInput(id=order_gid),
             field_inclusions={
@@ -292,7 +297,8 @@ class OrderManager:
                 "FulfillmentOrderConnection": {"nodes"},
                 "FulfillmentOrder": {"id", "lineItems"},
                 "FulfillmentOrderLineItemConnection": {"nodes"},
-                "FulfillmentOrderLineItem": {"id", "remainingQuantity"},
+                "FulfillmentOrderLineItem": {"id", "remainingQuantity", "lineItem"},
+                "LineItem": {"id"},
             },
             connection_arguments={
                 "fulfillmentOrders": {"first": 50},
@@ -303,6 +309,7 @@ class OrderManager:
             raise ValueError("Order fulfillment failed; order not found.")
 
         line_items_by_fulfillment: list[FulfillmentOrderLineItemsInput] = []
+        matched_line_item = False
         fulfillment_orders = getattr(order, "fulfillmentOrders", None)
         for fulfillment_order in getattr(fulfillment_orders, "nodes", []) or []:
             items: list[FulfillmentOrderLineItemInput] = []
@@ -311,9 +318,14 @@ class OrderManager:
                 continue
             line_items = getattr(fulfillment_order, "lineItems", None)
             for line_item in getattr(line_items, "nodes", []) or []:
-                line_item_id = getattr(line_item, "id", None)
-                if not line_item_id:
+                fulfillment_line_item_id = getattr(line_item, "id", None)
+                if not fulfillment_line_item_id:
                     continue
+                order_line_item = getattr(line_item, "lineItem", None)
+                order_line_item_id = getattr(order_line_item, "id", None)
+                if order_line_item_id != line_item_gid:
+                    continue
+                matched_line_item = True
                 quantity = getattr(line_item, "remainingQuantity", None)
                 if quantity is None:
                     quantity = 1
@@ -321,7 +333,7 @@ class OrderManager:
                     continue
                 items.append(
                     FulfillmentOrderLineItemInput(
-                        id=line_item_id, quantity=int(quantity)
+                        id=fulfillment_line_item_id, quantity=int(quantity)
                     )
                 )
             if items:
@@ -332,8 +344,12 @@ class OrderManager:
                     )
                 )
 
+        if not matched_line_item:
+            raise ValueError("Order fulfillment failed; line item not found.")
         if not line_items_by_fulfillment:
-            raise ValueError("Order fulfillment failed; no fulfillable line items.")
+            raise ValueError(
+                "Order fulfillment failed; line item has no fulfillable quantity."
+            )
 
         tracking_info = FulfillmentTrackingInput(
             company=tracking_company,
