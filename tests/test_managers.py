@@ -115,7 +115,7 @@ def _wait_for_order_line_item_id(
         if nodes:
             line_item_id = getattr(nodes[0], "id", None)
             if line_item_id:
-                return line_item_id
+                return str(line_item_id)
         time.sleep(1.0)
     raise AssertionError(f"Timed out waiting for line items on order '{order_id}'.")
 
