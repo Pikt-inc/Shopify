@@ -90,6 +90,7 @@ class OrderTransactionConnection(connection):
     nodes: list[OrderTransaction]
     pageInfo: PageInfo
 
+
 class SalesAgreementConnection(connection):
     edges: list[SalesAgreementEdge]
     nodes: list[SalesAgreement]
