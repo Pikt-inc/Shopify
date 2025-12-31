@@ -38,3 +38,6 @@ jobs:
           TEST_SHOPIFY_SHOP_DOMAIN: ${{ secrets.TEST_SHOPIFY_SHOP_DOMAIN }}
           TEST_SHOPIFY_ACCESS_TOKEN: ${{ secrets.TEST_SHOPIFY_ACCESS_TOKEN }}
           TEST_SHOPIFY_API_VERSION: ${{ secrets.TEST_SHOPIFY_API_VERSION }}
+
+      - name: Lint with Vulture
+        run: vulture ./shopify_sdk/ --min-confidence 100

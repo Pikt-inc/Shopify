@@ -7,3 +7,4 @@ strawberry-graphql
 ruff>=0.0.289
 pytest
 dotenv
+vulture
