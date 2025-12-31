@@ -21,6 +21,7 @@ if TYPE_CHECKING:
         DeliveryProfileEdge,
         ProductEdge,
         OrderTransactionEdge,
+        MediaEdge,
     )
     from .objects import (
         Collection,
@@ -40,6 +41,7 @@ if TYPE_CHECKING:
         DeliveryProfile,
         Product,
         OrderTransaction,
+        Media,
     )
 
 
@@ -137,3 +139,9 @@ class ProductConnection(connection):
     edges: list[ProductEdge]
     nodes: list[Product]
     pageInfo: PageInfo
+
+
+class MediaConnection(connection):
+    edges: list[MediaEdge]
+    nodes: list[Media]
+    pageInfo: "PageInfo"

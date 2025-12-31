@@ -40,6 +40,16 @@ class ProductCreateMediaPayload(AutoRegisterModel):
     mediaUserErrors: List[UserError]
 
 
+class FileUpdatePayload(AutoRegisterModel):
+    files: List[Media]
+    userErrors: List[UserError]
+
+
+class FileDeletePayload(AutoRegisterModel):
+    deletedFileIds: List[ID]
+    userErrors: List[UserError]
+
+
 class ProductDeletePayload(AutoRegisterModel):
     deletedProductId: Optional[ID] = Field(default=None)
     userErrors: List[UserError]
@@ -88,3 +98,21 @@ class OrderMarkAsPaidPayload(AutoRegisterModel):
 class OrderCancelPayload(AutoRegisterModel):
     job: Optional[Job] = Field(default=None)
     orderCancelUserErrors: List[OrderCancelUserError]
+
+
+class ProductPublishPayload(AutoRegisterModel):
+    product: Optional[Product] = Field(default=None)
+    shop: Shop
+    userErrors: List[UserError]
+
+
+class ProductVariantsBulkUpdateUserError(AutoRegisterModel):
+    code: Optional[String] = Field(default=None)
+    field: Optional[List[String]] = Field(default=None)
+    message: String
+
+
+class ProductVariantsBulkUpdatePayload(AutoRegisterModel):
+    product: Optional[Product] = Field(default=None)
+    productVariants: Optional[List[ProductVariant]] = Field(default=None)
+    userErrors: List[ProductVariantsBulkUpdateUserError]

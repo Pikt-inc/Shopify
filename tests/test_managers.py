@@ -5,17 +5,24 @@ import uuid
 from contextlib import contextmanager
 from typing import Iterator
 
-from shopify_sdk import store
+from shopify_sdk.managers import store
+from shopify_sdk.common.product.media import set_product_images
 from shopify_sdk.gql.core.types import (
     MailingAddressInput,
     MetafieldInput,
     OrderCreateLineItemInput,
     ProductCreateInput,
+    ProductSetInput,
+)
+from shopify_sdk.gql.core.types.input_objects import (
+    ProductVariantSetInput,
+    ProductSetInventoryInput,
 )
 from shopify_sdk.gql.core.types.enums import (
     OrderDisplayFinancialStatus,
     OrderDisplayFulfillmentStatus,
     ProductStatus,
+    ProductVariantInventoryPolicy,
 )
 from shopify_sdk.managers.products import ProductManager
 from shopify_sdk.managers.store import StoreManager
@@ -83,6 +90,56 @@ def _wait_for_product_absence(
         time.sleep(1.0)
     raise AssertionError(
         f"Timed out waiting for product handle '{handle}' to be deleted."
+    )
+
+
+def _wait_for_product_media_and_metafield(
+    product_id: str,
+    metafield_namespace: str,
+    metafield_key: str,
+    metafield_value: str,
+    timeout_s: float = 30.0,
+) -> None:
+    from shopify_sdk import client
+    from shopify_sdk.gql.core.types import ProductIdentifierInput
+    from shopify_sdk.gql.queries import productByIdentifier
+
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        product = productByIdentifier(
+            identifier=ProductIdentifierInput(id=product_id, handle=None),
+            field_inclusions={
+                "Product": {"media", "metafields"},
+                "MediaConnection": {"nodes"},
+                "Media": {"id"},
+                "MetafieldConnection": {"nodes"},
+                "Metafield": {"namespace", "key", "value"},
+            },
+            connection_arguments={
+                "media": {"first": 10},
+                "metafields": {"first": 10, "namespace": metafield_namespace},
+            },
+        ).execute(client=client)
+
+        if product:
+            media_nodes = getattr(getattr(product, "media", None), "nodes", None) or []
+            metafields = (
+                getattr(getattr(product, "metafields", None), "nodes", None) or []
+            )
+            has_media = len(media_nodes) > 0
+            has_metafield = any(
+                getattr(metafield, "key", None) == metafield_key
+                and getattr(metafield, "namespace", None) == metafield_namespace
+                and getattr(metafield, "value", None) == metafield_value
+                for metafield in metafields
+            )
+            if has_media and has_metafield:
+                return
+
+        time.sleep(1.0)
+
+    raise AssertionError(
+        f"Timed out waiting for product '{product_id}' to update media/metafields."
     )
 
 
@@ -183,6 +240,55 @@ class TestProductManager(unittest.TestCase):
                 for product_id in created_ids:
                     manager.delete(product_id)
 
+    def test_bulk_create_sets_media_and_metafields(self) -> None:
+        with _test_store(self) as test_store:
+            manager = test_store.products
+            handles = [f"codex-bulk-details-{uuid.uuid4().hex}" for _ in range(2)]
+            created_ids: list[str] = []
+            metafield_namespace = "codex"
+            metafield_key = "codex_bulk_details"
+            metafield_values = [f"bulk-{handle}" for handle in handles]
+            try:
+                inputs = [
+                    ProductCreateInput(
+                        title=f"Codex Bulk Details {handle}",
+                        handle=handle,
+                        status=ProductStatus.DRAFT,
+                        metafields=[
+                            MetafieldInput(
+                                namespace=metafield_namespace,
+                                key=metafield_key,
+                                type="single_line_text_field",
+                                value=metafield_value,
+                            )
+                        ],
+                    )
+                    for handle, metafield_value in zip(handles, metafield_values)
+                ]
+                created_ids = manager.bulk.create(inputs)
+                self.assertEqual(len(created_ids), len(handles))
+                for handle, product_id, metafield_value in zip(
+                    handles, created_ids, metafield_values
+                ):
+                    found_id = _wait_for_product_id(manager, handle=handle)
+                    self.assertEqual(found_id, product_id)
+                    set_product_images(
+                        product_id=product_id,
+                        images=[TEST_IMAGE_URL],
+                    )
+                    _wait_for_product_media_and_metafield(
+                        product_id=product_id,
+                        metafield_namespace=metafield_namespace,
+                        metafield_key=metafield_key,
+                        metafield_value=metafield_value,
+                    )
+            finally:
+                for product_id in created_ids:
+                    try:
+                        manager.delete(product_id)
+                    except Exception:
+                        pass
+
     def test_bulk_delete(self) -> None:
         with _test_store(self) as test_store:
             manager = test_store.products
@@ -210,6 +316,53 @@ class TestProductManager(unittest.TestCase):
                 for product_id in created_ids:
                     try:
                         manager.delete(product_id)
+                    except Exception:
+                        pass
+
+    def test_bulk_publish_from_set(self) -> None:
+        with _test_store(self) as test_store:
+            manager = test_store.products
+            publications = test_store.publications
+            locations = test_store.locations
+            if publications.count == 0:
+                self.skipTest("No publications available for bulk publish testing.")
+                return
+            handles = [f"codex-bulk-pub-{uuid.uuid4().hex}" for _ in range(2)]
+            created_ids: list[str] = []
+            try:
+                inputs = [
+                    ProductSetInput(
+                        title=f"Codex Bulk Publish {handle}",
+                        handle=handle,
+                        status=ProductStatus.ACTIVE,
+                        variants=[
+                            ProductVariantSetInput(
+                                sku=f"COD-BULK-PUB-{handle}",
+                                price="9.99",
+                                inventoryQuantities=[
+                                    ProductSetInventoryInput(
+                                        locationId=locations.nodes[0].id,
+                                        quantity=100,
+                                        name="available",
+                                    )
+                                ],
+                                inventoryPolicy=ProductVariantInventoryPolicy.DENY,
+                            )
+                        ],
+                    )
+                    for handle in handles
+                ]
+                created_ids = manager.bulk.set(inputs)
+                self.assertEqual(len(created_ids), len(handles))
+                for handle, product_id in zip(handles, created_ids):
+                    found_id = _wait_for_product_id(manager, handle=handle)
+                    self.assertEqual(found_id, product_id)
+
+                self.assertTrue(manager.bulk.publish(created_ids))
+            finally:
+                if created_ids:
+                    try:
+                        manager.bulk.delete(created_ids)
                     except Exception:
                         pass
 

@@ -20,6 +20,7 @@ if TYPE_CHECKING:
         ResourcePublicationConnection,
         SalesAgreementConnection,
         OrderTransactionConnection,
+        MediaConnection,
     )
     from .enums import *
 
@@ -247,17 +248,6 @@ class Product(AutoRegisterModel):
 class Media(AutoRegisterModel):
     id: ID
     mediaContentType: String
-
-
-class MediaEdge(AutoRegisterModel):
-    cursor: String
-    node: Media
-
-
-class MediaConnection(connection):
-    edges: List[MediaEdge]
-    nodes: List[Media]
-    pageInfo: "PageInfo"
 
 
 class Metafield(AutoRegisterModel):
@@ -1004,6 +994,12 @@ class ProductSetOperation(AutoRegisterModel):
     id: ID
     status: String
     product: Optional[Product] = Field(default=None)
+    userErrors: List[ProductSetUserError]
+
+
+class ProductSetPayload(AutoRegisterModel):
+    product: Optional[Product] = Field(default=None)
+    productSetOperation: Optional[ProductSetOperation] = Field(default=None)
     userErrors: List[ProductSetUserError]
 
 

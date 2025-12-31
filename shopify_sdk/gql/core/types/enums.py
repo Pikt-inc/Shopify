@@ -187,6 +187,7 @@ class BulkOperationUserErrorCode(enum):
     INVALID = "INVALID"
     LIMIT_REACHED = "LIMIT_REACHED"
     OPERATION_IN_PROGRESS = "OPERATION_IN_PROGRESS"
+    INVALID_MUTATION = "INVALID_MUTATION"
 
 
 class BulkOperationStatus(enum):
