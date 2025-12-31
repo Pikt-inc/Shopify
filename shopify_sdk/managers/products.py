@@ -208,6 +208,7 @@ class BulkProductManager(BaseModel):
     ) -> bool:
         """
         Set products to active status based on a list of SKUs.
+        This is an 'all or nothing' operation; all skus in the store will have their status updated.
         """
         from shopify_sdk.gql.queries import productVariants
 
@@ -217,11 +218,11 @@ class BulkProductManager(BaseModel):
                 "ProductVariant": {"id", "sku", "product"},
                 "Product": {"id"},
             }
-        )
+        ).bulk()
         if hasattr(connection, "count") and connection.count == 0:
             logger.warning("No product variants found in store.")
             return False
-
+        
         if not hasattr(connection, "nodes"):
             raise ValueError("Failed to fetch product variants from store.")
 
