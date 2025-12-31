@@ -125,6 +125,7 @@ class OptionValueSetInput(input_object):
     id: Optional[ID] = Field(default=None)
     name: Optional[String] = Field(default=None)
 
+
 class OptionCreateInput(input_object):
     name: String
     values: List[OptionValueSetInput] = Field(default_factory=list)
@@ -280,6 +281,12 @@ class InventoryLevelInput(input_object):
     availableQuantity: Int
 
 
+class ProductSetInventoryInput(input_object):
+    locationId: ID
+    name: String
+    quantity: Int
+
+
 class VariantOptionValueInput(input_object):
     id: Optional[ID] = Field(default=None)
     linkedMetafieldValue: Optional[String] = Field(default=None)
@@ -322,9 +329,11 @@ class ProductVariantSetInput(input_object):
     compareAtPrice: Optional[String] = Field(default=None)
     barcode: Optional[String] = Field(default=None)
     inventoryPolicy: Optional[ProductVariantInventoryPolicy] = Field(default=None)
-    inventoryQuantities: Optional[List[InventoryLevelInput]] = Field(default=None)
+    inventoryQuantities: Optional[List[ProductSetInventoryInput]] = Field(default=None)
     metafields: List["MetafieldInput"] = Field(default_factory=list)
-    optionValues: Optional[List[VariantOptionValueInput]] = Field(default=VariantOptionValueInput(name="Default Title", optionName="Title"))
+    optionValues: Optional[List[VariantOptionValueInput]] = Field(
+        default=[VariantOptionValueInput(name="Default Title", optionName="Title")]
+    )
 
 
 class ProductSetInput(input_object):
@@ -345,7 +354,13 @@ class ProductSetInput(input_object):
     redirectNewHandle: Optional[Boolean] = Field(default=None)
     requiresSellingPlan: Optional[Boolean] = Field(default=None)
     seo: Optional[SEOInput] = Field(default=None)
-    productOptions: Optional[List[OptionCreateInput]] = Field(default=[OptionCreateInput(name="Title", values=[OptionValueSetInput(name="Default Title")])])
+    productOptions: Optional[List[OptionCreateInput]] = Field(
+        default=[
+            OptionCreateInput(
+                name="Title", values=[OptionValueSetInput(name="Default Title")]
+            )
+        ]
+    )
     metafields: List["MetafieldInput"] = Field(default_factory=list)
     templateSuffix: Optional[String] = Field(default=None)
     variants: List[ProductVariantSetInput] = Field(default_factory=list)

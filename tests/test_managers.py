@@ -14,11 +14,15 @@ from shopify_sdk.gql.core.types import (
     ProductCreateInput,
     ProductSetInput,
 )
-from shopify_sdk.gql.core.types.input_objects import ProductVariantSetInput
+from shopify_sdk.gql.core.types.input_objects import (
+    ProductVariantSetInput,
+    ProductSetInventoryInput,
+)
 from shopify_sdk.gql.core.types.enums import (
     OrderDisplayFinancialStatus,
     OrderDisplayFulfillmentStatus,
     ProductStatus,
+    ProductVariantInventoryPolicy,
 )
 from shopify_sdk.managers.products import ProductManager
 from shopify_sdk.managers.store import StoreManager
@@ -319,6 +323,7 @@ class TestProductManager(unittest.TestCase):
         with _test_store(self) as test_store:
             manager = test_store.products
             publications = test_store.publications
+            locations = test_store.locations
             if publications.count == 0:
                 self.skipTest("No publications available for bulk publish testing.")
                 return
@@ -332,7 +337,16 @@ class TestProductManager(unittest.TestCase):
                         status=ProductStatus.ACTIVE,
                         variants=[
                             ProductVariantSetInput(
-                                sku=f"COD-BULK-PUB-{handle}", price="9.99", inventoryQuantity=10, inventoryPolicy="DENY"
+                                sku=f"COD-BULK-PUB-{handle}",
+                                price="9.99",
+                                inventoryQuantities=[
+                                    ProductSetInventoryInput(
+                                        locationId=locations.nodes[0].id,
+                                        quantity=100,
+                                        name="available",
+                                    )
+                                ],
+                                inventoryPolicy=ProductVariantInventoryPolicy.DENY,
                             )
                         ],
                     )

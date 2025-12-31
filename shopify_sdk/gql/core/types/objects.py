@@ -996,6 +996,7 @@ class ProductSetOperation(AutoRegisterModel):
     product: Optional[Product] = Field(default=None)
     userErrors: List[ProductSetUserError]
 
+
 class ProductSetPayload(AutoRegisterModel):
     product: Optional[Product] = Field(default=None)
     productSetOperation: Optional[ProductSetOperation] = Field(default=None)

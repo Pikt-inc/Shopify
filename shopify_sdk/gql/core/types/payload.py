@@ -105,10 +105,12 @@ class ProductPublishPayload(AutoRegisterModel):
     shop: Shop
     userErrors: List[UserError]
 
+
 class ProductVariantsBulkUpdateUserError(AutoRegisterModel):
     code: Optional[String] = Field(default=None)
     field: Optional[List[String]] = Field(default=None)
     message: String
+
 
 class ProductVariantsBulkUpdatePayload(AutoRegisterModel):
     product: Optional[Product] = Field(default=None)
