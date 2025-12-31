@@ -1,9 +1,12 @@
 from pydantic import BaseModel, Field
+import logging
 from typing import Optional, TYPE_CHECKING, cast, Sequence
 
 from shopify_sdk.gql.core.types.base import ID
 from shopify_sdk.gql.core.types.enums import ProductStatus
 from .media import MediaManager
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from shopify_sdk.gql.core.mutation import Mutation
@@ -12,6 +15,7 @@ if TYPE_CHECKING:
     from shopify_sdk.gql.core.types import MetafieldInput
     from shopify_sdk.gql.core.types import ProductCreateInput
     from shopify_sdk.gql.core.types import ProductSetInput
+    from shopify_sdk.gql.core.types.payload import ProductSetPayload
 
 
 class BulkProductManager(BaseModel):
@@ -99,7 +103,34 @@ class BulkProductManager(BaseModel):
 
         return deleted_ids
 
-    def set(self, products: Sequence["ProductSetInput"]) -> list[ID]:
+    def missing_skus(
+        self,
+        skus: list[str],
+    ) -> list[str]:
+        """
+        Return SKUs from the input list that do not exist in the store.
+        """
+        from shopify_sdk.gql.queries import productVariants
+
+        connection = productVariants(
+            field_inclusions={
+                "ProductVariantConnection": {"edges"},
+                "ProductVariant": {"sku"},
+            }
+        ).bulk()
+        if hasattr(connection, "count") and connection.count == 0:
+            return list(skus)
+        if not hasattr(connection, "nodes"):
+            raise ValueError("Failed to fetch product variants from store.")
+
+        found_skus: set = set(
+            [node.sku for node in connection.nodes if node.sku is not None]
+        )
+        print(f"Found SKUs in store: {len(found_skus)}")
+        diff = set(skus) - found_skus
+        return list(diff)
+
+    def set(self, products: Sequence["ProductSetInput"]) -> list["ProductSetPayload"]:
         """
         Create or update products in bulk using productSet.
         Returns product IDs when available; when synchronous=False, falls back to operation IDs.
@@ -123,35 +154,23 @@ class BulkProductManager(BaseModel):
                             "product",
                             "userErrors",
                         },
-                        "Product": {"id"},
+                        "Product": {"id", "variants"},
+                        "ProductVariant": {"id", "sku"},
                         "ProductSetUserError": {"field", "message"},
                     },
                 )
             )
 
-        result_ids: list[ID] = []
-        errors: list[str] = []
-        for index, payload in enumerate(productSet.bulk(mutations), start=1):
+        responses: list = []
+
+        for payload in productSet.bulk(mutations):
             user_errors = getattr(payload, "userErrors", []) or []
-            if user_errors:
-                messages = ", ".join(error.message for error in user_errors)
-                errors.append(f"{index}: {messages}")
-                continue
-            product_obj = getattr(payload, "product", None)
-            product_id = getattr(product_obj, "id", None)
-            if product_id:
-                result_ids.append(cast(ID, product_id))
-                continue
-            else:
-                errors.append(f"{index}: no product set operation id returned")
+            if user_errors != []:
+                logger.error(f"ProductSet user errors: {user_errors}")
+                raise ValueError("ProductSet operation returned user errors.")
+            responses.append(payload)
 
-        if errors:
-            details = "; ".join(errors[:5])
-            if len(errors) > 5:
-                details = f"{details}; ... ({len(errors)} total failures)"
-            raise ValueError(f"Bulk product set failed: {details}")
-
-        return result_ids
+        return responses
 
     def set_status(
         self,

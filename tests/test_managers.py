@@ -328,7 +328,6 @@ class TestProductManager(unittest.TestCase):
                 self.skipTest("No publications available for bulk publish testing.")
                 return
             handles = [f"codex-bulk-pub-{uuid.uuid4().hex}" for _ in range(2)]
-            created_ids: list[str] = []
             try:
                 inputs = [
                     ProductSetInput(
@@ -352,7 +351,10 @@ class TestProductManager(unittest.TestCase):
                     )
                     for handle in handles
                 ]
-                created_ids = manager.bulk.set(inputs)
+                created = manager.bulk.set(inputs)
+                created_ids = [
+                    item.product.id for item in created if item.product is not None
+                ]
                 self.assertEqual(len(created_ids), len(handles))
                 for handle, product_id in zip(handles, created_ids):
                     found_id = _wait_for_product_id(manager, handle=handle)
