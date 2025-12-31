@@ -1,15 +1,13 @@
-from typing import Any, Type, TYPE_CHECKING
-from pydantic import BaseModel, Field
+from typing import TYPE_CHECKING
+from pydantic import BaseModel
 from shopify_sdk import client
 
 if TYPE_CHECKING:
     from shopify_sdk.gql.core.types import ID
-    from shopify_sdk.gql.core.types.objects import Media
 from shopify_sdk.gql.core.types.connections import MediaConnection
 
 
 class MediaManager(BaseModel):
-
     def images(
         self,
         product_id: "ID",

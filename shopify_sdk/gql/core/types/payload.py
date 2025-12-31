@@ -104,4 +104,3 @@ class ProductPublishPayload(AutoRegisterModel):
     product: Optional[Product] = Field(default=None)
     shop: Shop
     userErrors: List[UserError]
-

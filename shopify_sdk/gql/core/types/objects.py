@@ -20,6 +20,7 @@ if TYPE_CHECKING:
         ResourcePublicationConnection,
         SalesAgreementConnection,
         OrderTransactionConnection,
+        MediaConnection,
     )
     from .enums import *
 
@@ -247,7 +248,6 @@ class Product(AutoRegisterModel):
 class Media(AutoRegisterModel):
     id: ID
     mediaContentType: String
-
 
 
 class Metafield(AutoRegisterModel):

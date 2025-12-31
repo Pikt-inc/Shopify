@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Any, ClassVar, Mapping, Optional, TYPE_CHECKING, cast, Sequence
+from typing import Optional, TYPE_CHECKING, cast, Sequence
 
 from shopify_sdk.gql.core.types.base import ID
 from shopify_sdk.gql.core.types.enums import ProductStatus
@@ -15,7 +15,6 @@ if TYPE_CHECKING:
 
 
 class BulkProductManager(BaseModel):
-
     def create(self, products: Sequence["ProductCreateInput"]) -> list[ID]:
         from shopify_sdk.gql.core.mutation import Mutation
         from shopify_sdk.gql.mutations import productCreate
@@ -100,10 +99,7 @@ class BulkProductManager(BaseModel):
 
         return deleted_ids
 
-    def set(
-        self,
-        products: Sequence["ProductSetInput"]
-    ) -> list[ID]:
+    def set(self, products: Sequence["ProductSetInput"]) -> list[ID]:
         """
         Create or update products in bulk using productSet.
         Returns product IDs when available; when synchronous=False, falls back to operation IDs.
@@ -121,7 +117,12 @@ class BulkProductManager(BaseModel):
                     input=input_data,
                     synchronous=False,
                     field_inclusions={
-                        "ProductSetOperation": {"id", "status", "product", "userErrors"},
+                        "ProductSetOperation": {
+                            "id",
+                            "status",
+                            "product",
+                            "userErrors",
+                        },
                         "Product": {"id"},
                         "ProductSetUserError": {"field", "message"},
                     },
@@ -190,27 +191,31 @@ class BulkProductManager(BaseModel):
         Publish products in bulk by setting their status to ACTIVE.
         """
         from shopify_sdk.gql.mutations import productPublish
-        from shopify_sdk.gql.core.types.input_objects import ProductPublishInput
-        from shopify_sdk.gql.core.types.payload import ProductPublishPayload
+        from shopify_sdk.gql.core.types.input_objects import (
+            ProductPublishInput,
+            ProductPublicationInput,
+        )
 
         if not product_ids:
             raise ValueError("No product IDs provided for publishing.")
-        
-        from shopify_sdk import store
+
+        from shopify_sdk.managers import store
+
         publication_connection = store.publications
         if publication_connection.count == 0:
             raise ValueError("No publications found in the store.")
-        
+
         mutations: list["Mutation"] = []
         for product_id in product_ids:
             mutation = productPublish(
                 input=ProductPublishInput(
-                    productId=product_id,
-                    publicationIds=[node.id for node in publication_connection.nodes],
+                    id=product_id,
+                    productPublications=[
+                        ProductPublicationInput(publicationId=node.id)
+                        for node in publication_connection.nodes
+                    ],
                 ),
-                field_inclusions={
-                    "Product": {"id"}
-                },
+                field_inclusions={"Product": {"id"}},
             )
             mutations.append(mutation)
         response = productPublish.bulk(mutations)
@@ -220,8 +225,6 @@ class BulkProductManager(BaseModel):
                 messages = ", ".join(error.message for error in user_errors)
                 raise ValueError(f"Product publishing failed: {messages}")
         return True
-        
-
 
 
 class ProductManager(BaseModel):

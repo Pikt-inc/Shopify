@@ -23,7 +23,7 @@ if TYPE_CHECKING:
         Product,
         DeliveryProfile,
         OrderTransaction,
-        Media
+        Media,
     )
 
 

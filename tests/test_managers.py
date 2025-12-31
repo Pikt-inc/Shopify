@@ -5,7 +5,7 @@ import uuid
 from contextlib import contextmanager
 from typing import Iterator
 
-from shopify_sdk import store
+from shopify_sdk.managers import store
 from shopify_sdk.common.product.media import set_product_images
 from shopify_sdk.gql.core.types import (
     MailingAddressInput,

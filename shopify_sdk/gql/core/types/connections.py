@@ -41,7 +41,7 @@ if TYPE_CHECKING:
         DeliveryProfile,
         Product,
         OrderTransaction,
-        Media
+        Media,
     )
 
 
