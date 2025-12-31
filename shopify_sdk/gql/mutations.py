@@ -105,6 +105,8 @@ class deliveryProfileRemove(Mutation):
 
 
 class productSet(Mutation):
+    return_type: Type[BaseModel] = ProductSetOperation
+
     def __init__(
         self,
         input: ProductSetInput,
@@ -119,6 +121,8 @@ class productSet(Mutation):
 
 
 class productPublish(Mutation):
+    return_type: Type[BaseModel] = ProductPublishPayload
+
     def __init__(
         self,
         input: ProductPublishInput,
@@ -307,6 +311,8 @@ class productCreateMedia(Mutation):
 
 
 class fileUpdate(Mutation):
+    return_type: Type[BaseModel] = FileUpdatePayload
+
     def __init__(
         self,
         files: list[FileUpdateInput],
@@ -314,6 +320,20 @@ class fileUpdate(Mutation):
         field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.files: list[FileUpdateInput] = files
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
+
+
+class fileDelete(Mutation):
+    return_type: Type[BaseModel] = FileDeletePayload
+
+    def __init__(
+        self,
+        fileIds: list[ID],
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
+    ):
+        self.fileIds: list[ID] = fileIds
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
 

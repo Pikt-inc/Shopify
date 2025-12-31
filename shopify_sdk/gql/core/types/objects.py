@@ -249,16 +249,6 @@ class Media(AutoRegisterModel):
     mediaContentType: String
 
 
-class MediaEdge(AutoRegisterModel):
-    cursor: String
-    node: Media
-
-
-class MediaConnection(connection):
-    edges: List[MediaEdge]
-    nodes: List[Media]
-    pageInfo: "PageInfo"
-
 
 class Metafield(AutoRegisterModel):
     id: ID

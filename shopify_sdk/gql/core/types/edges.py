@@ -23,6 +23,7 @@ if TYPE_CHECKING:
         Product,
         DeliveryProfile,
         OrderTransaction,
+        Media
     )
 
 
@@ -88,3 +89,7 @@ class ProductEdge(edge):
 
 class DeliveryProfileEdge(edge):
     node: DeliveryProfile
+
+
+class MediaEdge(edge):
+    node: Media
