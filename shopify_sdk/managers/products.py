@@ -222,7 +222,7 @@ class BulkProductManager(BaseModel):
         if hasattr(connection, "count") and connection.count == 0:
             logger.warning("No product variants found in store.")
             return False
-        
+
         if not hasattr(connection, "nodes"):
             raise ValueError("Failed to fetch product variants from store.")
 
