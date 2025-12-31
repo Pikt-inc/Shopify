@@ -5,6 +5,7 @@ from typing import Optional, TYPE_CHECKING, cast, Sequence
 from shopify_sdk.gql.core.types.base import ID
 from shopify_sdk.gql.core.types.enums import ProductStatus
 from .media import MediaManager
+from .variants import ProductVariantManager
 
 logger = logging.getLogger(__name__)
 
@@ -278,6 +279,7 @@ class BulkProductManager(BaseModel):
 
 
 class ProductManager(BaseModel):
+    variants: ProductVariantManager = Field(default_factory=ProductVariantManager)
     bulk: BulkProductManager = Field(default_factory=BulkProductManager)
     media: MediaManager = Field(default_factory=MediaManager)
 
