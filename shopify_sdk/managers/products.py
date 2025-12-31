@@ -154,8 +154,7 @@ class BulkProductManager(BaseModel):
                             "product",
                             "userErrors",
                         },
-                        "Product": {"id", "variants"},
-                        "ProductVariant": {"id", "sku"},
+                        "Product": {"id"},
                         "ProductSetUserError": {"field", "message"},
                     },
                 )
@@ -200,6 +199,38 @@ class BulkProductManager(BaseModel):
             to_archive=to_archive,
             to_draft=to_draft,
             fallback_status=fallback_status,
+        )
+
+    def set_active_by_sku(
+        self,
+        skus: list[str],
+    ) -> bool:
+        """
+        Set products to active status based on a list of SKUs.
+        """
+        from shopify_sdk.gql.queries import productVariants
+
+        connection = productVariants(
+            field_inclusions={
+                "ProductVariantConnection": {"edges"},
+                "ProductVariant": {"id", "sku", "product"},
+                "Product": {"id"},
+            }
+        )
+        if hasattr(connection, "count") and connection.count == 0:
+            logger.warning("No product variants found in store.")
+            return False
+
+        if not hasattr(connection, "nodes"):
+            raise ValueError("Failed to fetch product variants from store.")
+
+        pids = set()
+        for variant in connection.nodes:
+            if variant.sku in skus and variant.product and variant.product.id:
+                pids.add(variant.product.id)
+
+        return self.set_status(
+            to_active=list(pids), fallback_status=ProductStatus.ARCHIVED
         )
 
     def publish(

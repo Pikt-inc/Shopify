@@ -1009,7 +1009,7 @@ class UserError(AutoRegisterModel):
 
 
 class BulkOperationUserError(AutoRegisterModel):
-    code: BulkOperationUserErrorCode
+    code: Optional[BulkOperationUserErrorCode] = Field(default=None)
     field: Optional[List[String]] = Field(default=None)
     message: String
 
