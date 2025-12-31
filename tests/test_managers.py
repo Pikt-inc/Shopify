@@ -14,6 +14,7 @@ from shopify_sdk.gql.core.types import (
     ProductCreateInput,
     ProductSetInput,
 )
+from shopify_sdk.gql.core.types.input_objects import ProductVariantSetInput
 from shopify_sdk.gql.core.types.enums import (
     OrderDisplayFinancialStatus,
     OrderDisplayFulfillmentStatus,
@@ -329,6 +330,11 @@ class TestProductManager(unittest.TestCase):
                         title=f"Codex Bulk Publish {handle}",
                         handle=handle,
                         status=ProductStatus.ACTIVE,
+                        variants=[
+                            ProductVariantSetInput(
+                                sku=f"COD-BULK-PUB-{handle}", price="9.99", inventoryQuantity=10, inventoryPolicy="DENY"
+                            )
+                        ],
                     )
                     for handle in handles
                 ]

@@ -105,7 +105,7 @@ class deliveryProfileRemove(Mutation):
 
 
 class productSet(Mutation):
-    return_type: Type[BaseModel] = ProductSetOperation
+    return_type: Type[BaseModel] = ProductSetPayload
 
     def __init__(
         self,

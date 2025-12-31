@@ -121,9 +121,13 @@ class ProductClaimOwnershipInput(input_object):
     bundles: Optional[Boolean] = Field(default=None)
 
 
+class OptionValueSetInput(input_object):
+    id: Optional[ID] = Field(default=None)
+    name: Optional[String] = Field(default=None)
+
 class OptionCreateInput(input_object):
     name: String
-    values: List[String] = Field(default_factory=list)
+    values: List[OptionValueSetInput] = Field(default_factory=list)
 
 
 class SEOInput(input_object):
@@ -320,7 +324,7 @@ class ProductVariantSetInput(input_object):
     inventoryPolicy: Optional[ProductVariantInventoryPolicy] = Field(default=None)
     inventoryQuantities: Optional[List[InventoryLevelInput]] = Field(default=None)
     metafields: List["MetafieldInput"] = Field(default_factory=list)
-    optionValues: Optional[List[VariantOptionValueInput]] = Field(default=None)
+    optionValues: Optional[List[VariantOptionValueInput]] = Field(default=VariantOptionValueInput(name="Default Title", optionName="Title"))
 
 
 class ProductSetInput(input_object):
@@ -341,7 +345,7 @@ class ProductSetInput(input_object):
     redirectNewHandle: Optional[Boolean] = Field(default=None)
     requiresSellingPlan: Optional[Boolean] = Field(default=None)
     seo: Optional[SEOInput] = Field(default=None)
-    productOptions: Optional[List[OptionCreateInput]] = Field(default=None)
+    productOptions: Optional[List[OptionCreateInput]] = Field(default=[OptionCreateInput(name="Title", values=[OptionValueSetInput(name="Default Title")])])
     metafields: List["MetafieldInput"] = Field(default_factory=list)
     templateSuffix: Optional[String] = Field(default=None)
     variants: List[ProductVariantSetInput] = Field(default_factory=list)
