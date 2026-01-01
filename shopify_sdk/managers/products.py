@@ -278,6 +278,30 @@ class BulkProductManager(BaseModel):
                 raise ValueError(f"Product publishing failed: {messages}")
         return True
 
+    def exchange(
+        self,
+        skus: list[str],
+    ) -> list[ID]:
+        """
+        Return product IDs for the given SKUs.
+        """
+        from shopify_sdk import store
+        pids: set[ID] = set()
+        variant_connection = store.products.variants.all
+        for v in variant_connection.nodes:
+            if not v.sku:
+                logger.warning(
+                    "No SKU found for product ID %s",
+                    getattr(v.product, "id", "<unknown>"),
+                )
+                continue
+            if not v.product or not v.product.id:
+                logger.warning("No product found for variant with SKU %s", v.sku)
+                continue
+            if v.sku in skus:
+                pids.add(str(v.product.id))
+        return list(pids)
+
 
 class ProductManager(BaseModel):
     variants: ProductVariantManager = Field(default_factory=ProductVariantManager)
