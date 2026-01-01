@@ -11,8 +11,8 @@ from shopify_sdk.gql.core.types.payload import BulkOperationResultPayload
 from shopify_sdk.gql.queries import bulkOperation
 from shopify_sdk.gql.core.types.objects import BulkOperation
 
-DOWNLOAD_TIMEOUT_S = 300  # 5 minutes
-UPLOAD_TIMEOUT_S = 600  # 10 minutes
+DOWNLOAD_TIMEOUT_S = 1200  # 20 minutes
+UPLOAD_TIMEOUT_S = 1200  # 20 minutes
 POLL_INTERVAL_S = 5  # 5 seconds
 
 
@@ -57,16 +57,17 @@ class BulkActionResultManager:
     def _poll_operation(self) -> BulkOperation:
         terminal_statuses = {"COMPLETED", "FAILED", "CANCELED", "CANCELLED", "EXPIRED"}
         deadline = time.monotonic() + UPLOAD_TIMEOUT_S
-        remaining = deadline - time.monotonic()
-        successful_operation: BulkOperation
-        while remaining > 0:
+        while True:
             operation = self._get_operation_status()
             if operation.status in terminal_statuses:
-                successful_operation = operation
-                break
+                return operation
             remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError(
+                    f"Bulk operation {self._bulk_operation_id!r} did not complete within "
+                    f"{UPLOAD_TIMEOUT_S}s (last status: {operation.status})."
+                )
             time.sleep(min(POLL_INTERVAL_S, remaining))
-        return successful_operation
 
     def _get_operation_status(self) -> BulkOperation:
         operation = bulkOperation(id=self._bulk_operation_id).execute(
