@@ -127,7 +127,7 @@ class BulkProductManager(BaseModel):
         found_skus: set = set(
             [node.sku for node in connection.nodes if node.sku is not None]
         )
-        print(f"Found SKUs in store: {len(found_skus)}")
+
         diff = set(skus) - found_skus
         return list(diff)
 
