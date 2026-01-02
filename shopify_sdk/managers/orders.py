@@ -127,6 +127,7 @@ class OrderManager:
         else:
             query_string = None
 
+        # customer details are not available for our current store subscription
         query = orders(
             first=250,
             query=query_string,
@@ -134,14 +135,10 @@ class OrderManager:
                 "Order": set(
                     {
                         "id",
-                        "name",
-                        "email",
                         "createdAt",
                         "totalPriceSet",
                         "financialStatus",
                         "fulfillmentStatus",
-                        "shippingAddress",
-                        "billingAddress",
                         "tags",
                     }
                 )
