@@ -89,13 +89,10 @@ class OrderManager:
                     {
                         "id",
                         "name",
-                        "email",
                         "createdAt",
                         "totalPriceSet",
                         "financialStatus",
                         "fulfillmentStatus",
-                        "shippingAddress",
-                        "billingAddress",
                         "tags",
                     }
                 )
@@ -161,7 +158,6 @@ class OrderManager:
                         "id",
                         "legacyResourceId",
                         "name",
-                        "email",
                         "createdAt",
                         "updatedAt",
                         "processedAt",
@@ -176,8 +172,6 @@ class OrderManager:
                         "fulfillmentStatus",
                         "displayFinancialStatus",
                         "displayFulfillmentStatus",
-                        "shippingAddress",
-                        "billingAddress",
                         "tags",
                         "note",
                         "sourceName",
@@ -191,7 +185,6 @@ class OrderManager:
                         "transactions",
                         "refunds",
                         "fulfillments",
-                        "customer",
                         "discountApplications",
                     }
                 ),
