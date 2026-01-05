@@ -18,7 +18,12 @@ if TYPE_CHECKING:
         RefundLineItemEdge,
         ResourcePublicationEdge,
         SalesAgreementEdge,
+        SellingPlanGroupEdge,
         DeliveryProfileEdge,
+        DeliveryProfileLocationGroupEdge,
+        DeliveryProfileItemEdge,
+        DeliveryMethodDefinitionEdge,
+        DeliveryLocationGroupZoneEdge,
         ProductEdge,
         OrderTransactionEdge,
         MediaEdge,
@@ -38,7 +43,12 @@ if TYPE_CHECKING:
         RefundLineItem,
         ResourcePublication,
         SalesAgreement,
+        SellingPlanGroup,
         DeliveryProfile,
+        DeliveryProfileLocationGroup,
+        DeliveryProfileItem,
+        DeliveryMethodDefinition,
+        DeliveryLocationGroupZone,
         Product,
         OrderTransaction,
         Media,
@@ -135,6 +145,36 @@ class DeliveryProfileConnection(connection):
     pageInfo: PageInfo
 
 
+class SellingPlanGroupConnection(connection):
+    edges: list[SellingPlanGroupEdge]
+    nodes: list[SellingPlanGroup]
+    pageInfo: PageInfo
+
+
+class DeliveryProfileLocationGroupConnection(connection):
+    edges: list[DeliveryProfileLocationGroupEdge]
+    nodes: list[DeliveryProfileLocationGroup]
+    pageInfo: PageInfo
+
+
+class DeliveryProfileItemConnection(connection):
+    edges: list[DeliveryProfileItemEdge]
+    nodes: list[DeliveryProfileItem]
+    pageInfo: PageInfo
+
+
+class DeliveryMethodDefinitionConnection(connection):
+    edges: list[DeliveryMethodDefinitionEdge]
+    nodes: list[DeliveryMethodDefinition]
+    pageInfo: PageInfo
+
+
+class DeliveryLocationGroupZoneConnection(connection):
+    edges: list[DeliveryLocationGroupZoneEdge]
+    nodes: list[DeliveryLocationGroupZone]
+    pageInfo: PageInfo
+
+
 class ProductConnection(connection):
     edges: list[ProductEdge]
     nodes: list[Product]
@@ -144,4 +184,4 @@ class ProductConnection(connection):
 class MediaConnection(connection):
     edges: list[MediaEdge]
     nodes: list[Media]
-    pageInfo: "PageInfo"
+    pageInfo: PageInfo

@@ -21,6 +21,11 @@ if TYPE_CHECKING:
         SalesAgreementConnection,
         OrderTransactionConnection,
         MediaConnection,
+        DeliveryMethodDefinitionConnection,
+        DeliveryLocationGroupZoneConnection,
+        DeliveryProfileItemConnection,
+        SellingPlanGroupConnection,
+        LocationConnection,
     )
     from .enums import *
 
@@ -323,16 +328,6 @@ class SellingPlanGroup(AutoRegisterModel):
     id: ID
     name: String
 
-
-class SellingPlanGroupEdge(AutoRegisterModel):
-    cursor: String
-    node: SellingPlanGroup
-
-
-class SellingPlanGroupConnection(connection):
-    edges: List[SellingPlanGroupEdge]
-    nodes: List[SellingPlanGroup]
-    pageInfo: "PageInfo"
 
 
 class ProductVariant(AutoRegisterModel):
@@ -1050,3 +1045,86 @@ class DeliveryProfile(AutoRegisterModel):
     unassignedLocations: List[Location]
     version: Int
     zoneCountryCount: Int
+    profileItems: DeliveryProfileItemConnection
+    profileLocationGroups: List[DeliveryProfileLocationGroup]
+    sellingPlanGroups: SellingPlanGroupConnection
+    unassignedLocationsPaginated: "LocationConnection"
+
+
+class DeliveryProvince(AutoRegisterModel):
+    code: String
+    id: ID
+    name: String
+    translatedName: String
+
+
+class DeliveryCountry(AutoRegisterModel):
+    code: CountryCode
+    id: ID
+    name: String
+    provinces: List[DeliveryProvince]
+    translatedName: String
+
+
+class DeliveryZone(AutoRegisterModel):
+    countries: List[DeliveryCountry]
+    id: ID
+    name: String
+
+# Alias for GraphQL union: DeliveryConditionCriteria = MoneyV2 | Weight
+DeliveryConditionCriteria = MoneyV2 | Weight
+
+
+class DeliveryCondition(AutoRegisterModel):
+    conditionCriteria: DeliveryConditionCriteria
+    field: "DeliveryConditionField"
+    id: ID
+    operator: "DeliveryConditionOperator"
+
+
+class DeliveryRateDefinition(AutoRegisterModel):
+    price: MoneyV2
+    id: ID
+
+
+class DeliveryMethodDefinition(AutoRegisterModel):
+    active: Boolean
+    description: Optional[String] = Field(default=None)
+    id: ID
+    methodConditions: List[DeliveryCondition]
+    name: String
+    rateProvider: DeliveryRateDefinition
+
+
+class DeliveryMethodDefinitionCounts(AutoRegisterModel):
+    total: Int
+    eligible: Optional[Int] = Field(default=None)
+    ineligible: Optional[Int] = Field(default=None)
+
+
+class DeliveryLocationGroupZone(AutoRegisterModel):
+    methodDefinitionCounts: DeliveryMethodDefinitionCounts
+    methodDefinitions: DeliveryMethodDefinitionConnection
+    zone: DeliveryZone
+
+
+class DeliveryCountryAndZone(AutoRegisterModel):
+    country: DeliveryCountry
+    zone: DeliveryZone
+
+
+class DeliveryLocationGroup(AutoRegisterModel):
+    id: ID
+    locations: List[Location]
+
+
+class DeliveryProfileLocationGroup(AutoRegisterModel):
+    countriesInAnyZone: List[DeliveryCountryAndZone]
+    locationGroup: DeliveryLocationGroup
+    locationGroupZones: DeliveryLocationGroupZoneConnection
+
+
+class DeliveryProfileItem(AutoRegisterModel):
+    id: ID
+    product: Optional[Product] = Field(default=None)
+    variant: Optional[ProductVariant] = Field(default=None)

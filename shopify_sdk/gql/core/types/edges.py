@@ -20,8 +20,13 @@ if TYPE_CHECKING:
         RefundLineItem,
         ResourcePublication,
         SalesAgreement,
+        SellingPlanGroup,
         Product,
         DeliveryProfile,
+        DeliveryProfileLocationGroup,
+        DeliveryProfileItem,
+        DeliveryMethodDefinition,
+        DeliveryLocationGroupZone,
         OrderTransaction,
         Media,
     )
@@ -93,3 +98,23 @@ class DeliveryProfileEdge(edge):
 
 class MediaEdge(edge):
     node: Media
+
+
+class DeliveryMethodDefinitionEdge(edge):
+    node: DeliveryMethodDefinition
+
+
+class DeliveryLocationGroupZoneEdge(edge):
+    node: DeliveryLocationGroupZone
+
+
+class DeliveryProfileLocationGroupEdge(edge):
+    node: DeliveryProfileLocationGroup
+
+
+class SellingPlanGroupEdge(edge):
+    node: SellingPlanGroup
+
+
+class DeliveryProfileItemEdge(edge):
+    node: DeliveryProfileItem

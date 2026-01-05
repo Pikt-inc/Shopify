@@ -203,3 +203,13 @@ class BulkOperationStatus(enum):
 class BulkOperationType(enum):
     MUTATION = "MUTATION"
     QUERY = "QUERY"
+
+
+class DeliveryConditionField(enum):
+    TOTAL_PRICE = "TOTAL_PRICE"
+    TOTAL_WEIGHT = "TOTAL_WEIGHT"
+
+
+class DeliveryConditionOperator(enum):
+    GREATER_THAN_OR_EQUAL_TO = "GREATER_THAN_OR_EQUAL_TO"
+    LESS_THAN_OR_EQUAL_TO = "LESS_THAN_OR_EQUAL_TO"
