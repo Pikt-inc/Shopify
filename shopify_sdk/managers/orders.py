@@ -209,7 +209,7 @@ class OrderManager:
                         "fulfillmentStatus",
                     }
                 ),
-                "Product": set({"id"}),
+                "Product": set({"id", "handle"}),
                 "ProductVariant": set({"id", "sku"}),
                 "Attribute": set({"key", "value"}),
                 "TaxLine": set({"title", "rate", "priceSet"}),
