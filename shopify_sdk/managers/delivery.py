@@ -45,7 +45,7 @@ class DeliveryProfileManager(BaseModel):
         Args:
             entries: Sequence of ``(product_id, flat_rate)`` tuples to apply.
         """
-        return self._set_shipping(entries=entries)
+        return self._set_shipping(input=input)
 
     def profiles(self, merchant_only: bool = False) -> DeliveryProfileConnection:
         query = deliveryProfiles(
