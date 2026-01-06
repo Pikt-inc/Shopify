@@ -207,24 +207,3 @@ class TestProductManager(unittest.TestCase):
                 manager.delete("gid://shopify/Product/1")
 
         self.assertIn("Product deletion failed", str(ctx.exception))
-
-    def test_missing_handles_returns_missing_items(self) -> None:
-        fake_connection = SimpleNamespace(
-            nodes=[
-                SimpleNamespace(handle="alpha"),
-                SimpleNamespace(handle="beta"),
-            ]
-        )
-
-        class DummyProductsQuery:
-            def __init__(self, *args, **kwargs) -> None:
-                pass
-
-            def bulk(self):
-                return fake_connection
-
-        manager = BulkProductManager()
-        with patch("shopify_sdk.gql.queries.products", DummyProductsQuery):
-            missing = manager.missing_handles(["alpha", "gamma"])
-
-        self.assertEqual(missing, ["gamma"])

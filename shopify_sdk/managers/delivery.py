@@ -179,10 +179,6 @@ class DeliveryProfileManager(BaseModel):
         connection = connection or self.profiles(merchant_only=False)
         flat_rate_value = float(flat_rate) if flat_rate is not None else None
         matches: list[DeliveryProfile] = []
-        print(
-            "[DeliveryProfileManager._query] searching",
-            {"name": name, "flat_rate": flat_rate_value},
-        )
         for _node in connection.nodes:
             _dp = self.details(_node.id)
             for _lg in _dp.profileLocationGroups:

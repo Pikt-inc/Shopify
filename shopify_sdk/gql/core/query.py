@@ -261,12 +261,11 @@ class Query:
             return self._unwrap_annotation(list_args[0]) if list_args else Any
         if origin is Union:
             union_args = [arg for arg in get_args(annotation) if arg is not type(None)]
+            if not union_args:
+                return Any
             if len(union_args) == 1:
-                return self._unwrap_annotation(union_args[0]) if union_args else Any
-            else:
-                return self._unwrap_annotation(union_args[0]), self._unwrap_annotation(
-                    union_args[1]
-                )
+                return self._unwrap_annotation(union_args[0])
+            return tuple(self._unwrap_annotation(arg) for arg in union_args)
         return annotation
 
     def _is_model(self, annotation: Any) -> bool:

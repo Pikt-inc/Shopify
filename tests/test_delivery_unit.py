@@ -29,6 +29,16 @@ class DummyDeliveryProfileUpdateUserError:
             yield SimpleNamespace(userErrors=[SimpleNamespace(message="bad")])
 
 
+class DummyDeliveryProfileCreateUserError:
+    def __init__(self, *args, **kwargs) -> None:
+        pass
+
+    @classmethod
+    def bulk(cls, mutations):
+        for _ in mutations:
+            yield SimpleNamespace(userErrors=[SimpleNamespace(message="nope")])
+
+
 class TestDeliveryProfileManager(unittest.TestCase):
     def setUp(self) -> None:
         self.manager = DeliveryProfileManager()
@@ -350,3 +360,17 @@ class TestDeliveryProfileManager(unittest.TestCase):
         self.assertIn(
             "Delivery profile for rate '8.0' was not found", str(ctx.exception)
         )
+
+    def test_bulk_create_raises_on_user_errors(self) -> None:
+        fake_store = SimpleNamespace(location_ids=["loc-1"])
+        with (
+            patch("shopify_sdk.managers.delivery._get_store", return_value=fake_store),
+            patch(
+                "shopify_sdk.managers.delivery.deliveryProfileCreate",
+                DummyDeliveryProfileCreateUserError,
+            ),
+        ):
+            with self.assertRaises(ValueError) as ctx:
+                self.manager._bulk_create_flat_rate_shipping_profile([5.0])
+
+        self.assertIn("Delivery profile creation failed", str(ctx.exception))

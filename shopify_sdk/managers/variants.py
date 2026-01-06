@@ -36,8 +36,15 @@ class ProductVariantManager(BaseModel):
         mapping: dict[str, str] = {}
         connection = self.all
         for variant in connection.nodes:
-            if variant.sku:
-                mapping[variant.sku] = variant.product.id
+            product = getattr(variant, "product", None)
+            if (
+                not product
+                or not getattr(product, "id", None)
+                or not getattr(variant, "id", None)
+            ):
+                logger.warning("Missing product or variant id for variant %s", variant)
+                continue
+            mapping[variant.id] = product.id
         return mapping
 
     @property
@@ -46,10 +53,15 @@ class ProductVariantManager(BaseModel):
         mapping: dict[str, list[str]] = {}
         connection = self.all
         for variant in connection.nodes:
-            product_id = variant.product.id
+            product = getattr(variant, "product", None)
+            product_id = getattr(product, "id", None) if product else None
+            variant_id = getattr(variant, "id", None)
+            if not product_id or not variant_id:
+                logger.warning("Missing product or variant id for variant %s", variant)
+                continue
             if product_id not in mapping:
                 mapping[product_id] = []
-            mapping[product_id].append(variant.id)
+            mapping[product_id].append(variant_id)
         return mapping
 
     @property
