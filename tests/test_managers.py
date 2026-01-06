@@ -1,4 +1,5 @@
 import os
+import random
 import time
 import unittest
 import uuid
@@ -140,6 +141,23 @@ def _wait_for_product_media_and_metafield(
 
     raise AssertionError(
         f"Timed out waiting for product '{product_id}' to update media/metafields."
+    )
+
+
+def _wait_for_variant_ids(
+    manager: ProductManager,
+    product_id: str,
+    timeout_s: float = 30.0,
+) -> list[str]:
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        variant_map = manager.bulk.product_variant_map
+        variant_ids = variant_map.get(product_id) or []
+        if variant_ids:
+            return variant_ids
+        time.sleep(1.0)
+    raise AssertionError(
+        f"Timed out waiting for variants to appear for product '{product_id}'."
     )
 
 
@@ -381,6 +399,41 @@ class TestProductManager(unittest.TestCase):
             drafted = manager.drafted
             self.assertIsInstance(drafted.nodes, list)
 
+    def test_bulk_helpers_reflect_store_state(self) -> None:
+        with _test_store(self) as test_store:
+            manager = test_store.products
+            handles = [f"codex-helper-{uuid.uuid4().hex}" for _ in range(2)]
+            created_ids: list[str] = []
+            missing_handle = f"{handles[0]}-missing"
+            try:
+                for handle in handles:
+                    created_ids.append(
+                        manager.create(
+                            title=f"Codex Helper Product {handle}",
+                            handle=handle,
+                            status=ProductStatus.DRAFT,
+                        )
+                    )
+                    _wait_for_product_id(manager, handle=handle)
+
+                variant_map = manager.bulk.product_variant_map
+                for product_id in created_ids:
+                    self.assertIn(product_id, variant_map)
+                    self.assertTrue(variant_map[product_id])
+
+                handle_map = manager.bulk.handle_id_map
+                for handle, product_id in zip(handles, created_ids):
+                    self.assertEqual(handle_map.get(handle), product_id)
+
+                missing = manager.bulk.missing_handles(handles + [missing_handle])
+                self.assertEqual(set(missing), {missing_handle})
+            finally:
+                for product_id in created_ids:
+                    try:
+                        manager.delete(product_id)
+                    except Exception:
+                        pass
+
 
 class TestStoreManager(unittest.TestCase):
     def test_locations_and_publications(self) -> None:
@@ -392,57 +445,82 @@ class TestStoreManager(unittest.TestCase):
             self.assertIsInstance(publications.nodes, list)
 
 
-class TestDeliveryManager(unittest.TestCase):
+class TestDeliveryProfiles(unittest.TestCase):
     def test_profiles(self) -> None:
         with _test_store(self) as test_store:
-            profiles = test_store.delivery.profiles
-            self.assertIsInstance(profiles.nodes, list)
+            profiles_conn = test_store.delivery.profiles.profiles()
+            self.assertIsInstance(profiles_conn.nodes, list)
 
-    def test_assign_products_to_profile(self) -> None:
+    def test_set_assigns_product_to_shipping_profile(self) -> None:
         with _test_store(self) as test_store:
-            delivery_manager = test_store.delivery
-            locations = test_store.locations.nodes
-            if not locations:
-                self.skipTest("No locations available for delivery profile creation.")
-                return
-            profile_id = None
-            profile_id = delivery_manager.create_profile(
-                name=f"Codex Test Profile {uuid.uuid4().hex}",
-                location_ids=[locations[0].id],
+            manager = test_store.products
+            shipping_rate = round(random.uniform(5.0, 30.0), 2)
+            before_profiles = test_store.delivery.profiles._query(
+                flat_rate=shipping_rate
             )
-            profiles = delivery_manager.profiles
-            self.assertTrue(any(profile.id == profile_id for profile in profiles.nodes))
-
-            product_manager = test_store.products
-            handles = [f"codex-ship-{uuid.uuid4().hex}" for _ in range(2)]
-            created_ids: list[str] = []
+            before_profile_ids = {profile.id for profile in before_profiles}
+            handles = [f"codex-delivery-set-{uuid.uuid4().hex}" for _ in range(2)]
+            product_ids: list[str] = []
+            created_profile_id: str | None = None
             try:
-                for handle in handles:
-                    created_ids.append(
-                        product_manager.create(
-                            title=f"Codex Delivery Product {handle}",
-                            handle=handle,
+                for handle_value in handles:
+                    product_ids.append(
+                        manager.create(
+                            title=f"Codex Delivery Profile {handle_value}",
+                            handle=handle_value,
                             status=ProductStatus.DRAFT,
                         )
                     )
-                assigned_single = delivery_manager.assign_products(
-                    profile_id=profile_id,
-                    product_ids=[created_ids[0]],
+                    print(
+                        f"TestDeliveryProfiles shipping profile product_id={product_ids[-1]}"
+                    )
+                found_ids = [
+                    _wait_for_product_id(manager, handle=handle_value)
+                    for handle_value in handles
+                ]
+                self.assertEqual(found_ids, product_ids)
+                variant_lookup = [
+                    _wait_for_variant_ids(manager, pid) for pid in product_ids
+                ]
+                for variant_ids in variant_lookup:
+                    self.assertTrue(variant_ids)
+                entries = [(pid, float(shipping_rate)) for pid in product_ids]
+                self.assertTrue(test_store.delivery.profiles.set(entries))
+                after_profiles = test_store.delivery.profiles._query(
+                    flat_rate=shipping_rate
                 )
-                self.assertEqual(assigned_single, [created_ids[0]])
-
-                assigned_bulk = delivery_manager.bulk.assign_products(
-                    profile_id=profile_id,
-                    product_ids=created_ids[1:],
+                self.assertTrue(after_profiles)
+                after_profile_ids = {profile.id for profile in after_profiles}
+                new_profile_ids = after_profile_ids - before_profile_ids
+                if new_profile_ids:
+                    created_profile_id = next(iter(new_profile_ids))
+                    profile_id = created_profile_id
+                else:
+                    profile_id = next(iter(after_profile_ids))
+                profile_details = test_store.delivery.profiles.details(profile_id)
+                assigned_variant_ids = set()
+                profile_items_conn = getattr(profile_details, "profileItems", None)
+                profile_items = getattr(profile_items_conn, "nodes", None) or []
+                for profile_item in profile_items:
+                    variant_conn = getattr(profile_item, "variants", None)
+                    variant_nodes = getattr(variant_conn, "nodes", None) or []
+                    for variant in variant_nodes:
+                        if variant.id:
+                            assigned_variant_ids.add(str(variant.id))
+                expected_variant_ids = {str(ids[0]) for ids in variant_lookup if ids}
+                self.assertTrue(
+                    expected_variant_ids.issubset(assigned_variant_ids),
+                    "All expected product variants should be in the profile.",
                 )
-                self.assertEqual(assigned_bulk, created_ids[1:])
             finally:
-                if created_ids:
-                    product_manager.bulk.delete(created_ids)
-                if profile_id:
+                for pid in product_ids:
                     try:
-                        delivery_manager.delete_profile(profile_id)
-                        _wait_for_profile_absence(delivery_manager, profile_id)
+                        manager.delete(pid)
+                    except Exception:
+                        pass
+                if created_profile_id:
+                    try:
+                        test_store.delivery.profiles.delete(created_profile_id)
                     except Exception:
                         pass
 

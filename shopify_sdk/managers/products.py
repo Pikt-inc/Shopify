@@ -131,6 +131,30 @@ class BulkProductManager(BaseModel):
         diff = set(skus) - found_skus
         return list(diff)
 
+    def missing_handles(self, handles: list[str]) -> list[str]:
+        """
+        Return handles from the input list that do not exist in the store.
+        """
+        from shopify_sdk.gql.queries import products
+
+        connection = products(
+            field_inclusions={
+                "ProductConnection": {"edges"},
+                "Product": {"handle"},
+            }
+        ).bulk()
+        if hasattr(connection, "count") and connection.count == 0:
+            return list(handles)
+        if not hasattr(connection, "nodes"):
+            raise ValueError("Failed to fetch products from store.")
+
+        found_handles: set = set(
+            [node.handle for node in connection.nodes if node.handle is not None]
+        )
+
+        diff = set(handles) - found_handles
+        return list(diff)
+
     def set(self, products: Sequence["ProductSetInput"]) -> list["ProductSetPayload"]:
         """
         Create or update products in bulk using productSet.
@@ -285,7 +309,8 @@ class BulkProductManager(BaseModel):
         """
         Return product IDs for the given SKUs.
         """
-        from shopify_sdk import store
+        from shopify_sdk.managers import store
+
         pids: set[ID] = set()
         variant_connection = store.products.variants.all
         for v in variant_connection.nodes:
@@ -301,6 +326,42 @@ class BulkProductManager(BaseModel):
             if v.sku in skus:
                 pids.add(str(v.product.id))
         return list(pids)
+
+    @property
+    def product_variant_map(self) -> dict[ID, list[ID]]:
+        """
+        Return a mapping of product IDs to their variant IDs.
+        """
+        from shopify_sdk.managers import store
+
+        pv_conn = store.products.variants.all
+        product_variant_map: dict[ID, list[ID]] = {}
+        for variant in pv_conn.nodes:
+            if not variant.product or not variant.product.id:
+                logger.warning("No product found for variant ID %s", variant.id)
+                continue
+            product_id = str(variant.product.id)
+            if product_id not in product_variant_map:
+                product_variant_map[product_id] = []
+            if variant.id:
+                product_variant_map[product_id].append(str(variant.id))
+        return product_variant_map
+
+    @property
+    def handle_id_map(self) -> dict[str, ID]:
+        """
+        Return a mapping of product handles to their IDs.
+        """
+        from shopify_sdk.managers import store
+
+        product_conn = store.products.all
+        handle_id_map: dict[str, ID] = {}
+        for product in product_conn.nodes:
+            if not product.handle or not product.id:
+                logger.warning("No handle or ID found for product.")
+                continue
+            handle_id_map[product.handle] = str(product.id)
+        return handle_id_map
 
 
 class ProductManager(BaseModel):
@@ -441,6 +502,33 @@ class ProductManager(BaseModel):
 
         query = products(
             query=f"status:{ProductStatus.DRAFT.value}",
+            field_inclusions={
+                "Product": set(
+                    {
+                        "status",
+                        "id",
+                        "title",
+                        "tags",
+                        "productType",
+                        "seo",
+                        "vendor",
+                        "totalInventory",
+                        "handle",
+                        "description",
+                        "descriptionHtml",
+                    }
+                )
+            },
+        )
+        response = cast(ProductConnection, query.bulk())
+        return response
+
+    @property
+    def all(self) -> "ProductConnection":
+        from shopify_sdk.gql.queries import products
+        from shopify_sdk.gql.core.types.connections import ProductConnection
+
+        query = products(
             field_inclusions={
                 "Product": set(
                     {

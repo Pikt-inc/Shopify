@@ -283,12 +283,14 @@ class deliveryProfiles(Query):
         self,
         first: int = 20,
         after: Optional[str] = None,
+        merchantOwnedOnly: Optional[bool] = False,
         field_exclusions: Optional[Dict[str, Set[str]]] = None,
         field_inclusions: Optional[Dict[str, Set[str]]] = None,
         connection_arguments: Optional[Dict[str, Dict[str, Any]]] = None,
     ):
         self.first: int = first
         self.after: Optional[str] = after
+        self.merchantOwnedOnly: Optional[bool] = merchantOwnedOnly
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
         self._connection_arguments = connection_arguments or dict(
@@ -297,4 +299,67 @@ class deliveryProfiles(Query):
 
     def execute(self, client: ShopifyClient) -> Optional[DeliveryProfileConnection]:
         result: Optional[DeliveryProfileConnection] = super().execute(client=client)
+        return result
+
+
+class deliveryProfile(Query):
+    return_type: Type[BaseModel] = DeliveryProfile
+
+    def __init__(
+        self,
+        id: ID,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
+        connection_arguments: Optional[Dict[str, Dict[str, Any]]] = None,
+    ):
+        self.id: ID = id
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
+        self._connection_arguments = connection_arguments or dict(
+            self.__class__._connection_arguments
+        )
+
+    def execute(self, client: ShopifyClient) -> Optional[DeliveryProfile]:
+        result: Optional[DeliveryProfile] = super().execute(client=client)
+        return result
+
+
+class deliveryMethodDefinition(Query):
+    return_type: Type[BaseModel] = DeliveryMethodDefinition
+
+    @property
+    def class_name(self) -> str:
+        return "node"
+
+    @property
+    def fields(self) -> str:
+        spacer = " " * (self._indent * 2)
+        inner_indent = self._indent * 3
+        selection = self._build_model_selection(self.return_type, indent=inner_indent)
+        if not selection.strip():
+            selection = f"{' ' * inner_indent}__typename"
+        return "\n".join(
+            [
+                f"{spacer}... on {self.return_type.__name__} {{",
+                selection,
+                f"{spacer}}}",
+            ]
+        )
+
+    def __init__(
+        self,
+        id: ID,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
+        connection_arguments: Optional[Dict[str, Dict[str, Any]]] = None,
+    ):
+        self.id: ID = id
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
+        self._connection_arguments = connection_arguments or dict(
+            self.__class__._connection_arguments
+        )
+
+    def execute(self, client: ShopifyClient) -> Optional[DeliveryMethodDefinition]:
+        result: Optional[DeliveryMethodDefinition] = super().execute(client=client)
         return result

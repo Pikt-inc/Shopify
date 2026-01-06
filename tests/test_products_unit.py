@@ -74,6 +74,86 @@ class TestBulkProductManager(unittest.TestCase):
 
         self.assertIn("Bulk product deletion failed", str(ctx.exception))
 
+    def test_product_variant_map_groups_variants(self) -> None:
+        fake_connection = SimpleNamespace(
+            nodes=[
+                SimpleNamespace(
+                    product=SimpleNamespace(id="gid://shopify/Product/1"),
+                    id="gid://shopify/ProductVariant/1",
+                ),
+                SimpleNamespace(
+                    product=SimpleNamespace(id="gid://shopify/Product/1"),
+                    id="gid://shopify/ProductVariant/2",
+                ),
+                SimpleNamespace(
+                    product=SimpleNamespace(id="gid://shopify/Product/2"),
+                    id="gid://shopify/ProductVariant/3",
+                ),
+            ]
+        )
+        fake_store = SimpleNamespace(
+            products=SimpleNamespace(variants=SimpleNamespace(all=fake_connection))
+        )
+        manager = BulkProductManager()
+        with patch(
+            "shopify_sdk.managers.store",
+            fake_store,
+        ):
+            result = manager.product_variant_map
+
+        self.assertEqual(
+            result,
+            {
+                "gid://shopify/Product/1": [
+                    "gid://shopify/ProductVariant/1",
+                    "gid://shopify/ProductVariant/2",
+                ],
+                "gid://shopify/Product/2": ["gid://shopify/ProductVariant/3"],
+            },
+        )
+
+    def test_handle_id_map_filters_missing_values(self) -> None:
+        fake_connection = SimpleNamespace(
+            nodes=[
+                SimpleNamespace(handle="alpha", id="gid://shopify/Product/alpha"),
+                SimpleNamespace(handle=None, id="gid://shopify/Product/beta"),
+                SimpleNamespace(handle="gamma", id=None),
+            ]
+        )
+        fake_store = SimpleNamespace(products=SimpleNamespace(all=fake_connection))
+        manager = BulkProductManager()
+        with patch(
+            "shopify_sdk.managers.store",
+            fake_store,
+        ):
+            result = manager.handle_id_map
+
+        self.assertEqual(
+            result,
+            {"alpha": "gid://shopify/Product/alpha"},
+        )
+
+    def test_missing_handles_returns_missing_items(self) -> None:
+        fake_connection = SimpleNamespace(
+            nodes=[
+                SimpleNamespace(handle="alpha"),
+                SimpleNamespace(handle="beta"),
+            ]
+        )
+
+        class DummyProductsQuery:
+            def __init__(self, *args, **kwargs) -> None:
+                pass
+
+            def bulk(self):
+                return fake_connection
+
+        manager = BulkProductManager()
+        with patch("shopify_sdk.gql.queries.products", DummyProductsQuery):
+            missing = manager.missing_handles(["alpha", "gamma"])
+
+        self.assertEqual(missing, ["gamma"])
+
 
 class TestProductManager(unittest.TestCase):
     def test_create_calls_set_product_images(self) -> None:
@@ -127,3 +207,24 @@ class TestProductManager(unittest.TestCase):
                 manager.delete("gid://shopify/Product/1")
 
         self.assertIn("Product deletion failed", str(ctx.exception))
+
+    def test_missing_handles_returns_missing_items(self) -> None:
+        fake_connection = SimpleNamespace(
+            nodes=[
+                SimpleNamespace(handle="alpha"),
+                SimpleNamespace(handle="beta"),
+            ]
+        )
+
+        class DummyProductsQuery:
+            def __init__(self, *args, **kwargs) -> None:
+                pass
+
+            def bulk(self):
+                return fake_connection
+
+        manager = BulkProductManager()
+        with patch("shopify_sdk.gql.queries.products", DummyProductsQuery):
+            missing = manager.missing_handles(["alpha", "gamma"])
+
+        self.assertEqual(missing, ["gamma"])

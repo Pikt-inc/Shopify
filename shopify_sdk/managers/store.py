@@ -12,6 +12,7 @@ if TYPE_CHECKING:
         LocationConnection,
         PublicationConnection,
     )
+    from shopify_sdk.gql.core.types.base import ID
 
 
 class StoreManager(BaseModel):
@@ -64,6 +65,11 @@ class StoreManager(BaseModel):
         )
         response: "LocationConnection" = query.execute(client)
         return response
+
+    @property
+    def location_ids(self) -> list["ID"]:
+        loc_ids = [loc.id for loc in self.locations.nodes if loc.id]
+        return loc_ids
 
     @property
     def publications(self) -> "PublicationConnection":

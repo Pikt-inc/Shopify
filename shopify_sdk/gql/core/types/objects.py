@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Union
 from pydantic import Field
 
 from .base import *
@@ -327,7 +327,6 @@ class ProductVariantComponentConnection(connection):
 class SellingPlanGroup(AutoRegisterModel):
     id: ID
     name: String
-
 
 
 class ProductVariant(AutoRegisterModel):
@@ -1058,8 +1057,13 @@ class DeliveryProvince(AutoRegisterModel):
     translatedName: String
 
 
+class DeliveryCountryCodeOrRestOfWorld(AutoRegisterModel):
+    countryCode: Optional[CountryCode] = Field(default=None)
+    restOfWorld: Boolean
+
+
 class DeliveryCountry(AutoRegisterModel):
-    code: CountryCode
+    code: DeliveryCountryCodeOrRestOfWorld
     id: ID
     name: String
     provinces: List[DeliveryProvince]
@@ -1070,6 +1074,7 @@ class DeliveryZone(AutoRegisterModel):
     countries: List[DeliveryCountry]
     id: ID
     name: String
+
 
 # Alias for GraphQL union: DeliveryConditionCriteria = MoneyV2 | Weight
 DeliveryConditionCriteria = MoneyV2 | Weight
@@ -1087,19 +1092,22 @@ class DeliveryRateDefinition(AutoRegisterModel):
     id: ID
 
 
+class DeliveryParticipant(AutoRegisterModel):
+    id: ID
+
+
 class DeliveryMethodDefinition(AutoRegisterModel):
     active: Boolean
     description: Optional[String] = Field(default=None)
     id: ID
     methodConditions: List[DeliveryCondition]
     name: String
-    rateProvider: DeliveryRateDefinition
+    rateProvider: Union[DeliveryRateDefinition, DeliveryParticipant]
 
 
 class DeliveryMethodDefinitionCounts(AutoRegisterModel):
-    total: Int
-    eligible: Optional[Int] = Field(default=None)
-    ineligible: Optional[Int] = Field(default=None)
+    participantDefinitionsCount: Int
+    rateDefinitionsCount: Int
 
 
 class DeliveryLocationGroupZone(AutoRegisterModel):
@@ -1115,7 +1123,7 @@ class DeliveryCountryAndZone(AutoRegisterModel):
 
 class DeliveryLocationGroup(AutoRegisterModel):
     id: ID
-    locations: List[Location]
+    locations: LocationConnection
 
 
 class DeliveryProfileLocationGroup(AutoRegisterModel):
@@ -1127,4 +1135,4 @@ class DeliveryProfileLocationGroup(AutoRegisterModel):
 class DeliveryProfileItem(AutoRegisterModel):
     id: ID
     product: Optional[Product] = Field(default=None)
-    variant: Optional[ProductVariant] = Field(default=None)
+    variants: Optional[ProductVariantConnection] = Field(default=None)

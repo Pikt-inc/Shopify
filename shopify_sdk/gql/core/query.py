@@ -34,6 +34,7 @@ class Query:
     _field_exclusions: Dict[str, Set[str]] = {}
     _field_inclusions: Dict[str, Set[str]] = {}
     _indent: int = 2
+    _union_fields: List[str] = []
     default_connection_first: Optional[int] = 100
     action_type: str = "query"
 
@@ -131,6 +132,20 @@ class Query:
             nested = self._build_model_selection(resolved, indent + self._indent)
             return f"{spacer}{field_label} {{\n{nested}\n{spacer}}}"
 
+        if isinstance(resolved, tuple):
+            nested_parts = []
+            for union_type in resolved:
+                if self._is_model(union_type):
+                    self._union_fields.append(union_type)
+                    union_body = self._build_model_selection(
+                        union_type, indent + self._indent * 2
+                    )
+                    nested_parts.append(
+                        f"{' ' * (indent + self._indent)}... on {union_type.__name__} {{\n{union_body}\n{' ' * (indent + self._indent)}}}"
+                    )
+            nested = "\n".join(nested_parts)
+            return f"{spacer}{field_label} {{\n{nested}\n{spacer}}}"
+
         return f"{spacer}{field_label}"
 
     def _build_connection_selection(
@@ -148,7 +163,9 @@ class Query:
         sections = []
 
         edges_type = self._unwrap_annotation(conn_hints.get("edges"))
-        if self._is_model(edges_type):
+        if self._is_model(edges_type) and self._should_include_field(
+            conn_type, "edges"
+        ):
             edges_body = self._build_model_selection(
                 edges_type, inner_indent + self._indent
             )
@@ -157,7 +174,9 @@ class Query:
             )
 
         nodes_type = self._unwrap_annotation(conn_hints.get("nodes"))
-        if self._is_model(nodes_type):
+        if self._is_model(nodes_type) and self._should_include_field(
+            conn_type, "nodes"
+        ):
             nodes_body = self._build_model_selection(
                 nodes_type, inner_indent + self._indent
             )
@@ -242,7 +261,12 @@ class Query:
             return self._unwrap_annotation(list_args[0]) if list_args else Any
         if origin is Union:
             union_args = [arg for arg in get_args(annotation) if arg is not type(None)]
-            return self._unwrap_annotation(union_args[0]) if union_args else Any
+            if len(union_args) == 1:
+                return self._unwrap_annotation(union_args[0]) if union_args else Any
+            else:
+                return self._unwrap_annotation(union_args[0]), self._unwrap_annotation(
+                    union_args[1]
+                )
         return annotation
 
     def _is_model(self, annotation: Any) -> bool:
@@ -318,6 +342,11 @@ class Query:
                 return self._build_partial_model(value, model_type)
             return value
 
+        if isinstance(value, dict):
+            for union_type in self._union_fields:
+                if self._is_model(union_type) and isinstance(value, dict):
+                    model_type = cast(Type[BaseModel], union_type)
+                    return self._build_partial_model(value, model_type)
         return value
 
     def _default_value_for(self, annotation: Any) -> Any:
@@ -540,7 +569,7 @@ class Query:
             raise TypeError("return_type must be a class type derived from BaseModel.")
         # When fields were excluded/included, construct a partial model so missing
         # fields default to None instead of raising validation errors.
-        if self.field_exclusions or self.field_inclusions:
+        if self.field_exclusions or self.field_inclusions or self._union_fields:
             cast_obj = self._build_partial_model(order_data, self.return_type)
         else:
             cast_obj = self.return_type(**order_data)
