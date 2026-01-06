@@ -39,7 +39,13 @@ class DeliveryProfileManager(BaseModel):
         self,
         input: Sequence[tuple[ID, float]],
     ) -> bool:
-        return self._set_shipping(input=input)
+        """
+        Assign flat-rate delivery profiles to the variants for the given products.
+
+        Args:
+            entries: Sequence of ``(product_id, flat_rate)`` tuples to apply.
+        """
+        return self._set_shipping(entries=entries)
 
     def profiles(self, merchant_only: bool = False) -> DeliveryProfileConnection:
         query = deliveryProfiles(
@@ -110,13 +116,12 @@ class DeliveryProfileManager(BaseModel):
         _location_ids = _get_store().location_ids
         for rate_price in rate_prices:
             rate_price = float(rate_price)
-            location_ids = _location_ids
             profile_name = f"Flat Rate ${rate_price}"
             profile_input = DeliveryProfileInput(
                 name=profile_name,
                 locationGroupsToCreate=[
                     DeliveryProfileLocationGroupInput(
-                        locations=list(location_ids),
+                        locations=list(_location_ids),
                         zonesToCreate=[
                             DeliveryLocationGroupZoneInput(
                                 name="Default",
