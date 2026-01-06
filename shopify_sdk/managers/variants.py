@@ -29,3 +29,47 @@ class ProductVariantManager(BaseModel):
             }
         ).bulk()
         return cast("ProductVariantConnection", connection)
+
+    @property
+    def variant_to_product_map(self) -> dict[str, str]:
+        """Return a mapping of variant IDs to their parent product IDs."""
+        mapping: dict[str, str] = {}
+        connection = self.all
+        for variant in connection.nodes:
+            product = getattr(variant, "product", None)
+            if (
+                not product
+                or not getattr(product, "id", None)
+                or not getattr(variant, "id", None)
+            ):
+                logger.warning("Missing product or variant id for variant %s", variant)
+                continue
+            mapping[variant.id] = product.id
+        return mapping
+
+    @property
+    def product_to_variants_map(self) -> dict[str, list[str]]:
+        """Return a mapping of product IDs to their variant IDs."""
+        mapping: dict[str, list[str]] = {}
+        connection = self.all
+        for variant in connection.nodes:
+            product = getattr(variant, "product", None)
+            product_id = getattr(product, "id", None) if product else None
+            variant_id = getattr(variant, "id", None)
+            if not product_id or not variant_id:
+                logger.warning("Missing product or variant id for variant %s", variant)
+                continue
+            if product_id not in mapping:
+                mapping[product_id] = []
+            mapping[product_id].append(variant_id)
+        return mapping
+
+    @property
+    def sku_to_variant_map(self) -> dict[str, str]:
+        """Return a mapping of SKUs to their variant IDs."""
+        mapping: dict[str, str] = {}
+        connection = self.all
+        for variant in connection.nodes:
+            if variant.sku:
+                mapping[variant.sku] = variant.id
+        return mapping
