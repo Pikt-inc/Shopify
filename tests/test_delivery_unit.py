@@ -49,6 +49,20 @@ class TestDeliveryProfileManager(unittest.TestCase):
                 bulk=SimpleNamespace(product_variant_map={self.product_id: ["var-1"]})
             )
         )
+        self._profiles_patcher = patch.object(
+            DeliveryProfileManager, "profiles", return_value=SimpleNamespace(nodes=[])
+        )
+        self._details_patcher = patch.object(
+            DeliveryProfileManager,
+            "details",
+            return_value=SimpleNamespace(id="profile-1", profileLocationGroups=[]),
+        )
+        self._profiles_patcher.start()
+        self._details_patcher.start()
+
+    def tearDown(self) -> None:
+        self._profiles_patcher.stop()
+        self._details_patcher.stop()
 
     def test_set_associates_variants_and_returns_true(self) -> None:
         DummyDeliveryProfileUpdateSuccess.seen_mutations = None
@@ -69,7 +83,12 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "rate_to_delivery_profile",
+                "profiles",
+                return_value=SimpleNamespace(nodes=[]),
+            ),
+            patch.object(
+                DeliveryProfileManager,
+                "_get_rate_to_profile_id_map",
                 return_value={self.rate: "profile-1"},
             ),
             patch(
@@ -112,7 +131,12 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "rate_to_delivery_profile",
+                "profiles",
+                return_value=SimpleNamespace(nodes=[]),
+            ),
+            patch.object(
+                DeliveryProfileManager,
+                "_get_rate_to_profile_id_map",
                 return_value={self.rate: "profile-1"},
             ),
             patch(
@@ -253,7 +277,12 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "rate_to_delivery_profile",
+                "profiles",
+                return_value=SimpleNamespace(nodes=[]),
+            ),
+            patch.object(
+                DeliveryProfileManager,
+                "_get_rate_to_profile_id_map",
                 return_value={rate: f"profile-{rate}" for rate in rate_variants},
             ),
             patch(
@@ -294,7 +323,12 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "rate_to_delivery_profile",
+                "profiles",
+                return_value=SimpleNamespace(nodes=[]),
+            ),
+            patch.object(
+                DeliveryProfileManager,
+                "_get_rate_to_profile_id_map",
                 return_value={5.0: "profile-empty"},
             ),
             patch(
@@ -338,7 +372,12 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "rate_to_delivery_profile",
+                "profiles",
+                return_value=SimpleNamespace(nodes=[]),
+            ),
+            patch.object(
+                DeliveryProfileManager,
+                "_get_rate_to_profile_id_map",
                 return_value={},
             ),
             patch(
