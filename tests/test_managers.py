@@ -469,12 +469,13 @@ class TestDeliveryProfiles(unittest.TestCase):
             manager = test_store.products
             shipping_rate = round(random.uniform(5.0, 30.0), 2)
             try:
-                before_profiles = test_store.delivery.profiles._query(
-                    flat_rate=shipping_rate
+                before_conn = test_store.delivery.profiles.profiles(merchant_only=False)
+                before_map = test_store.delivery.profiles.rate_to_delivery_profile(
+                    before_conn
                 )
             except Exception as exc:
                 self.skipTest(f"Delivery profiles unavailable: {exc}")
-            before_profile_ids = {profile.id for profile in before_profiles}
+            before_profile_id = before_map.get(shipping_rate)
             handles = [f"codex-delivery-set-{uuid.uuid4().hex}" for _ in range(2)]
             product_ids: list[str] = []
             created_profile_id: str | None = None
@@ -502,17 +503,15 @@ class TestDeliveryProfiles(unittest.TestCase):
                     self.assertTrue(test_store.delivery.profiles.set(entries))
                 except ValueError as exc:
                     self.skipTest(f"Unable to create/update delivery profile: {exc}")
-                after_profiles = test_store.delivery.profiles._query(
-                    flat_rate=shipping_rate
+                after_conn = test_store.delivery.profiles.profiles(merchant_only=False)
+                after_map = test_store.delivery.profiles.rate_to_delivery_profile(
+                    after_conn
                 )
-                self.assertTrue(after_profiles)
-                after_profile_ids = {profile.id for profile in after_profiles}
-                new_profile_ids = after_profile_ids - before_profile_ids
-                if new_profile_ids:
-                    created_profile_id = next(iter(new_profile_ids))
-                    profile_id = created_profile_id
-                else:
-                    profile_id = next(iter(after_profile_ids))
+                profile_id = after_map.get(shipping_rate)
+                self.assertIsNotNone(profile_id)
+                assert profile_id is not None
+                if profile_id != before_profile_id:
+                    created_profile_id = profile_id
                 profile_details = test_store.delivery.profiles.details(profile_id)
                 assigned_variant_ids = set()
                 profile_items_conn = getattr(profile_details, "profileItems", None)
