@@ -88,7 +88,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "_get_rate_to_profile_id_map",
+                "rate_to_delivery_profile",
                 return_value={self.rate: "profile-1"},
             ),
             patch(
@@ -136,7 +136,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "_get_rate_to_profile_id_map",
+                "rate_to_delivery_profile",
                 return_value={self.rate: "profile-1"},
             ),
             patch(
@@ -282,7 +282,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "_get_rate_to_profile_id_map",
+                "rate_to_delivery_profile",
                 return_value={rate: f"profile-{rate}" for rate in rate_variants},
             ),
             patch(
@@ -328,7 +328,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "_get_rate_to_profile_id_map",
+                "rate_to_delivery_profile",
                 return_value={5.0: "profile-empty"},
             ),
             patch(
@@ -377,7 +377,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "_get_rate_to_profile_id_map",
+                "rate_to_delivery_profile",
                 return_value={},
             ),
             patch(
