@@ -1,4 +1,4 @@
-from typing import Sequence, Optional, cast
+from typing import Sequence, cast
 from pydantic import BaseModel, Field
 import logging
 
@@ -175,15 +175,11 @@ class DeliveryProfileManager(BaseModel):
                     f"Delivery profile creation failed {messages} in bulk operation at chunk {index}."
                 )
 
-    def _query(
-        self,
-        connection: Optional[DeliveryProfileConnection] = None,
-        name: Optional[str] = None,
-        flat_rate: Optional[float] = None,
-    ) -> list[DeliveryProfile]:
-        connection = connection or self.profiles(merchant_only=False)
-        flat_rate_value = float(flat_rate) if flat_rate is not None else None
-        matches: list[DeliveryProfile] = []
+    def rate_to_delivery_profile(
+        self, profiles: DeliveryProfileConnection
+    ) -> dict[float, ID]:
+        connection = profiles
+        _map: dict[float, ID] = {}
         for _node in connection.nodes:
             _dp = self.details(_node.id)
             for _lg in _dp.profileLocationGroups:
@@ -196,43 +192,26 @@ class DeliveryProfileManager(BaseModel):
                         if not hasattr(_md.rateProvider.price, "amount"):
                             continue
                         amount = float(_md.rateProvider.price.amount)
-                        if name and name != _dp.name:
+                        if amount in _map:
+                            logger.warning(
+                                "Multiple delivery profiles found for rate '%s'. Using the first one found.",
+                                amount,
+                            )
                             continue
-                        if flat_rate_value is not None and flat_rate_value != amount:
-                            continue
-                        matches.append(_dp)
-        return matches
+                        _map[amount] = _dp.id
+        return _map
 
     def _get_missing_rates(
         self,
         input: Sequence[tuple[ID, float]],
+        rate_map: dict[float, ID],
     ) -> list[float]:
-        profiles = self.profiles(merchant_only=False)
         missing_rates: list[float] = []
         for pid, rate in input:
-            _sp_list = self._query(
-                connection=profiles,
-                flat_rate=rate,
-            )
+            _sp_list = rate_map.get(rate)
             if not _sp_list:
                 missing_rates.append(rate)
         return missing_rates
-
-    def _get_rate_to_profile_id_map(
-        self,
-        input: Sequence[tuple[ID, float]],
-    ) -> dict[float, ID]:
-        profiles = self.profiles(merchant_only=False)
-        rate_id_map: dict[float, ID] = {}
-        for pid, rate in input:
-            _sp_list = self._query(
-                connection=profiles,
-                flat_rate=rate,
-            )
-            if _sp_list:
-                profile_id = _sp_list[0].id
-                rate_id_map[rate] = profile_id
-        return rate_id_map
 
     def _get_rate_to_variant_id_map(
         self,
@@ -250,25 +229,29 @@ class DeliveryProfileManager(BaseModel):
         self,
         input: Sequence[tuple[ID, float]],
     ) -> bool:
+        profiles_connection = self.profiles(merchant_only=False)
+        rate_profile_map = self.rate_to_delivery_profile(profiles_connection)
         _variant_map: dict[float, list[ID]] = self._get_rate_to_variant_id_map(
             input=input
         )
         mutations: list[Mutation] = []
-        missing_rates: list[float] = self._get_missing_rates(input=input)
-        self._bulk_create_flat_rate_shipping_profile(list(set(missing_rates)))
-        rate_profile_id_map: dict[float, ID] = self._get_rate_to_profile_id_map(
-            input=input
+        missing_rates: list[float] = self._get_missing_rates(
+            input=input, rate_map=rate_profile_map
         )
+        if missing_rates:
+            self._bulk_create_flat_rate_shipping_profile(list(set(missing_rates)))
+            profiles_connection = self.profiles(merchant_only=False)
+            rate_profile_map = self.rate_to_delivery_profile(profiles_connection)
 
         for pid, rate in input:
-            if rate not in rate_profile_id_map:
+            if rate not in rate_profile_map:
                 raise ValueError(
                     f"Delivery profile for rate '{rate}' was not found after creation."
                 )
 
         for pid, rate in input:
             variant_ids = _variant_map.get(rate, [])
-            profile_id = rate_profile_id_map.get(rate)
+            profile_id = rate_profile_map.get(rate)
             if not profile_id:
                 logger.warning(
                     "No delivery profile found for rate '%s' during shipping profile setup.",

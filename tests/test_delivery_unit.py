@@ -69,7 +69,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "_get_rate_to_profile_id_map",
+                "rate_to_delivery_profile",
                 return_value={self.rate: "profile-1"},
             ),
             patch(
@@ -112,7 +112,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "_get_rate_to_profile_id_map",
+                "rate_to_delivery_profile",
                 return_value={self.rate: "profile-1"},
             ),
             patch(
@@ -131,21 +131,18 @@ class TestDeliveryProfileManager(unittest.TestCase):
         self.assertIn("Delivery profile assignment failed", str(ctx.exception))
 
     def test_get_rate_to_variant_id_map_aggregates_variants_for_same_rate(self) -> None:
+        variant_map = {
+            "prod-1": ["var-1"],
+            "prod-2": ["var-2"],
+            "prod-3": ["var-3"],
+        }
+
         fake_store = SimpleNamespace(
             products=SimpleNamespace(
-                bulk=SimpleNamespace(
-                    product_variant_map={
-                        "prod-1": ["var-1"],
-                        "prod-2": ["var-2"],
-                        "prod-3": ["var-3"],
-                    }
-                )
+                bulk=SimpleNamespace(product_variant_map=variant_map)
             )
         )
-        with patch(
-            "shopify_sdk.managers.delivery._get_store",
-            return_value=fake_store,
-        ):
+        with patch("shopify_sdk.managers.delivery._get_store", return_value=fake_store):
             rate_map = self.manager._get_rate_to_variant_id_map(
                 input=[
                     ("prod-1", 5.0),
@@ -195,7 +192,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "_get_rate_to_profile_id_map",
+                "rate_to_delivery_profile",
                 return_value={
                     10.0: "profile-10",
                     15.5: "profile-15",
@@ -256,7 +253,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "_get_rate_to_profile_id_map",
+                "rate_to_delivery_profile",
                 return_value={rate: f"profile-{rate}" for rate in rate_variants},
             ),
             patch(
@@ -297,7 +294,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "_get_rate_to_profile_id_map",
+                "rate_to_delivery_profile",
                 return_value={5.0: "profile-empty"},
             ),
             patch(
@@ -341,7 +338,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             ),
             patch.object(
                 DeliveryProfileManager,
-                "_get_rate_to_profile_id_map",
+                "rate_to_delivery_profile",
                 return_value={},
             ),
             patch(
