@@ -88,10 +88,6 @@ class Image(AutoRegisterModel):
     altText: Optional[String] = Field(default=None)
     height: Optional[Int] = Field(default=None)
     id: ID
-    metafield: Optional[Metafield] = Field(default=None)
-    metafields: "MetafieldConnection"
-    thumbhash: Optional[String] = Field(default=None)
-    translations: List[Translation] = Field(default_factory=list)
     url: URL
     width: Optional[Int] = Field(default=None)
 
