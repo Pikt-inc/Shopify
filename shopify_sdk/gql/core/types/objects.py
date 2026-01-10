@@ -249,10 +249,30 @@ class Product(AutoRegisterModel):
     variantsCount: Optional[Count] = Field(default=None)
     vendor: String
 
+class MediaError(AutoRegisterModel):
+    code: "MediaErrorCode"
+    details: Optional[String] = Field(default=None)
+    message: String
+
+
+class MediaWarning(AutoRegisterModel):
+    code: MediaWarningCode
+    message: Optional[String] = Field(default=None)
+
+
+class MediaPreviewImage(AutoRegisterModel):
+    image: Optional[Image] = Field(default=None)
+    status: MediaStatus
+
 
 class Media(AutoRegisterModel):
+    alt: Optional[String] = Field(default=None)
     id: ID
     mediaContentType: String
+    mediaErrors: List[MediaError]
+    mediaWarnings: List[MediaWarning]
+    preview: Optional[MediaPreviewImage] = Field(default=None)
+    status: String
 
 
 class Metafield(AutoRegisterModel):
