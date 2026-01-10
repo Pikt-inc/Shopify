@@ -199,7 +199,7 @@ class TaxonomyCategory(AutoRegisterModel):
 class ProductPriceRangeV2(AutoRegisterModel):
     maxVariantPrice: MoneyV2
     minVariantPrice: MoneyV2
-    
+
 
 class Product(AutoRegisterModel):
     availablePublicationsCount: Optional[Count] = Field(default=None)
@@ -229,7 +229,7 @@ class Product(AutoRegisterModel):
     onlineStorePreviewUrl: Optional[URL] = Field(default=None)
     onlineStoreUrl: Optional[URL] = Field(default=None)
     options: List[ProductOption]
-    priceRangeV2: "ProductPriceRangeV2"
+    priceRangeV2: ProductPriceRangeV2
     productComponentsCount: Optional[Count] = Field(default=None)
     productParents: ProductConnection
     productType: String
