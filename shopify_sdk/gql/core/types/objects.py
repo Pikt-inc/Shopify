@@ -85,10 +85,15 @@ class Duty(AutoRegisterModel):
 
 
 class Image(AutoRegisterModel):
-    altText: String
+    altText: Optional[String] = Field(default=None)
+    height: Optional[Int] = Field(default=None)
     id: ID
-    originalSrc: URL
-    transformedSrc: URL
+    metafield: Optional[Metafield] = Field(default=None)
+    metafields: "MetafieldConnection"
+    thumbhash: Optional[String] = Field(default=None)
+    translations: List[Translation] = Field(default_factory=list)
+    url: URL
+    width: Optional[Int] = Field(default=None)
 
 
 class SelectedOption(AutoRegisterModel):
