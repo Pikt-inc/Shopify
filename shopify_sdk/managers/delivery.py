@@ -264,11 +264,14 @@ class DeliveryProfileManager(BaseModel):
                     rate,
                 )
                 continue
-            mutations.append(
-                deliveryProfileUpdate(
-                    id=profile_id,
-                    profile=DeliveryProfileInput(variantsToAssociate=variant_ids),
-                    field_inclusions={
+            MAX_VARIANTS_PER_PROFILE_UPDATE = 250
+            for i in range(0, len(variant_ids), MAX_VARIANTS_PER_PROFILE_UPDATE):
+                chunk_variant_ids = variant_ids[i : i + MAX_VARIANTS_PER_PROFILE_UPDATE]
+                mutations.append(
+                    deliveryProfileUpdate(
+                        id=profile_id,
+                        profile=DeliveryProfileInput(variantsToAssociate=chunk_variant_ids),
+                        field_inclusions={
                         "DeliveryProfileUpdatePayload": {"profile", "userErrors"},
                         "DeliveryProfile": {"id"},
                         "UserError": {"field", "message"},
