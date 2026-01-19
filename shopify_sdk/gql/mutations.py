@@ -24,9 +24,11 @@ class productUpdate(Mutation):
     def __init__(
         self,
         product: ProductUpdateInput,
+        media: Optional[list[CreateMediaInput]] = None,
         field_exclusions: Optional[Dict[str, Set[str]]] = None,
         field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
+        self.media: Optional[list[CreateMediaInput]] = media
         self.product: ProductUpdateInput = product
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
