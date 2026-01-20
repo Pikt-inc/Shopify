@@ -25,7 +25,7 @@ class StatusUpsertManager:
     @cached_property
     def products(self) -> list[Product]:
         """
-        Yields Product objects for all IDs in the input.
+        Returns a list of all products in the store with their IDs and statuses.
         """
         from shopify_sdk.gql.core.types.connections import ProductConnection
 
@@ -42,6 +42,7 @@ class StatusUpsertManager:
     ) -> InventorySyncInput:
         """
         Identify which product's have different statuses than those provided in the input.
+        The goal of this function is to avoid unnecessary updates for products that already have the desired status.
         """
         resolved_active: Set[ID] = set()
         resolved_archived: Set[ID] = set()
