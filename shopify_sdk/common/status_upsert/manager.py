@@ -47,7 +47,11 @@ class StatusUpsertManager:
         resolved_active: Set[ID] = set()
         resolved_archived: Set[ID] = set()
         resolved_draft: Set[ID] = set()
-        pid_status_map = {product.id: product.status for product in self.products if product and product.id}
+        pid_status_map = {
+            product.id: product.status
+            for product in self.products
+            if product and product.id
+        }
         for pid in input.active:
             if pid in pid_status_map and pid_status_map[pid] != ProductStatus.ACTIVE:
                 resolved_active.add(pid)
