@@ -280,9 +280,6 @@ class DeliveryProfileManager(BaseModel):
                         },
                     )
                 )
-        if not mutations or len(mutations) == 0:
-            return True
-
         for index, payload in enumerate(deliveryProfileUpdate.bulk(mutations), start=1):
             if payload is None:
                 raise ValueError(

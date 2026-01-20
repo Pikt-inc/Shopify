@@ -30,9 +30,7 @@ class Mutation(Query):
         from .bulk import bulk_mutation
 
         if len(mutations) == 0:
-            raise ValueError(
-                "At least one mutation must be provided for bulk operation."
-            )
+            return iter(())
 
         responses: Iterator["BulkOperationResultPayload"] = bulk_mutation(
             mutations=mutations,
