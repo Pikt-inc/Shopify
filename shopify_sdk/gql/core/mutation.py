@@ -28,8 +28,9 @@ class Mutation(Query):
             Iterator[BaseModel]: An iterator over the payload models returned by the bulk operation.
         """
         from .bulk import bulk_mutation
+
         if len(mutations) == 0:
-            raise ValueError("At least one mutation must be provided for bulk operation.")
+            yield from iter(())
 
         responses: Iterator["BulkOperationResultPayload"] = bulk_mutation(
             mutations=mutations,

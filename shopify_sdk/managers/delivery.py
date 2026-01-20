@@ -270,17 +270,16 @@ class DeliveryProfileManager(BaseModel):
                 mutations.append(
                     deliveryProfileUpdate(
                         id=profile_id,
-                        profile=DeliveryProfileInput(variantsToAssociate=chunk_variant_ids),
+                        profile=DeliveryProfileInput(
+                            variantsToAssociate=chunk_variant_ids
+                        ),
                         field_inclusions={
-                        "DeliveryProfileUpdatePayload": {"profile", "userErrors"},
-                        "DeliveryProfile": {"id"},
-                        "UserError": {"field", "message"},
-                    },
+                            "DeliveryProfileUpdatePayload": {"profile", "userErrors"},
+                            "DeliveryProfile": {"id"},
+                            "UserError": {"field", "message"},
+                        },
+                    )
                 )
-            )
-        if not mutations or len(mutations) == 0:
-            return True
-        
         for index, payload in enumerate(deliveryProfileUpdate.bulk(mutations), start=1):
             if payload is None:
                 raise ValueError(

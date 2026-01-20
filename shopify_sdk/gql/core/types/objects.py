@@ -256,6 +256,7 @@ class Product(AutoRegisterModel):
     variantsCount: Optional[Count] = Field(default=None)
     vendor: String
 
+
 class MediaError(AutoRegisterModel):
     code: "MediaErrorCode"
     details: Optional[String] = Field(default=None)

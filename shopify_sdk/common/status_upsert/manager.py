@@ -22,6 +22,51 @@ class StatusUpsertManager:
     def __init__(self, input: InventorySyncInput) -> None:
         self._input: InventorySyncInput = input
 
+    @cached_property
+    def products(self) -> list[Product]:
+        """
+        Returns a list of all products in the store with their IDs and statuses.
+        """
+        from shopify_sdk.gql.core.types.connections import ProductConnection
+
+        query = products(
+            field_exclusions={
+                "Product": Product.fields_except(exclude={"id", "status"})
+            },
+        )
+        prod_connect = cast(ProductConnection, query.bulk())
+        return prod_connect.nodes
+
+    def _resolve_status_conflicts(
+        self, input: InventorySyncInput
+    ) -> InventorySyncInput:
+        """
+        Identify which product's have different statuses than those provided in the input.
+        The goal of this function is to avoid unnecessary updates for products that already have the desired status.
+        """
+        resolved_active: Set[ID] = set()
+        resolved_archived: Set[ID] = set()
+        resolved_draft: Set[ID] = set()
+        pid_status_map = {
+            product.id: product.status
+            for product in self.products
+            if product and product.id
+        }
+        for pid in input.active:
+            if pid in pid_status_map and pid_status_map[pid] != ProductStatus.ACTIVE:
+                resolved_active.add(pid)
+        for pid in input.archived:
+            if pid in pid_status_map and pid_status_map[pid] != ProductStatus.ARCHIVED:
+                resolved_archived.add(pid)
+        for pid in input.draft:
+            if pid in pid_status_map and pid_status_map[pid] != ProductStatus.DRAFT:
+                resolved_draft.add(pid)
+        return InventorySyncInput(
+            active=list(resolved_active),
+            archived=list(resolved_archived),
+            draft=list(resolved_draft),
+        )
+
     @classmethod
     def inventory_status_sync(
         cls,
@@ -42,10 +87,11 @@ class StatusUpsertManager:
             draft=to_draft,
         )
         manager = cls(input=input)
+        resolved_input = manager._resolve_status_conflicts(input)
         for status, id_list in [
-            (ProductStatus.ACTIVE, input.active),
-            (ProductStatus.ARCHIVED, input.archived),
-            (ProductStatus.DRAFT, input.draft),
+            (ProductStatus.ACTIVE, resolved_input.active),
+            (ProductStatus.ARCHIVED, resolved_input.archived),
+            (ProductStatus.DRAFT, resolved_input.draft),
         ]:
             if not id_list:
                 continue
@@ -70,19 +116,7 @@ class StatusUpsertManager:
 
     @cached_property
     def valid_ids(self) -> list[ID]:
-        from shopify_sdk.gql.core.types.connections import ProductConnection
-
-        query = products(
-            field_exclusions={"Product": Product.fields_except(exclude={"id"})}
-        )
-        _ids: list[ID] = []
-        prod_connect = cast(ProductConnection, query.bulk())
-        if not prod_connect.nodes:
-            logger.warning("No products found in store during validation of valid IDs.")
-            raise ValueError(
-                "No products found in store during validation of valid IDs."
-            )
-        _ids = [product.id for product in prod_connect.nodes if product.id]
+        _ids = [product.id for product in self.products if product.id]
         return _ids
 
     @cached_property
