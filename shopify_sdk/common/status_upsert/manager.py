@@ -47,17 +47,15 @@ class StatusUpsertManager:
         resolved_active: Set[ID] = set()
         resolved_archived: Set[ID] = set()
         resolved_draft: Set[ID] = set()
+        pid_status_map = {product.id: product.status for product in self.products if product and product.id}
         for pid in input.active:
-            product = next((p for p in self.products if p.id == pid), None)
-            if product and product.status != ProductStatus.ACTIVE:
+            if pid in pid_status_map and pid_status_map[pid] != ProductStatus.ACTIVE:
                 resolved_active.add(pid)
         for pid in input.archived:
-            product = next((p for p in self.products if p.id == pid), None)
-            if product and product.status != ProductStatus.ARCHIVED:
+            if pid in pid_status_map and pid_status_map[pid] != ProductStatus.ARCHIVED:
                 resolved_archived.add(pid)
         for pid in input.draft:
-            product = next((p for p in self.products if p.id == pid), None)
-            if product and product.status != ProductStatus.DRAFT:
+            if pid in pid_status_map and pid_status_map[pid] != ProductStatus.DRAFT:
                 resolved_draft.add(pid)
         return InventorySyncInput(
             active=list(resolved_active),
