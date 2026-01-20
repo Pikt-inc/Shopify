@@ -20,9 +20,9 @@ class StatusUpsertManager:
     """
 
     def __init__(self, input: InventorySyncInput) -> None:
-        self._input: InventorySyncInput = self._resolve_status_conflicts(input)
+        self._input: InventorySyncInput = input
 
-    @property
+    @cached_property
     def products(self) -> list[Product]:
         """
         Yields Product objects for all IDs in the input.
@@ -84,10 +84,11 @@ class StatusUpsertManager:
             draft=to_draft,
         )
         manager = cls(input=input)
+        resolved_input = manager._resolve_status_conflicts(input)
         for status, id_list in [
-            (ProductStatus.ACTIVE, input.active),
-            (ProductStatus.ARCHIVED, input.archived),
-            (ProductStatus.DRAFT, input.draft),
+            (ProductStatus.ACTIVE, resolved_input.active),
+            (ProductStatus.ARCHIVED, resolved_input.archived),
+            (ProductStatus.DRAFT, resolved_input.draft),
         ]:
             if not id_list:
                 continue
