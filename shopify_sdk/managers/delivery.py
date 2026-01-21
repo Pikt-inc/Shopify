@@ -45,7 +45,7 @@ class DeliveryProfileManager(BaseModel):
 
         This method applies flat-rate shipping charges to the given product variants,
         using the provided sequence of (ID, rate) tuples.
-        :param input: Sequence of tuples containing ID and their associated flat rate.
+        :param input: Sequence of tuples containing a product ID and its associated flat rate.
         :type input: Sequence[tuple[ID, float]]
         :return: Boolean indicating success or failure
         :rtype: bool
