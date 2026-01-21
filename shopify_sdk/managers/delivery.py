@@ -150,7 +150,6 @@ class DeliveryProfileManager(BaseModel):
 
         :param rate_prices: List of flat rate prices to create shipping profiles for.
         :type rate_prices: list[float]
-        :return: None
         :rtype: None
         """
         mutations: list[Mutation] = []
