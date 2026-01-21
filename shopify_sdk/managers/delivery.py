@@ -237,14 +237,11 @@ class DeliveryProfileManager(BaseModel):
     @validate_call(validate_return=True)
     def rate_to_delivery_profile(
         self,
-        profiles: DeliveryProfileConnection,
         profile_details_map: dict[ID, DeliveryProfile],
     ) -> dict[float, ID]:
         """
         Generates a mapping of flat shipping rates to their associated delivery profile IDs.
 
-        :param profiles: Shopify Connection object of Delivery Profiles objects.
-        :type profiles: DeliveryProfileConnection
         :param profile_details_map: Mapping of profile IDs to DeliveryProfile objects.
         :type profile_details_map: dict[ID, DeliveryProfile]
         :return: Mapping of flat shipping rates as floats to delivery profile IDs.
@@ -343,7 +340,7 @@ class DeliveryProfileManager(BaseModel):
         """
         Generates a mapping of flat shipping rates to their associated variant IDs.
 
-        :param input: Sequence of tuples containing ID and their associated flat shipping rate.
+        :param input: Sequence of tuples containing product ID's and their associated flat shipping rate.
         :type input: Sequence[tuple[ID, float]]
         :return: Mapping of flat shipping rates to lists of variant IDs.
         :rtype: dict[float, list[ID]]
@@ -364,7 +361,7 @@ class DeliveryProfileManager(BaseModel):
         """
         Sets up shipping profiles and associates variants with the appropriate delivery profiles.
 
-        :param input: Sequence of tuples containing ID and their associated flat rate.
+        :param input: Sequence of tuples containing product ID's and their associated flat rate.
         :type input: Sequence[tuple[ID, float]]
         :return: Boolean indicating success or failure
         :rtype: bool
@@ -372,7 +369,7 @@ class DeliveryProfileManager(BaseModel):
         profiles_connection = self.profiles(merchant_only=False)
         profile_details_map = self._get_profile_details_map(profiles_connection)
         rate_profile_map = self.rate_to_delivery_profile(
-            profiles_connection, profile_details_map
+            profile_details_map
         )
         _variant_map = self._get_rate_to_variant_id_map(input=input)
         mutations: list[Mutation] = []
@@ -382,7 +379,7 @@ class DeliveryProfileManager(BaseModel):
             profiles_connection = self.profiles(merchant_only=False)
             profile_details_map = self._get_profile_details_map(profiles_connection)
             rate_profile_map = self.rate_to_delivery_profile(
-                profiles_connection, profile_details_map
+                profile_details_map
             )
 
         for pid, rate in input:
