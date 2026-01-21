@@ -246,7 +246,7 @@ class DeliveryProfileManager(BaseModel):
         :param profiles: Shopify Connection object of Delivery Profiles objects.
         :type profiles: DeliveryProfileConnection
         :param profile_details_map: Mapping of profile IDs to DeliveryProfile objects.
-        :type profile_details_map: dict[ID, DeliveryProfile] | None
+        :type profile_details_map: dict[ID, DeliveryProfile]
         :return: Mapping of flat shipping rates as floats to delivery profile IDs.
         :rtype: dict[float, ID]
         """
