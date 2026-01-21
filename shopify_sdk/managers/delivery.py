@@ -322,7 +322,7 @@ class DeliveryProfileManager(BaseModel):
         :type input: Sequence[tuple[ID, float]]
         :param rate_map: Mapping of rates to delivery profile IDs.
         :type rate_map: dict[float, ID]
-        :return: List of float values that don't exist as a delivery profile in shopify.
+        :return: List of float values that don't exist as a delivery profile in Shopify.
         :rtype: list[float]
         """
         missing_rates: list[float] = []
