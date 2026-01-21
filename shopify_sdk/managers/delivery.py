@@ -144,7 +144,7 @@ class DeliveryProfileManager(BaseModel):
     @validate_call(validate_return=True)
     def _bulk_create_flat_rate_shipping_profile(self, rate_prices: list[float]) -> None:
         """
-        Docstring for _bulk_create_flat_rate_shipping_profile
+        Create multiple flat-rate delivery profiles in bulk, one for each given price.
 
         :param rate_prices: List of flat rate prices to create shipping profiles for.
         :type rate_prices: list[float]
