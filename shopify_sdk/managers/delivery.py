@@ -365,9 +365,7 @@ class DeliveryProfileManager(BaseModel):
         """
         profiles_connection = self.profiles(merchant_only=False)
         profile_details_map = self._get_profile_details_map(profiles_connection)
-        rate_profile_map = self.rate_to_delivery_profile(
-            profile_details_map
-        )
+        rate_profile_map = self.rate_to_delivery_profile(profile_details_map)
         _variant_map = self._get_rate_to_variant_id_map(input=input)
         mutations: list[Mutation] = []
         missing_rates = self._get_missing_rates(input=input, rate_map=rate_profile_map)
@@ -375,9 +373,7 @@ class DeliveryProfileManager(BaseModel):
             self._bulk_create_flat_rate_shipping_profile(list(set(missing_rates)))
             profiles_connection = self.profiles(merchant_only=False)
             profile_details_map = self._get_profile_details_map(profiles_connection)
-            rate_profile_map = self.rate_to_delivery_profile(
-                profile_details_map
-            )
+            rate_profile_map = self.rate_to_delivery_profile(profile_details_map)
 
         for pid, rate in input:
             if rate not in rate_profile_map:
