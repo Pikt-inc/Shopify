@@ -35,7 +35,6 @@ logger = logging.getLogger(__name__)
 
 
 class DeliveryProfileManager(BaseModel):
-
     @validate_call(validate_return=True)
     def set(
         self,
@@ -43,7 +42,7 @@ class DeliveryProfileManager(BaseModel):
     ) -> bool:
         """
         Docstring for set
-        
+
         :param self:
         :type self: DeliveryProfileManager
         :param input: Sequence of tuples containing ID and their associated flat rate.
@@ -57,7 +56,7 @@ class DeliveryProfileManager(BaseModel):
     def profiles(self, merchant_only: bool = False) -> DeliveryProfileConnection:
         """
         Retrieves delivery profiles from the Shopify store.
-        
+
         :param self:
         :type self: DeliveryProfileManager
         :param merchant_only: Flag to filter for merchant-owned profiles only.
@@ -87,7 +86,7 @@ class DeliveryProfileManager(BaseModel):
     def delete(self, id: ID) -> bool:
         """
         Deletes a delivery profile by its ID.
-        
+
         :param self:
         :type self: DeliveryProfileManager
         :param id: ID of the delivery profile to delete.
@@ -119,7 +118,7 @@ class DeliveryProfileManager(BaseModel):
     def details(self, id: ID) -> DeliveryProfile:
         """
         Retrieves detailed information about a specific delivery profile by its ID.
-        
+
         :param self:
         :type self: DeliveryProfileManager
         :param id: ID of the delivery profile to retrieve details for.
@@ -154,7 +153,7 @@ class DeliveryProfileManager(BaseModel):
     def _bulk_create_flat_rate_shipping_profile(self, rate_prices: list[float]) -> None:
         """
         Docstring for _bulk_create_flat_rate_shipping_profile
-        
+
         :param self:
         :type self: DeliveryProfileManager
         :param rate_prices: List of flat rate prices to create shipping profiles for.
@@ -231,7 +230,7 @@ class DeliveryProfileManager(BaseModel):
     ) -> dict[ID, DeliveryProfile]:
         """
         Generates a mapping of delivery profile IDs to their detailed DeliveryProfile objects.
-        
+
         :param self:
         :type self: DeliveryProfileManager
         :param profiles: Shopify Connection object of Delivery Profiles objects.
@@ -246,8 +245,10 @@ class DeliveryProfileManager(BaseModel):
                 continue
             profile_details_map[str(node_id)] = self.details(node_id)
         try:
+
             class _get_profile_details_map_onput(BaseModel):
                 mapping: dict[ID, DeliveryProfile]
+
             _ = _get_profile_details_map_onput(mapping=profile_details_map)
         except Exception as e:
             raise ValueError(f"Invalid profile details map constructed: {e}")
@@ -261,7 +262,7 @@ class DeliveryProfileManager(BaseModel):
     ) -> dict[float, ID]:
         """
         Generates a mapping of flat shipping rates to their associated delivery profile IDs.
-        
+
         :param self:
         :type self: DeliveryProfileManager
         :param profiles: Shopify Connection object of Delivery Profiles objects.
@@ -305,7 +306,7 @@ class DeliveryProfileManager(BaseModel):
     ) -> dict[ID, list[ID]]:
         """
         Generates a mapping of delivery profile IDs to their associated variant IDs.
-        
+
         :param self:
         :type self: DeliveryProfileManager
         :param profiles: Shopify Connection object of Delivery Profiles objects.
@@ -353,7 +354,7 @@ class DeliveryProfileManager(BaseModel):
     ) -> list[float]:
         """
         Gets a list of flat shipping rates that do not have an associated delivery profile.
-        
+
         :param self:
         :type self: DeliveryProfileManager
         :param input: Sequence of tuples containing ID and their associated flat shipping rate.
@@ -377,7 +378,7 @@ class DeliveryProfileManager(BaseModel):
     ) -> dict[float, list[ID]]:
         """
         Generates a mapping of flat shipping rates to their associated variant IDs.
-        
+
         :param self:
         :type self: DeliveryProfileManager
         :param input: Sequence of tuples containing ID and their associated flat shipping rate.
@@ -400,7 +401,7 @@ class DeliveryProfileManager(BaseModel):
     ) -> bool:
         """
         Sets up shipping profiles and associates variants with the appropriate delivery profiles.
-        
+
         :param self:
         :type self: DeliveryProfileManager
         :param input: Sequence of tuples containing ID and their associated flat rate.
@@ -413,13 +414,9 @@ class DeliveryProfileManager(BaseModel):
         rate_profile_map = self.rate_to_delivery_profile(
             profiles_connection, profile_details_map
         )
-        _variant_map = self._get_rate_to_variant_id_map(
-            input=input
-        )
+        _variant_map = self._get_rate_to_variant_id_map(input=input)
         mutations: list[Mutation] = []
-        missing_rates = self._get_missing_rates(
-            input=input, rate_map=rate_profile_map
-        )
+        missing_rates = self._get_missing_rates(input=input, rate_map=rate_profile_map)
         if missing_rates:
             self._bulk_create_flat_rate_shipping_profile(list(set(missing_rates)))
             profiles_connection = self.profiles(merchant_only=False)
