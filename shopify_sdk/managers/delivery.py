@@ -41,8 +41,10 @@ class DeliveryProfileManager(BaseModel):
         input: Sequence[tuple[ID, float]],
     ) -> bool:
         """
-        Docstring for set
+        Assign flat-rate delivery profiles to product variants.
 
+        This method applies flat-rate shipping charges to the given product variants,
+        using the provided sequence of (ID, rate) tuples.
         :param input: Sequence of tuples containing ID and their associated flat rate.
         :type input: Sequence[tuple[ID, float]]
         :return: Boolean indicating success or failure
