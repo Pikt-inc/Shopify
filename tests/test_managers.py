@@ -470,12 +470,15 @@ class TestDeliveryProfiles(unittest.TestCase):
             shipping_rate = round(random.uniform(5.0, 30.0), 2)
             try:
                 before_conn = test_store.delivery.profiles.profiles(merchant_only=False)
-                before_map = test_store.delivery.profiles.rate_to_delivery_profile(
+                before_map = test_store.delivery.profiles._get_profile_details_map(
                     before_conn
+                )
+                before_rate_map = test_store.delivery.profiles.rate_to_delivery_profile(
+                    before_map
                 )
             except Exception as exc:
                 self.skipTest(f"Delivery profiles unavailable: {exc}")
-            before_profile_id = before_map.get(shipping_rate)
+            before_profile_id = before_rate_map.get(shipping_rate)
             handles = [f"codex-delivery-set-{uuid.uuid4().hex}" for _ in range(2)]
             product_ids: list[str] = []
             created_profile_id: str | None = None
@@ -504,10 +507,13 @@ class TestDeliveryProfiles(unittest.TestCase):
                 except ValueError as exc:
                     self.skipTest(f"Unable to create/update delivery profile: {exc}")
                 after_conn = test_store.delivery.profiles.profiles(merchant_only=False)
-                after_map = test_store.delivery.profiles.rate_to_delivery_profile(
+                after_map = test_store.delivery.profiles._get_profile_details_map(
                     after_conn
                 )
-                profile_id = after_map.get(shipping_rate)
+                after_rate_map = test_store.delivery.profiles.rate_to_delivery_profile(
+                    after_map
+                )
+                profile_id = after_rate_map.get(shipping_rate)
                 self.assertIsNotNone(profile_id)
                 assert profile_id is not None
                 if profile_id != before_profile_id:
