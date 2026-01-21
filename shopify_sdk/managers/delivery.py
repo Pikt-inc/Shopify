@@ -287,11 +287,6 @@ class DeliveryProfileManager(BaseModel):
         :return: Mapping of profile IDs to lists of variant IDs.
         :rtype: dict[ID, list[ID]]
         """
-        profile_details_map = (
-            profile_details_map
-            if profile_details_map is not None
-            else self._get_profile_details_map(profiles)
-        )
         profile_variant_map: dict[ID, list[ID]] = {}
         for profile in profile_details_map.values():
             variant_ids: list[ID] = []
