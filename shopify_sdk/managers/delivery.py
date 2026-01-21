@@ -271,14 +271,11 @@ class DeliveryProfileManager(BaseModel):
     @validate_call(validate_return=True)
     def _get_profile_variant_id_map(
         self,
-        profiles: DeliveryProfileConnection,
         profile_details_map: dict[ID, DeliveryProfile],
     ) -> dict[ID, list[ID]]:
         """
         Generates a mapping of delivery profile IDs to their associated variant IDs.
 
-        :param profiles: Shopify Connection object of Delivery Profiles objects.
-        :type profiles: DeliveryProfileConnection
         :param profile_details_map: Mapping of profile IDs to DeliveryProfile objects.
         :type profile_details_map: dict[ID, DeliveryProfile]
         :return: Mapping of profile IDs to lists of variant IDs.
@@ -340,7 +337,7 @@ class DeliveryProfileManager(BaseModel):
         """
         Generates a mapping of flat shipping rates to their associated variant IDs.
 
-        :param input: Sequence of tuples containing product ID's and their associated flat shipping rate.
+        :param input: Sequence of tuples containing product IDs and their associated flat shipping rate.
         :type input: Sequence[tuple[ID, float]]
         :return: Mapping of flat shipping rates to lists of variant IDs.
         :rtype: dict[float, list[ID]]
@@ -361,7 +358,7 @@ class DeliveryProfileManager(BaseModel):
         """
         Sets up shipping profiles and associates variants with the appropriate delivery profiles.
 
-        :param input: Sequence of tuples containing product ID's and their associated flat rate.
+        :param input: Sequence of tuples containing product IDs and their associated flat rate.
         :type input: Sequence[tuple[ID, float]]
         :return: Boolean indicating success or failure
         :rtype: bool
@@ -389,7 +386,6 @@ class DeliveryProfileManager(BaseModel):
                 )
 
         profile_variant_map = self._get_profile_variant_id_map(
-            profiles_connection,
             profile_details_map,
         )
         for pid, rate in input:
