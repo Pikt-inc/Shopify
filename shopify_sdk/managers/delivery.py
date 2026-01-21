@@ -43,8 +43,6 @@ class DeliveryProfileManager(BaseModel):
         """
         Docstring for set
 
-        :param self:
-        :type self: DeliveryProfileManager
         :param input: Sequence of tuples containing ID and their associated flat rate.
         :type input: Sequence[tuple[ID, float]]
         :return: Boolean indicating success or failure
@@ -57,8 +55,6 @@ class DeliveryProfileManager(BaseModel):
         """
         Retrieves delivery profiles from the Shopify store.
 
-        :param self:
-        :type self: DeliveryProfileManager
         :param merchant_only: Flag to filter for merchant-owned profiles only.
         :type merchant_only: bool
         :return: Shopify Connection object of Delivery Profiles objects.
@@ -87,8 +83,6 @@ class DeliveryProfileManager(BaseModel):
         """
         Deletes a delivery profile by its ID.
 
-        :param self:
-        :type self: DeliveryProfileManager
         :param id: ID of the delivery profile to delete.
         :type id: ID
         :return: Boolean indicating success or failure.
@@ -119,8 +113,6 @@ class DeliveryProfileManager(BaseModel):
         """
         Retrieves detailed information about a specific delivery profile by its ID.
 
-        :param self:
-        :type self: DeliveryProfileManager
         :param id: ID of the delivery profile to retrieve details for.
         :type id: ID
         :return: Detailed information about the specified delivery profile.
@@ -154,8 +146,6 @@ class DeliveryProfileManager(BaseModel):
         """
         Docstring for _bulk_create_flat_rate_shipping_profile
 
-        :param self:
-        :type self: DeliveryProfileManager
         :param rate_prices: List of flat rate prices to create shipping profiles for.
         :type rate_prices: list[float]
         :return: None
@@ -231,8 +221,6 @@ class DeliveryProfileManager(BaseModel):
         """
         Generates a mapping of delivery profile IDs to their detailed DeliveryProfile objects.
 
-        :param self:
-        :type self: DeliveryProfileManager
         :param profiles: Shopify Connection object of Delivery Profiles objects.
         :type profiles: DeliveryProfileConnection
         :return: Mapping of profile IDs to DeliveryProfile objects.
@@ -263,8 +251,6 @@ class DeliveryProfileManager(BaseModel):
         """
         Generates a mapping of flat shipping rates to their associated delivery profile IDs.
 
-        :param self:
-        :type self: DeliveryProfileManager
         :param profiles: Shopify Connection object of Delivery Profiles objects.
         :type profiles: DeliveryProfileConnection
         :param profile_details_map: Mapping of profile IDs to DeliveryProfile objects.
@@ -307,8 +293,6 @@ class DeliveryProfileManager(BaseModel):
         """
         Generates a mapping of delivery profile IDs to their associated variant IDs.
 
-        :param self:
-        :type self: DeliveryProfileManager
         :param profiles: Shopify Connection object of Delivery Profiles objects.
         :type profiles: DeliveryProfileConnection
         :param profile_details_map: Mapping of profile IDs to DeliveryProfile objects.
@@ -355,8 +339,6 @@ class DeliveryProfileManager(BaseModel):
         """
         Gets a list of flat shipping rates that do not have an associated delivery profile.
 
-        :param self:
-        :type self: DeliveryProfileManager
         :param input: Sequence of tuples containing ID and their associated flat shipping rate.
         :type input: Sequence[tuple[ID, float]]
         :param rate_map: Mapping of rates to delivery profile IDs.
@@ -379,8 +361,6 @@ class DeliveryProfileManager(BaseModel):
         """
         Generates a mapping of flat shipping rates to their associated variant IDs.
 
-        :param self:
-        :type self: DeliveryProfileManager
         :param input: Sequence of tuples containing ID and their associated flat shipping rate.
         :type input: Sequence[tuple[ID, float]]
         :return: Mapping of flat shipping rates to lists of variant IDs.
@@ -402,8 +382,6 @@ class DeliveryProfileManager(BaseModel):
         """
         Sets up shipping profiles and associates variants with the appropriate delivery profiles.
 
-        :param self:
-        :type self: DeliveryProfileManager
         :param input: Sequence of tuples containing ID and their associated flat rate.
         :type input: Sequence[tuple[ID, float]]
         :return: Boolean indicating success or failure
