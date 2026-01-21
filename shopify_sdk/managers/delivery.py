@@ -232,14 +232,6 @@ class DeliveryProfileManager(BaseModel):
             if not node_id:
                 continue
             profile_details_map[str(node_id)] = self.details(node_id)
-        try:
-
-            class _get_profile_details_map_onput(BaseModel):
-                mapping: dict[ID, DeliveryProfile]
-
-            _ = _get_profile_details_map_onput(mapping=profile_details_map)
-        except Exception as e:
-            raise ValueError(f"Invalid profile details map constructed: {e}")
         return profile_details_map
 
     @validate_call(validate_return=True)
