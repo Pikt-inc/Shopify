@@ -238,7 +238,7 @@ class DeliveryProfileManager(BaseModel):
     def rate_to_delivery_profile(
         self,
         profiles: DeliveryProfileConnection,
-        profile_details_map: dict[ID, DeliveryProfile] | None = None,
+        profile_details_map: dict[ID, DeliveryProfile],
     ) -> dict[float, ID]:
         """
         Generates a mapping of flat shipping rates to their associated delivery profile IDs.
@@ -250,11 +250,6 @@ class DeliveryProfileManager(BaseModel):
         :return: Mapping of flat shipping rates as floats to delivery profile IDs.
         :rtype: dict[float, ID]
         """
-        profile_details_map = (
-            profile_details_map
-            if profile_details_map is not None
-            else self._get_profile_details_map(profiles)
-        )
         _map: dict[float, ID] = {}
         for _dp in profile_details_map.values():
             for _lg in _dp.profileLocationGroups:
