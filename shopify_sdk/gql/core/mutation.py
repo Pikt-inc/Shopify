@@ -39,6 +39,10 @@ class Mutation(Query):
         if return_type is None:
             raise ValueError("return_type must be defined for bulk mutations.")
         for response in responses:
+            if response.errors:
+                raise ValueError(
+                    f"Errors encountered during bulk mutation: {response.errors}"
+                )
             response_data = response.data
             if response_data is None:
                 raise ValueError("Bulk mutation result payload is missing data.")
