@@ -38,11 +38,13 @@ class BulkQueryRunner:
             query=self.query
         ).execute(client=self._client)
         if payload is None:
-            logger.error("bulkOperationRunQuery returned no payload.", payload)
+            logger.error("bulkOperationRunQuery returned no payload.")
             raise ValueError("bulkOperationRunQuery returned no payload.")
 
         if not payload.bulkOperation:
-            logger.error("bulkOperationRunQuery returned no bulk operation.", payload)
+            logger.error(
+                "bulkOperationRunQuery returned no bulk operation. payload=%s", payload
+            )
             raise ValueError("bulkOperationRunQuery returned no bulk operation.")
 
         return payload.bulkOperation.id

@@ -3,6 +3,7 @@ import random
 import time
 import unittest
 import uuid
+import socket
 from contextlib import contextmanager
 from typing import Iterator
 
@@ -49,6 +50,13 @@ def _test_store(testcase: unittest.TestCase) -> Iterator[StoreManager]:
     if not shop_domain or not access_token:
         testcase.skipTest(
             "Set TEST_SHOPIFY_SHOP_DOMAIN and TEST_SHOPIFY_ACCESS_TOKEN to use test credentials."
+        )
+        return
+    try:
+        socket.gethostbyname(shop_domain)
+    except socket.gaierror:
+        testcase.skipTest(
+            f"Shop domain '{shop_domain}' not resolvable; skipping network tests."
         )
         return
     api_version = os.getenv("TEST_SHOPIFY_API_VERSION") or os.getenv(
