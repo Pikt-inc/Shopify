@@ -2,8 +2,23 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from shopify_sdk.gql.core.types.connections import DeliveryProfileConnection
+from shopify_sdk.gql.core.types.objects import PageInfo
 from shopify_sdk.gql.core.types.input_objects import DeliveryProfileInput
 from shopify_sdk.managers.delivery import DeliveryProfileManager
+
+
+def _empty_profiles_conn() -> DeliveryProfileConnection:
+    return DeliveryProfileConnection(
+        edges=[],
+        nodes=[],
+        pageInfo=PageInfo(
+            endCursor="",
+            startCursor="",
+            hasNextPage=False,
+            hasPreviousPage=False,
+        ),
+    )
 
 
 class DummyDeliveryProfileUpdateSuccess:
@@ -50,7 +65,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             )
         )
         self._profiles_patcher = patch.object(
-            DeliveryProfileManager, "profiles", return_value=SimpleNamespace(nodes=[])
+            DeliveryProfileManager, "profiles", return_value=_empty_profiles_conn()
         )
         self._details_patcher = patch.object(
             DeliveryProfileManager,
@@ -84,7 +99,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             patch.object(
                 DeliveryProfileManager,
                 "profiles",
-                return_value=SimpleNamespace(nodes=[]),
+                return_value=_empty_profiles_conn(),
             ),
             patch.object(
                 DeliveryProfileManager,
@@ -132,7 +147,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             patch.object(
                 DeliveryProfileManager,
                 "profiles",
-                return_value=SimpleNamespace(nodes=[]),
+                return_value=_empty_profiles_conn(),
             ),
             patch.object(
                 DeliveryProfileManager,
@@ -278,7 +293,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             patch.object(
                 DeliveryProfileManager,
                 "profiles",
-                return_value=SimpleNamespace(nodes=[]),
+                return_value=_empty_profiles_conn(),
             ),
             patch.object(
                 DeliveryProfileManager,
@@ -324,7 +339,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             patch.object(
                 DeliveryProfileManager,
                 "profiles",
-                return_value=SimpleNamespace(nodes=[]),
+                return_value=_empty_profiles_conn(),
             ),
             patch.object(
                 DeliveryProfileManager,
@@ -373,7 +388,7 @@ class TestDeliveryProfileManager(unittest.TestCase):
             patch.object(
                 DeliveryProfileManager,
                 "profiles",
-                return_value=SimpleNamespace(nodes=[]),
+                return_value=_empty_profiles_conn(),
             ),
             patch.object(
                 DeliveryProfileManager,

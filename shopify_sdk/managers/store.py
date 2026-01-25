@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from .products import ProductManager
 from .orders import OrderManager
 from .delivery import DeliveryManager
+from .map import MapManager
 
 if TYPE_CHECKING:
     from shopify_sdk.gql.core.types.connections import (
@@ -19,6 +20,7 @@ class StoreManager(BaseModel):
     products: ProductManager = Field(default_factory=ProductManager)
     orders: OrderManager = Field(default_factory=OrderManager)
     delivery: DeliveryManager = Field(default_factory=DeliveryManager)
+    map: "MapManager" = Field(default_factory=lambda: MapManager())
     model_config = {
         "arbitrary_types_allowed": True,
     }
