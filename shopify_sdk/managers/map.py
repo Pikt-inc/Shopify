@@ -49,13 +49,11 @@ class MapManager(BaseModel):
         # Cast so the static type checker knows `nodes`/`count` exist.
         connection_instance = cast(connection, connection_instance)
         if not connection_instance.nodes or connection_instance.count == 0:
-            print("No nodes found in the connection instance.")
             return {}
 
         result_map = {}
         for node in connection_instance.nodes:
             field_value = self.getattr_nested(node, field_key, None)
-            print(f"Processing node: field_value: {field_value}")
             value_value = self.getattr_nested(node, value_key, None)
             if field_value is not None and value_value is not None:
                 result_map[str(field_value)] = str(value_value)
