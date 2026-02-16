@@ -1,6 +1,10 @@
-import requests
+import json
 import time
 from typing import Optional, Dict, Any
+
+import requests
+from requests import Response
+from requests.exceptions import RequestException
 from .singleton import SingletonBase
 from .types import (
     GQLRequestParams,
@@ -13,7 +17,15 @@ class RootClient(SingletonBase):
         self._shop_domain = shop_domain
         self._access_token = access_token
         self._api_version = api_version
-        self._last_request_time = 0
+        self._last_request_time = 0.0
+
+    @staticmethod
+    def _response_snippet(response: Response, limit: int = 500) -> str:
+        try:
+            text = response.text or ""
+        except Exception:
+            return "<unavailable>"
+        return text[:limit]
 
     def check_limit(self) -> None:
         """
@@ -44,12 +56,35 @@ class RootClient(SingletonBase):
         else:
             payload["variables"] = {}
 
-        response = requests.post(
-            self.graphql_request_url, headers=headers, json=payload
-        )
+        try:
+            response = requests.post(
+                self.graphql_request_url,
+                headers=headers,
+                json=payload,
+                timeout=(10, 30),
+            )
+        except RequestException as e:
+            raise ValueError(f"Shopify request failed: {e}") from e
 
-        self._last_request_time = int(time.time())
-        response_json = response.json()
+        self._last_request_time = time.time()
+
+        response_json: Dict[str, Any] | None = None
+        try:
+            response_json = response.json()
+        except json.JSONDecodeError as e:
+            status = response.status_code
+            content_type = response.headers.get("Content-Type", "<missing>")
+            snippet = self._response_snippet(response)
+            raise ValueError(
+                "Shopify response was not valid JSON. "
+                f"status={status}, content_type={content_type}, body_snippet={snippet!r}"
+            ) from e
+
+        if response.status_code >= 400:
+            raise ValueError(
+                "Shopify request failed. "
+                f"status={response.status_code}, body={response_json}"
+            )
 
         if "errors" in response_json:
             raise ValueError(f"GraphQL errors occurred: {response_json.get('errors')}")
