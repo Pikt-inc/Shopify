@@ -137,6 +137,8 @@ class productPublish(Mutation):
 
 
 class productVariantsBulkUpdate(Mutation):
+    return_type: Type[BaseModel] = ProductVariantsBulkUpdatePayload
+
     def __init__(
         self,
         productId: ID,
