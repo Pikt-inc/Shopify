@@ -9,6 +9,7 @@ def upsert_inventory_status(
     to_archive: Optional[list[ID]] = None,
     to_draft: Optional[list[ID]] = None,
     fallback_status: Optional[ProductStatus] = ProductStatus.ARCHIVED,
+    scope_query: Optional[str] = None,
 ) -> bool:
     """
     Upserts product statuses in bulk.
@@ -22,6 +23,9 @@ def upsert_inventory_status(
             (treated as empty list).
         fallback_status (Optional[ProductStatus], optional): Status for product IDs in the store that
             are not in any provided list ("diff IDs"). Defaults to ProductStatus.ARCHIVED.
+        scope_query (Optional[str], optional): Optional Shopify product query that
+            constrains the product universe used for validation and fallback diff
+            status updates.
 
     Returns:
         bool: True if all operations were successful; False if any bulk status update fails.
@@ -40,6 +44,7 @@ def upsert_inventory_status(
         to_archive=to_archive,
         to_draft=to_draft,
         fallback_status=fallback_status,
+        scope_query=scope_query,
     )
 
 

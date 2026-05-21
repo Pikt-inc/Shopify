@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 import logging
-from typing import Optional, TYPE_CHECKING, cast, Sequence
+from typing import NamedTuple, Optional, TYPE_CHECKING, cast, Sequence
 
 from shopify_sdk.gql.core.types.base import ID
 from shopify_sdk.gql.core.types.enums import ProductStatus
@@ -17,6 +17,20 @@ if TYPE_CHECKING:
     from shopify_sdk.gql.core.types import ProductCreateInput
     from shopify_sdk.gql.core.types import ProductSetInput
     from shopify_sdk.gql.core.types.payload import ProductSetPayload
+
+
+class HandleScopePartition(NamedTuple):
+    """Partition requested handles by whether they exist inside or outside a scope.
+
+    `in_scope` contains handles present in the scoped query result.
+    `out_of_scope` contains handles present in the store globally but absent from the
+    scoped query result, which usually indicates a collision with unmanaged products.
+    `missing` contains handles not found anywhere in the store.
+    """
+
+    in_scope: dict[str, ID]
+    out_of_scope: dict[str, ID]
+    missing: list[str]
 
 
 class BulkProductManager(BaseModel):
@@ -107,13 +121,15 @@ class BulkProductManager(BaseModel):
     def missing_skus(
         self,
         skus: list[str],
+        query: Optional[str] = None,
     ) -> list[str]:
         """
-        Return SKUs from the input list that do not exist in the store.
+        Return SKUs from the input list that do not exist in the scoped store set.
         """
         from shopify_sdk.gql.queries import productVariants
 
         connection = productVariants(
+            query=query,
             field_inclusions={
                 "ProductVariantConnection": {"edges"},
                 "ProductVariant": {"sku"},
@@ -131,13 +147,20 @@ class BulkProductManager(BaseModel):
         diff = set(skus) - found_skus
         return list(diff)
 
-    def missing_handles(self, handles: list[str]) -> list[str]:
+    def missing_handles(
+        self, handles: list[str], query: Optional[str] = None
+    ) -> list[str]:
         """
-        Return handles from the input list that do not exist in the store.
+        Return handles from the input list that do not exist in the scoped store set.
+
+        When a scope query is provided, a handle may still exist elsewhere in the
+        store but outside that scope. Use `partition_handles` when callers need to
+        distinguish true absences from out-of-scope collisions.
         """
         from shopify_sdk.gql.queries import products
 
         connection = products(
+            query=query,
             field_inclusions={
                 "ProductConnection": {"edges"},
                 "Product": {"handle"},
@@ -154,6 +177,86 @@ class BulkProductManager(BaseModel):
 
         diff = set(handles) - found_handles
         return list(diff)
+
+    def partition_handles(
+        self, handles: list[str], query: Optional[str] = None
+    ) -> HandleScopePartition:
+        """Partition handles into in-scope, out-of-scope, and globally missing.
+
+        This is the safe helper to use for mixed-inventory stores where product
+        handles are globally unique but only a scoped subset should be managed.
+        """
+
+        global_map = self.get_handle_id_map()
+        scoped_map = global_map if query is None else self.get_handle_id_map(query=query)
+
+        in_scope: dict[str, ID] = {}
+        out_of_scope: dict[str, ID] = {}
+        missing: list[str] = []
+
+        for handle in handles:
+            if handle in scoped_map:
+                in_scope[handle] = scoped_map[handle]
+            elif handle in global_map:
+                out_of_scope[handle] = global_map[handle]
+            else:
+                missing.append(handle)
+
+        return HandleScopePartition(
+            in_scope=in_scope,
+            out_of_scope=out_of_scope,
+            missing=missing,
+        )
+
+    def partition_handles_by_tag(
+        self, handles: list[str], tag: str
+    ) -> HandleScopePartition:
+        """Partition handles by a managed tag using a single full-store scan.
+
+        This is the preferred helper for high-volume mixed-inventory workflows.
+        It avoids the dual-query pattern of `partition_handles(..., query=...)` by
+        scanning the store once for `handle`, `id`, and `tags`, then classifying
+        only the requested handles in memory.
+        """
+        from shopify_sdk.gql.queries import products
+
+        requested_handles = {handle for handle in handles if handle}
+        if not requested_handles:
+            return HandleScopePartition(in_scope={}, out_of_scope={}, missing=[])
+
+        connection = products(
+            field_inclusions={
+                "ProductConnection": {"edges"},
+                "Product": {"handle", "id", "tags"},
+            }
+        ).bulk()
+        if not hasattr(connection, "nodes"):
+            raise ValueError("Failed to fetch products from store.")
+
+        in_scope: dict[str, ID] = {}
+        out_of_scope: dict[str, ID] = {}
+        found_handles: set[str] = set()
+
+        for product in connection.nodes:
+            handle = getattr(product, "handle", None)
+            product_id = getattr(product, "id", None)
+            if not handle or not product_id or handle not in requested_handles:
+                continue
+
+            found_handles.add(handle)
+            tags = getattr(product, "tags", None) or []
+            normalized_tags = {str(value) for value in tags if value}
+            if tag in normalized_tags:
+                in_scope[handle] = str(product_id)
+            else:
+                out_of_scope[handle] = str(product_id)
+
+        missing = [handle for handle in handles if handle and handle not in found_handles]
+        return HandleScopePartition(
+            in_scope=in_scope,
+            out_of_scope=out_of_scope,
+            missing=missing,
+        )
 
     def set(self, products: Sequence["ProductSetInput"]) -> list["ProductSetPayload"]:
         """
@@ -202,14 +305,17 @@ class BulkProductManager(BaseModel):
         to_archive: Optional[list[ID]] = None,
         to_draft: Optional[list[ID]] = None,
         fallback_status: Optional[ProductStatus] = ProductStatus.ARCHIVED,
+        scope_query: Optional[str] = None,
     ) -> bool:
         """
-        Set the status of all products in the store.
+        Set the status of products in the store, optionally scoped by query.
         Args:
             to_active (list[ID]): List of product IDs to set to active.
             to_archive (list[ID]): List of product IDs to set to archived.
             to_draft (list[ID]): List of product IDs to set to draft.
             fallback_status (ProductStatus): Fallback status for products not in the above lists.
+            scope_query (str | None): Optional Shopify product query limiting the
+                product universe used for validation and fallback status diffs.
         """
         from shopify_sdk.common.status_upsert import upsert_inventory_status
 
@@ -224,11 +330,13 @@ class BulkProductManager(BaseModel):
             to_archive=to_archive,
             to_draft=to_draft,
             fallback_status=fallback_status,
+            scope_query=scope_query,
         )
 
     def set_active_by_sku(
         self,
         skus: list[str],
+        query: Optional[str] = None,
     ) -> bool:
         """
         Set products to active status based on a list of SKUs.
@@ -237,6 +345,7 @@ class BulkProductManager(BaseModel):
         from shopify_sdk.gql.queries import productVariants
 
         connection = productVariants(
+            query=query,
             field_inclusions={
                 "ProductVariantConnection": {"edges"},
                 "ProductVariant": {"id", "sku", "product"},
@@ -256,7 +365,9 @@ class BulkProductManager(BaseModel):
                 pids.add(variant.product.id)
 
         return self.set_status(
-            to_active=list(pids), fallback_status=ProductStatus.ARCHIVED
+            to_active=list(pids),
+            fallback_status=ProductStatus.ARCHIVED,
+            scope_query=query,
         )
 
     def publish(
@@ -305,6 +416,7 @@ class BulkProductManager(BaseModel):
     def exchange(
         self,
         skus: list[str],
+        query: Optional[str] = None,
     ) -> list[ID]:
         """
         Return product IDs for the given SKUs.
@@ -312,7 +424,7 @@ class BulkProductManager(BaseModel):
         from shopify_sdk.managers import store
 
         pids: set[ID] = set()
-        variant_connection = store.products.variants.all
+        variant_connection = store.products.variants.query_all(query=query)
         for v in variant_connection.nodes:
             if not v.sku:
                 logger.warning(
@@ -327,14 +439,19 @@ class BulkProductManager(BaseModel):
                 pids.add(str(v.product.id))
         return list(pids)
 
-    @property
-    def product_variant_map(self) -> dict[ID, list[ID]]:
+    def get_product_variant_map(
+        self, query: Optional[str] = None
+    ) -> dict[ID, list[ID]]:
         """
         Return a mapping of product IDs to their variant IDs.
         """
         from shopify_sdk.managers import store
 
-        pv_conn = store.products.variants.all
+        variants_manager = store.products.variants
+        if query is None and not hasattr(variants_manager, "query_all"):
+            pv_conn = variants_manager.all
+        else:
+            pv_conn = variants_manager.query_all(query=query)
         product_variant_map: dict[ID, list[ID]] = {}
         for variant in pv_conn.nodes:
             if not variant.product or not variant.product.id:
@@ -348,13 +465,20 @@ class BulkProductManager(BaseModel):
         return product_variant_map
 
     @property
-    def handle_id_map(self) -> dict[str, ID]:
+    def product_variant_map(self) -> dict[ID, list[ID]]:
+        return self.get_product_variant_map()
+
+    def get_handle_id_map(self, query: Optional[str] = None) -> dict[str, ID]:
         """
         Return a mapping of product handles to their IDs.
         """
         from shopify_sdk.managers import store
 
-        product_conn = store.products.all
+        products_manager = store.products
+        if query is None and not hasattr(products_manager, "query_all"):
+            product_conn = products_manager.all
+        else:
+            product_conn = products_manager.query_all(query=query)
         handle_id_map: dict[str, ID] = {}
         for product in product_conn.nodes:
             if not product.handle or not product.id:
@@ -362,6 +486,10 @@ class BulkProductManager(BaseModel):
                 continue
             handle_id_map[product.handle] = str(product.id)
         return handle_id_map
+
+    @property
+    def handle_id_map(self) -> dict[str, ID]:
+        return self.get_handle_id_map()
 
 
 class ProductManager(BaseModel):
@@ -525,30 +653,7 @@ class ProductManager(BaseModel):
 
     @property
     def all(self) -> "ProductConnection":
-        from shopify_sdk.gql.queries import products
-        from shopify_sdk.gql.core.types.connections import ProductConnection
-
-        query = products(
-            field_inclusions={
-                "Product": set(
-                    {
-                        "status",
-                        "id",
-                        "title",
-                        "tags",
-                        "productType",
-                        "seo",
-                        "vendor",
-                        "totalInventory",
-                        "handle",
-                        "description",
-                        "descriptionHtml",
-                    }
-                )
-            },
-        )
-        response = cast(ProductConnection, query.bulk())
-        return response
+        return self.query_all()
 
     def set_status(
         self, id: ID, status: ProductStatus
@@ -629,3 +734,30 @@ class ProductManager(BaseModel):
         if not variant_id:
             raise ValueError(f"No variant id returned for product '{product_id}'.")
         return cast(ID, variant_id)
+    def query_all(self, query: Optional[str] = None) -> "ProductConnection":
+        """Retrieve products, optionally scoped by a Shopify query."""
+        from shopify_sdk.gql.queries import products
+        from shopify_sdk.gql.core.types.connections import ProductConnection
+
+        product_query = products(
+            query=query,
+            field_inclusions={
+                "Product": set(
+                    {
+                        "status",
+                        "id",
+                        "title",
+                        "tags",
+                        "productType",
+                        "seo",
+                        "vendor",
+                        "totalInventory",
+                        "handle",
+                        "description",
+                        "descriptionHtml",
+                    }
+                )
+            },
+        )
+        response = cast(ProductConnection, product_query.bulk())
+        return response

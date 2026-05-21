@@ -25,11 +25,12 @@ class StatusUpsertManager:
     @cached_property
     def products(self) -> list[Product]:
         """
-        Returns a list of all products in the store with their IDs and statuses.
+        Returns a list of scoped products in the store with their IDs and statuses.
         """
         from shopify_sdk.gql.core.types.connections import ProductConnection
 
         query = products(
+            query=self._input.scope_query,
             field_exclusions={
                 "Product": Product.fields_except(exclude={"id", "status"})
             },
@@ -65,7 +66,19 @@ class StatusUpsertManager:
             active=list(resolved_active),
             archived=list(resolved_archived),
             draft=list(resolved_draft),
+            scope_query=input.scope_query,
         )
+
+    def _validate_ids_exist(self) -> None:
+        """Validate that all requested IDs exist within the scoped product set."""
+
+        merged = set(self._input.merged_ids(self._input.model_dump()))
+        valid_ids = set(self.valid_ids)
+        diff = merged - valid_ids
+        if diff:
+            raise ValueError(
+                f"The following IDs were not found in the target store: {diff}"
+            )
 
     @classmethod
     def inventory_status_sync(
@@ -74,6 +87,7 @@ class StatusUpsertManager:
         to_archive: Optional[list[ID]] = None,
         to_draft: Optional[list[ID]] = None,
         fallback_status: Optional[ProductStatus] = ProductStatus.ARCHIVED,
+        scope_query: Optional[str] = None,
     ) -> bool:
         if to_active is None:
             to_active = []
@@ -85,8 +99,10 @@ class StatusUpsertManager:
             active=to_active,
             archived=to_archive,
             draft=to_draft,
+            scope_query=scope_query,
         )
         manager = cls(input=input)
+        manager._validate_ids_exist()
         resolved_input = manager._resolve_status_conflicts(input)
         for status, id_list in [
             (ProductStatus.ACTIVE, resolved_input.active),
@@ -121,14 +137,14 @@ class StatusUpsertManager:
 
     @cached_property
     def diff_ids(self) -> Set[ID]:
-        # Find all ids in the store that are not in any of the input lists
+        # Find all ids in the scoped store set that are not in any input lists.
         merged = self._input.merged_ids(self._input.model_dump())
         if not merged:
             logger.warning(
-                "No IDs provided in input; all store products will be considered diff."
+                "No IDs provided in input; all scoped store products will be considered diff."
             )
             raise ValueError(
-                "No IDs provided in input; all store products will be considered diff."
+                "No IDs provided in input; all scoped store products will be considered diff."
             )
 
         if not self.valid_ids:

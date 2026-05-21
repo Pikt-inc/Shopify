@@ -112,6 +112,22 @@ class TestBulkProductManager(unittest.TestCase):
             },
         )
 
+    def test_get_product_variant_map_forwards_query(self) -> None:
+        recorded: dict[str, object] = {}
+
+        class ScopedVariantManager:
+            def query_all(self, query=None):
+                recorded["query"] = query
+                return SimpleNamespace(nodes=[])
+
+        fake_store = SimpleNamespace(products=SimpleNamespace(variants=ScopedVariantManager()))
+        manager = BulkProductManager()
+        with patch("shopify_sdk.managers.store", fake_store):
+            result = manager.get_product_variant_map(query="tag:managed-by:pikt-sync")
+
+        self.assertEqual(result, {})
+        self.assertEqual(recorded["query"], "tag:managed-by:pikt-sync")
+
     def test_handle_id_map_filters_missing_values(self) -> None:
         fake_connection = SimpleNamespace(
             nodes=[
@@ -132,6 +148,22 @@ class TestBulkProductManager(unittest.TestCase):
             result,
             {"alpha": "gid://shopify/Product/alpha"},
         )
+
+    def test_get_handle_id_map_forwards_query(self) -> None:
+        recorded: dict[str, object] = {}
+
+        class ScopedProductManager:
+            def query_all(self, query=None):
+                recorded["query"] = query
+                return SimpleNamespace(nodes=[])
+
+        fake_store = SimpleNamespace(products=ScopedProductManager())
+        manager = BulkProductManager()
+        with patch("shopify_sdk.managers.store", fake_store):
+            result = manager.get_handle_id_map(query="tag:managed-by:pikt-sync")
+
+        self.assertEqual(result, {})
+        self.assertEqual(recorded["query"], "tag:managed-by:pikt-sync")
 
     def test_missing_handles_returns_missing_items(self) -> None:
         fake_connection = SimpleNamespace(
@@ -154,8 +186,135 @@ class TestBulkProductManager(unittest.TestCase):
 
         self.assertEqual(missing, ["gamma"])
 
+    def test_missing_handles_forwards_query(self) -> None:
+        fake_connection = SimpleNamespace(nodes=[])
+        recorded: dict[str, object] = {}
+
+        class DummyProductsQuery:
+            def __init__(self, *args, **kwargs) -> None:
+                recorded.update(kwargs)
+
+            def bulk(self):
+                return fake_connection
+
+        manager = BulkProductManager()
+        with patch("shopify_sdk.gql.queries.products", DummyProductsQuery):
+            manager.missing_handles(["alpha"], query="tag:managed-by:pikt-sync")
+
+        self.assertEqual(recorded["query"], "tag:managed-by:pikt-sync")
+
+    def test_partition_handles_distinguishes_scope_collisions(self) -> None:
+        manager = BulkProductManager()
+
+        with patch.object(
+            BulkProductManager,
+            "get_handle_id_map",
+            side_effect=[
+                {
+                    "managed": "gid://shopify/Product/1",
+                    "foreign": "gid://shopify/Product/2",
+                },
+                {"managed": "gid://shopify/Product/1"},
+            ],
+        ):
+            partition = manager.partition_handles(
+                ["managed", "foreign", "missing"],
+                query="tag:managed-by:pikt-sync",
+            )
+
+        self.assertEqual(
+            partition.in_scope,
+            {"managed": "gid://shopify/Product/1"},
+        )
+        self.assertEqual(
+            partition.out_of_scope,
+            {"foreign": "gid://shopify/Product/2"},
+        )
+        self.assertEqual(partition.missing, ["missing"])
+
+    def test_partition_handles_by_tag_uses_single_scan(self) -> None:
+        fake_connection = SimpleNamespace(
+            nodes=[
+                SimpleNamespace(
+                    handle="managed",
+                    id="gid://shopify/Product/1",
+                    tags=["managed-by:pikt-sync", "source:ebay"],
+                ),
+                SimpleNamespace(
+                    handle="foreign",
+                    id="gid://shopify/Product/2",
+                    tags=["merchant-owned"],
+                ),
+                SimpleNamespace(
+                    handle="ignored",
+                    id="gid://shopify/Product/3",
+                    tags=["managed-by:pikt-sync"],
+                ),
+            ]
+        )
+
+        class DummyProductsQuery:
+            def __init__(self, *args, **kwargs) -> None:
+                pass
+
+            def bulk(self):
+                return fake_connection
+
+        manager = BulkProductManager()
+        with patch("shopify_sdk.gql.queries.products", DummyProductsQuery):
+            partition = manager.partition_handles_by_tag(
+                ["managed", "foreign", "missing"],
+                tag="managed-by:pikt-sync",
+            )
+
+        self.assertEqual(
+            partition.in_scope,
+            {"managed": "gid://shopify/Product/1"},
+        )
+        self.assertEqual(
+            partition.out_of_scope,
+            {"foreign": "gid://shopify/Product/2"},
+        )
+        self.assertEqual(partition.missing, ["missing"])
+
+    def test_set_status_passes_scope_query(self) -> None:
+        manager = BulkProductManager()
+        with patch(
+            "shopify_sdk.common.status_upsert.upsert_inventory_status",
+            return_value=True,
+        ) as upsert:
+            result = manager.set_status(
+                to_active=["gid://shopify/Product/1"],
+                scope_query="tag:managed-by:pikt-sync",
+            )
+
+        self.assertTrue(result)
+        upsert.assert_called_once_with(
+            to_active=["gid://shopify/Product/1"],
+            to_archive=[],
+            to_draft=[],
+            fallback_status=unittest.mock.ANY,
+            scope_query="tag:managed-by:pikt-sync",
+        )
+
 
 class TestProductManager(unittest.TestCase):
+    def test_query_all_forwards_query(self) -> None:
+        recorded: dict[str, object] = {}
+
+        class DummyProductsQuery:
+            def __init__(self, *args, **kwargs) -> None:
+                recorded.update(kwargs)
+
+            def bulk(self):
+                return SimpleNamespace(nodes=[])
+
+        manager = ProductManager()
+        with patch("shopify_sdk.gql.queries.products", DummyProductsQuery):
+            result = manager.query_all(query="tag:managed-by:pikt-sync")
+
+        self.assertEqual(result.nodes, [])
+        self.assertEqual(recorded["query"], "tag:managed-by:pikt-sync")
     def test_create_calls_set_product_images(self) -> None:
         payload = SimpleNamespace(
             product=SimpleNamespace(id="gid://shopify/Product/1"),

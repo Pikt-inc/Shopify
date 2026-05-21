@@ -1,6 +1,6 @@
 import logging
 from pydantic import BaseModel
-from typing import cast
+from typing import Optional, cast
 from typing import TYPE_CHECKING
 
 from shopify_sdk.gql.queries import productVariants
@@ -13,10 +13,11 @@ logger = logging.getLogger(__name__)
 
 
 class ProductVariantManager(BaseModel):
-    @property
-    def all(self) -> "ProductVariantConnection":
-        """Retrieve all product variants."""
+    def query_all(self, query: Optional[str] = None) -> "ProductVariantConnection":
+        """Retrieve product variants, optionally scoped by a Shopify query."""
+
         connection = productVariants(
+            query=query,
             field_inclusions={
                 "ProductVariant": {
                     "id",
@@ -26,15 +27,20 @@ class ProductVariantManager(BaseModel):
                     "product",
                 },
                 "Product": {"id", "title"},
-            }
+            },
         ).bulk()
         return cast("ProductVariantConnection", connection)
 
     @property
-    def variant_to_product_map(self) -> dict[str, str]:
+    def all(self) -> "ProductVariantConnection":
+        """Retrieve all product variants."""
+        return self.query_all()
+
+    def get_variant_to_product_map(self, query: Optional[str] = None) -> dict[str, str]:
         """Return a mapping of variant IDs to their parent product IDs."""
+
         mapping: dict[str, str] = {}
-        connection = self.all
+        connection = self.query_all(query=query)
         for variant in connection.nodes:
             product = getattr(variant, "product", None)
             if (
@@ -48,10 +54,16 @@ class ProductVariantManager(BaseModel):
         return mapping
 
     @property
-    def product_to_variants_map(self) -> dict[str, list[str]]:
+    def variant_to_product_map(self) -> dict[str, str]:
+        return self.get_variant_to_product_map()
+
+    def get_product_to_variants_map(
+        self, query: Optional[str] = None
+    ) -> dict[str, list[str]]:
         """Return a mapping of product IDs to their variant IDs."""
+
         mapping: dict[str, list[str]] = {}
-        connection = self.all
+        connection = self.query_all(query=query)
         for variant in connection.nodes:
             product = getattr(variant, "product", None)
             product_id = getattr(product, "id", None) if product else None
@@ -65,11 +77,19 @@ class ProductVariantManager(BaseModel):
         return mapping
 
     @property
-    def sku_to_variant_map(self) -> dict[str, str]:
+    def product_to_variants_map(self) -> dict[str, list[str]]:
+        return self.get_product_to_variants_map()
+
+    def get_sku_to_variant_map(self, query: Optional[str] = None) -> dict[str, str]:
         """Return a mapping of SKUs to their variant IDs."""
+
         mapping: dict[str, str] = {}
-        connection = self.all
+        connection = self.query_all(query=query)
         for variant in connection.nodes:
             if variant.sku:
                 mapping[variant.sku] = variant.id
         return mapping
+
+    @property
+    def sku_to_variant_map(self) -> dict[str, str]:
+        return self.get_sku_to_variant_map()
