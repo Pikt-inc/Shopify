@@ -4,6 +4,7 @@ from .enums import (
     ProductVariantInventoryPolicy,
     CombinedListingsRole,
     CountryCode,
+    WeightUnit,
 )
 from .base import (
     ID,
@@ -269,11 +270,21 @@ class ProductInput(input_object):
     vendor: Optional[String] = Field(default=None)
 
 
+class WeightInput(input_object):
+    unit: WeightUnit
+    value: Float
+
+
+class InventoryItemMeasurementInput(input_object):
+    weight: Optional[WeightInput] = Field(default=None)
+
+
 class InventoryItemInput(input_object):
     sku: Optional[String] = Field(default=None)
     cost: Optional[String] = Field(default=None)
     tracked: Optional[Boolean] = Field(default=None)
     requiresShipping: Optional[Boolean] = Field(default=None)
+    measurement: Optional[InventoryItemMeasurementInput] = Field(default=None)
 
 
 class InventoryLevelInput(input_object):
@@ -328,6 +339,7 @@ class ProductVariantSetInput(input_object):
     price: Optional[String] = Field(default=None)
     compareAtPrice: Optional[String] = Field(default=None)
     barcode: Optional[String] = Field(default=None)
+    inventoryItem: Optional[InventoryItemInput] = Field(default=None)
     inventoryPolicy: Optional[ProductVariantInventoryPolicy] = Field(default=None)
     inventoryQuantities: Optional[List[ProductSetInventoryInput]] = Field(default=None)
     metafields: List["MetafieldInput"] = Field(default_factory=list)

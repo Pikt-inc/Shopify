@@ -24,9 +24,13 @@ class ProductVariantManager(BaseModel):
                     "sku",
                     "price",
                     "inventoryQuantity",
+                    "inventoryItem",
                     "product",
                 },
                 "Product": {"id", "title"},
+                "InventoryItem": {"measurement"},
+                "InventoryItemMeasurement": {"weight"},
+                "Weight": {"value", "unit"},
             },
         ).bulk()
         return cast("ProductVariantConnection", connection)
