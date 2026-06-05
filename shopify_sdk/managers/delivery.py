@@ -1,4 +1,4 @@
-from typing import Sequence, cast
+from typing import Optional, Sequence, cast
 from pydantic import BaseModel, Field, validate_call
 import logging
 
@@ -51,6 +51,159 @@ class DeliveryProfileManager(BaseModel):
         :rtype: bool
         """
         return self._set_shipping(input=input)
+
+    @validate_call(validate_return=True)
+    def upsert_profile(
+        self,
+        name: str,
+        variant_ids: Sequence[ID],
+        method_definitions: Optional[list[DeliveryMethodDefinitionInput]] = None,
+    ) -> ID:
+        """
+        Find-or-create a delivery profile by name and associate variants to it.
+
+        A generic primitive that knows nothing about rate or naming policy --
+        the caller decides those. Pass ``method_definitions`` to seed the rates
+        of a *newly created* profile (e.g. a flat rate); omit them to leave the
+        profile rate-free for the merchant to configure (e.g. a carrier /
+        calculated profile). An already-existing profile's rates are never
+        touched -- only the variant association is reconciled.
+
+        Variant association is idempotent (variants already on the profile are
+        skipped) and chunked to Shopify's per-mutation limit.
+
+        :param name: Profile name to find or create.
+        :param variant_ids: Variant IDs to ensure are assigned to the profile.
+        :param method_definitions: Optional rate methods for a new profile.
+        :return: The delivery profile ID.
+        :rtype: ID
+        """
+        profile_details_map = self._get_profile_details_map(
+            self.profiles(merchant_only=False)
+        )
+        profile_id = self._find_profile_id_by_name(profile_details_map, name)
+        if profile_id is None:
+            profile_id = self._create_named_profile(name, method_definitions)
+            # Re-read so the new profile (and its empty variant set) is known.
+            profile_details_map = self._get_profile_details_map(
+                self.profiles(merchant_only=False)
+            )
+
+        assigned_variant_ids = set(
+            self._get_profile_variant_id_map(profile_details_map).get(
+                str(profile_id), []
+            )
+        )
+        pending_variant_ids = [
+            str(variant_id)
+            for variant_id in variant_ids
+            if str(variant_id) not in assigned_variant_ids
+        ]
+        if not pending_variant_ids:
+            return profile_id
+
+        mutations: list[Mutation] = []
+        MAX_VARIANTS_PER_PROFILE_UPDATE = 250
+        for i in range(0, len(pending_variant_ids), MAX_VARIANTS_PER_PROFILE_UPDATE):
+            chunk_variant_ids = pending_variant_ids[
+                i : i + MAX_VARIANTS_PER_PROFILE_UPDATE
+            ]
+            mutations.append(
+                deliveryProfileUpdate(
+                    id=profile_id,
+                    profile=DeliveryProfileInput(
+                        variantsToAssociate=chunk_variant_ids
+                    ),
+                    field_inclusions={
+                        "DeliveryProfileUpdatePayload": {"profile", "userErrors"},
+                        "DeliveryProfile": {"id"},
+                        "UserError": {"field", "message"},
+                    },
+                )
+            )
+        for index, payload in enumerate(deliveryProfileUpdate.bulk(mutations), start=1):
+            if payload is None:
+                raise ValueError(
+                    f"Delivery profile assignment failed; no payload returned for chunk {index}."
+                )
+            user_errors = getattr(payload, "userErrors", []) or []
+            if user_errors:
+                messages = ", ".join(error.message for error in user_errors)
+                logger.error(
+                    "Delivery profile assignment failed %s in bulk operation at chunk %s.",
+                    messages,
+                    index,
+                )
+                raise ValueError(
+                    f"Delivery profile assignment failed {messages} in bulk operation at chunk {index}."
+                )
+        return profile_id
+
+    @validate_call(validate_return=True)
+    def _find_profile_id_by_name(
+        self, profile_details_map: dict[ID, DeliveryProfile], name: str
+    ) -> Optional[ID]:
+        """Return the ID of the profile named ``name``, or ``None``."""
+        for profile in profile_details_map.values():
+            if getattr(profile, "name", None) == name:
+                return profile.id
+        return None
+
+    def _create_named_profile(
+        self,
+        name: str,
+        method_definitions: Optional[list[DeliveryMethodDefinitionInput]] = None,
+    ) -> ID:
+        """Create a delivery profile named ``name`` and return its ID.
+
+        When ``method_definitions`` are given, a US zone covering all store
+        locations is seeded with them (e.g. a flat rate). When omitted the
+        profile is created bare -- just the name -- rather than with an
+        empty-rate zone (which Shopify can reject); the merchant then adds the
+        zone and carrier (e.g. UPS) rate in the admin. Shopify assigns the
+        shop's locations to a new profile by default, so association still works.
+        """
+        profile_input = DeliveryProfileInput(name=name)
+        if method_definitions:
+            profile_input.locationGroupsToCreate = [
+                DeliveryProfileLocationGroupInput(
+                    locations=list(_get_store().location_ids),
+                    zonesToCreate=[
+                        DeliveryLocationGroupZoneInput(
+                            name="Default",
+                            countries=[
+                                DeliveryCountryInput(
+                                    code=CountryCode.US, includeAllProvinces=True
+                                )
+                            ],
+                            methodDefinitionsToCreate=method_definitions,
+                        )
+                    ],
+                )
+            ]
+        payload = deliveryProfileCreate(
+            profile=profile_input,
+            field_inclusions={
+                "DeliveryProfileCreatePayload": {"profile", "userErrors"},
+                "DeliveryProfile": {"id", "name"},
+                "UserError": {"field", "message"},
+            },
+        ).execute(client)
+        if payload is None:
+            raise ValueError(
+                f"Delivery profile '{name}' creation failed; no payload returned."
+            )
+        user_errors = getattr(payload, "userErrors", []) or []
+        if user_errors:
+            messages = ", ".join(error.message for error in user_errors)
+            raise ValueError(f"Delivery profile '{name}' creation failed: {messages}")
+        profile = getattr(payload, "profile", None)
+        profile_id = getattr(profile, "id", None) if profile is not None else None
+        if not profile_id:
+            raise ValueError(
+                f"Delivery profile '{name}' creation returned no profile id."
+            )
+        return profile_id
 
     @validate_call(validate_return=True)
     def profiles(self, merchant_only: bool = False) -> DeliveryProfileConnection:
