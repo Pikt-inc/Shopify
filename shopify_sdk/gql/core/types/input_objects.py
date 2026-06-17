@@ -184,7 +184,7 @@ class ProductUpdateInput(input_object):
     requiresSellingPlan: Optional[Boolean] = Field(default=None)
     seo: Optional[SEOInput] = Field(default=None)
     status: Optional["ProductStatus"] = Field(default=None)
-    tags: List[String] = Field(default_factory=list)
+    tags: Optional[List[String]] = Field(default=None)
     templateSuffix: Optional[String] = Field(default=None)
     title: Optional[String] = Field(default=None)
     vendor: Optional[String] = Field(default=None)
