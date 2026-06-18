@@ -2,11 +2,22 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from shopify_sdk.gql.core.types import ProductCreateInput
+from shopify_sdk.gql.core.types import ProductCreateInput, ProductUpdateInput
+from shopify_sdk.gql.core.types.enums import ProductStatus
 from shopify_sdk.managers.products import BulkProductManager, ProductManager
 
 
 class TestBulkProductManager(unittest.TestCase):
+    def test_product_update_input_omits_tags_when_not_provided(self) -> None:
+        payload = ProductUpdateInput(
+            id="gid://shopify/Product/1",
+            status=ProductStatus.ACTIVE,
+        ).to_graphql()
+
+        self.assertEqual(payload["id"], "gid://shopify/Product/1")
+        self.assertEqual(payload["status"], ProductStatus.ACTIVE)
+        self.assertNotIn("tags", payload)
+
     def test_bulk_create_returns_ids(self) -> None:
         inputs = [
             ProductCreateInput(title="One"),
