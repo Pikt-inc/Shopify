@@ -287,6 +287,8 @@ class fulfillmentCreateV2(Mutation):
 
 
 class inventoryAdjustQuantities(Mutation):
+    return_type: Type[BaseModel] = InventoryAdjustQuantitiesPayload
+
     def __init__(
         self,
         input: InventoryAdjustQuantitiesInput,

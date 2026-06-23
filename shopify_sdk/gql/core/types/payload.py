@@ -107,6 +107,10 @@ class ProductPublishPayload(AutoRegisterModel):
     userErrors: List[UserError]
 
 
+class InventoryAdjustQuantitiesPayload(AutoRegisterModel):
+    userErrors: List[UserError]
+
+
 class ProductVariantsBulkUpdateUserError(AutoRegisterModel):
     code: Optional[String] = Field(default=None)
     field: Optional[List[String]] = Field(default=None)
