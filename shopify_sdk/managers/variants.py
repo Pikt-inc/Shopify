@@ -28,7 +28,7 @@ class ProductVariantManager(BaseModel):
                     "product",
                 },
                 "Product": {"id", "title"},
-                "InventoryItem": {"measurement"},
+                "InventoryItem": {"id", "measurement"},
                 "InventoryItemMeasurement": {"weight"},
                 "Weight": {"value", "unit"},
             },

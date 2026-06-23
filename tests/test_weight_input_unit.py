@@ -69,7 +69,7 @@ class TestVariantQueryWeightSelection(unittest.TestCase):
 
         inclusions = captured["field_inclusions"]
         self.assertIn("inventoryItem", inclusions["ProductVariant"])
-        self.assertEqual(inclusions["InventoryItem"], {"measurement"})
+        self.assertEqual(inclusions["InventoryItem"], {"id", "measurement"})
         self.assertEqual(inclusions["InventoryItemMeasurement"], {"weight"})
         self.assertEqual(inclusions["Weight"], {"value", "unit"})
 

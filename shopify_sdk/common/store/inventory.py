@@ -8,6 +8,4 @@ from shopify_sdk import client
 def update_inventory(input: InventoryAdjustQuantitiesInput) -> bool:
     result = inventoryAdjustQuantities(input=input).execute(client=client)
 
-    if result and result.get("userErrors") == []:
-        return True
-    return False
+    return bool(result and not result.userErrors)
