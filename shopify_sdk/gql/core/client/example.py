@@ -2,7 +2,7 @@ from .wrapper import ShopifyClientWrapper
 
 def test():
     domain = 'quickstart-5dd1aca4.myshopify.com'
-    at = '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'
+    at = 'replace-with-shopify-admin-access-token'
 
     query = '''
     query GetProductByHandle($handle: String!) {
