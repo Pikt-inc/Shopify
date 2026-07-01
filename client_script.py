@@ -27,7 +27,7 @@ def run_with_context_override() -> None:
     """
     with client_context(
         shop_domain="your-shop.myshopify.com",
-        access_token="shpat_replace_me",
+        access_token="replace-with-shopify-admin-access-token",
     ):
         response = client.request(query=query, variables={})
         print(response.data)

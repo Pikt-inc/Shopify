@@ -1,6 +1,6 @@
 def test():
     domain = 'your-shop.myshopify.com'
-    at = 'shpat_your_token_here'
+    at = 'replace-with-shopify-admin-access-token'
 
     query = '''
     query GetProductByHandle($handle: String!) {
