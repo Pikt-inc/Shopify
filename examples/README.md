@@ -16,6 +16,7 @@ Examples:
 
 - [`query_products.py`](query_products.py) - query active products through the manager API.
 - [`product_set.py`](product_set.py) - build typed `ProductSetInput` payloads and submit them with `productSet`.
+- [`catalog_sync.py`](catalog_sync.py) - map an external catalog item into typed product and variant payloads.
 - [`metafields.py`](metafields.py) - attach product-level metafields to a typed `ProductSetInput` payload.
 - [`orders.py`](orders.py) - query recent paid orders.
 - [`delivery_profile.py`](delivery_profile.py) - attach variants to a named delivery profile.

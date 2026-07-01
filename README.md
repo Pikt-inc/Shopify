@@ -117,6 +117,10 @@ profile_id = store.delivery.upsert_profile(
 
 More focused examples live in [`examples/`](examples/).
 
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for local setup, check commands, and pull request expectations.
+
 ## Architecture
 
 The SDK is organized into three main layers:
