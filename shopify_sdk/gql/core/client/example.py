@@ -1,6 +1,6 @@
 def test():
     domain = "your-shop.myshopify.com"
-    at = "shpat_your_token_here"
+    at = "replace-with-shopify-admin-access-token"
     api_version = "2025-10"
 
     query = """
