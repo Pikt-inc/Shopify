@@ -6,7 +6,6 @@ from typing import Any, Dict, Iterator, Optional, cast
 from dotenv import load_dotenv
 
 from .wrapper import ShopifyClientWrapper as ShopifyClient
-from .example import test
 from .types import (
     GQLRequestParams,
     GQLResponse,
@@ -90,7 +89,6 @@ __all__ = [
     "GQLCost",
     "GQLThrottleStatus",
     "GQLExtensions",
-    "test",
     "client",
     "client_context",
 ]

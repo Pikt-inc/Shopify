@@ -121,6 +121,10 @@ More focused examples live in [`examples/`](examples/).
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for local setup, check commands, and pull request expectations.
 
+## Security
+
+See [`SECURITY.md`](SECURITY.md) for vulnerability reporting and credential-handling guidance.
+
 ## Architecture
 
 The SDK is organized into three main layers:
