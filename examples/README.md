@@ -6,7 +6,7 @@ Required environment variables for examples that call Shopify:
 
 ```bash
 export SHOPIFY_SHOP_DOMAIN="example.myshopify.com"
-export SHOPIFY_ACCESS_TOKEN="shpat_..."
+export SHOPIFY_ACCESS_TOKEN="replace-with-shopify-admin-access-token"
 export SHOPIFY_API_VERSION="2025-10"
 ```
 

@@ -31,7 +31,7 @@ from shopify_sdk.gql import client_context, products
 
 with client_context(
     shop_domain="example.myshopify.com",
-    access_token="shpat_...",
+    access_token="<SHOPIFY_ADMIN_ACCESS_TOKEN>",
     api_version="2025-10",
 ):
     query = products(query="status:active")
@@ -81,7 +81,7 @@ Example:
 ```python
 from shopify_sdk import store
 
-with store.credentials_context("example.myshopify.com", "shpat_..."):
+with store.credentials_context("example.myshopify.com", "<SHOPIFY_ADMIN_ACCESS_TOKEN>"):
     handle_to_id = store.products.bulk.get_handle_id_map(query="status:active")
 ```
 
