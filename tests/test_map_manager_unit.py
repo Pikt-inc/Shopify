@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from shopify_sdk.managers.map import MapManager, MapManagerException
 from shopify_sdk.gql.core.query import Query
 from shopify_sdk.gql.core.types.connections import connection
+from shopify_sdk.gql.core.types.objects import Product, ProductVariant
+from shopify_sdk.gql.versions.v2025_10.types.objects import Product as Product202510
 
 
 class DummyModel(BaseModel):
@@ -95,3 +97,35 @@ def test_get_raises_when_query_missing():
     mgr = MapManager()
     with pytest.raises(MapManagerException):
         mgr.get(UnknownModel, "code", "id")
+
+
+def test_get_query_class_uses_registry_for_shopify_models():
+    mgr = MapManager()
+
+    assert mgr._get_query_class(Product).__name__ == "products"
+    assert mgr._get_query_class(Product202510).__name__ == "products"
+    assert mgr._get_query_class(ProductVariant).__name__ == "productVariants"
+
+
+def test_get_uses_registry_factory_for_default_product(monkeypatch):
+    from shopify_sdk.gql import queries as query_module
+
+    class ProductQuery:
+        last_field_inclusions = None
+
+        def __init__(self, field_inclusions=None):
+            self._field_inclusions = field_inclusions
+
+        def bulk(self):
+            self.__class__.last_field_inclusions = self._field_inclusions
+            return DummyConnection(
+                edges=[],
+                nodes=[DummyModel(id="gid://shopify/Product/1", handle="example")],
+            )
+
+    monkeypatch.setattr(query_module, "products", ProductQuery)
+
+    result = MapManager().get(Product, "handle", "id")
+
+    assert result == {"example": "gid://shopify/Product/1"}
+    assert ProductQuery.last_field_inclusions == {"Product": {"handle", "id"}}

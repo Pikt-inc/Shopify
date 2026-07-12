@@ -1,10 +1,16 @@
 from __future__ import annotations
 
-from typing import Type, Optional, get_args, cast
-from pydantic import BaseModel, validate_call
+from collections.abc import Callable, Iterable
+from importlib import import_module
+from typing import Any, ClassVar, Optional, Type, get_args, cast
+
+from pydantic import BaseModel
 
 from shopify_sdk.gql.core.query import Query
 from shopify_sdk.gql.core.types.connections import connection
+
+
+QueryFactory = Callable[..., Query]
 
 
 class MapManagerException(Exception):
@@ -27,6 +33,15 @@ class MapManager(BaseModel):
     :var Args: Description
     """
 
+    _MODEL_QUERY_NAMES: ClassVar[dict[str, str]] = {
+        "DeliveryProfile": "deliveryProfiles",
+        "Location": "locations",
+        "Order": "orders",
+        "Product": "products",
+        "ProductVariant": "productVariants",
+        "Publication": "publications",
+    }
+
     # @validate_call(validate_return=True)
     def get(
         self,
@@ -35,23 +50,46 @@ class MapManager(BaseModel):
         value_key: str,
         inclusion_overrides: Optional[dict[str, set[str]]] = None,
     ) -> dict[str, str]:
-        query_class: Optional[Type[Query]] = self._get_query_class(model)
-        if not query_class:
-            raise MapManagerException(
-                f"No query class found for model: {model.__name__}"
-            )
+        """Return a lookup map from one model field path to another.
 
-        # Build and execute the query
+        :param model: GraphQL object model to query.
+        :param field_key: Source field path used as the dictionary key.
+        :param value_key: Destination field path used as the dictionary value.
+        :param inclusion_overrides: Optional field inclusions for nested lookups.
+        :returns: Mapping of source field values to destination field values.
+        """
+        query_factory = self._require_query_factory(model)
         connection_instance = self._build_and_execute_query(
-            query_class, model, field_key, value_key, inclusion_overrides
+            query_factory, model, field_key, value_key, inclusion_overrides
         )
-        # bulk() returns a pydantic BaseModel that subclasses `connection`.
-        # Cast so the static type checker knows `nodes`/`count` exist.
-        connection_instance = cast(connection, connection_instance)
+        return self._connection_to_map(
+            cast(connection, connection_instance), field_key, value_key
+        )
+
+    def _require_query_factory(self, model: Type[BaseModel]) -> QueryFactory:
+        """Return the query factory for a model or raise a map-specific error.
+
+        :param model: GraphQL object model to query.
+        :returns: Query class or versioned query proxy for the model.
+        """
+        query_factory = self._get_query_class(model)
+        if query_factory:
+            return query_factory
+        raise MapManagerException(f"No query class found for model: {model.__name__}")
+
+    def _connection_to_map(
+        self, connection_instance: connection, field_key: str, value_key: str
+    ) -> dict[str, str]:
+        """Convert connection nodes into a string lookup map.
+
+        :param connection_instance: Bulk query connection response.
+        :param field_key: Source field path used as the dictionary key.
+        :param value_key: Destination field path used as the dictionary value.
+        :returns: Mapping of source field values to destination field values.
+        """
         if not connection_instance.nodes or connection_instance.count == 0:
             return {}
-
-        result_map = {}
+        result_map: dict[str, str] = {}
         for node in connection_instance.nodes:
             field_value = self.getattr_nested(node, field_key, None)
             value_value = self.getattr_nested(node, value_key, None)
@@ -59,7 +97,14 @@ class MapManager(BaseModel):
                 result_map[str(field_value)] = str(value_value)
         return result_map
 
-    def getattr_nested(self, obj, path: str, default=None):
+    def getattr_nested(self, obj: object, path: str, default: Any = None) -> Any:
+        """Return a dotted-path value from an object or nested dictionaries.
+
+        :param obj: Object or dictionary to inspect.
+        :param path: Dot-delimited attribute path.
+        :param default: Value returned when any path segment is missing.
+        :returns: The nested value or the default.
+        """
         current = obj
         for part in path.split("."):
             if current is None:
@@ -75,48 +120,64 @@ class MapManager(BaseModel):
     # @validate_call(validate_return=True)
     def _build_and_execute_query(
         self,
-        query_class: Type[Query],
+        query_factory: QueryFactory,
         model: Type[BaseModel],
         field_key: str,
         value_key: str,
         inclusion_overrides: Optional[dict[str, set[str]]] = None,
     ) -> BaseModel:
-        """
-        Builds a query to fetch the specified field and value keys.
+        """Build and execute a bulk query for the requested model fields.
 
-        :type query: Type[Query]
-        :type field_key: str
-        :type value_key: str
-        :return: The constructed query.
-        :rtype: Query
+        :param query_factory: Query class or versioned query proxy.
+        :param model: GraphQL object model to query.
+        :param field_key: Source field path used as the dictionary key.
+        :param value_key: Destination field path used as the dictionary value.
+        :param inclusion_overrides: Optional explicit field inclusions.
+        :returns: Bulk query connection response.
         """
         if not inclusion_overrides:
             field_inclusions = {model.__name__: {field_key, value_key}}
         else:
             field_inclusions = inclusion_overrides
-        built_query = query_class(field_inclusions=field_inclusions)
+        built_query = query_factory(field_inclusions=field_inclusions)
         return built_query.bulk()
 
-    @validate_call(validate_return=True)
     def _get_query_class(
         self,
         model: Type[BaseModel],
-    ) -> Optional[Type[Query]]:
-        """
-        Searches through defined Query classes to find one that returns the specified model.
+    ) -> Optional[QueryFactory]:
+        """Return a query factory for the model without requiring caller changes.
 
-        :type model: Type[BaseModel]
-        :return: Description
-        :rtype: Type[Query]
+        :param model: GraphQL object model to query.
+        :returns: Query class or versioned query proxy for the model.
         """
-        connection_subclasses = (
-            connection.__subclasses__()
-        )  # Get all connection subclasses
-        query_subclasses = Query.__subclasses__()  # Get all Query subclasses
-        for conn_class in connection_subclasses:
+        return self._registered_query_factory(model) or self._legacy_query_class(model)
+
+    def _registered_query_factory(
+        self, model: Type[BaseModel]
+    ) -> Optional[QueryFactory]:
+        """Resolve known Shopify models through the versioned query registry.
+
+        :param model: GraphQL object model to query.
+        :returns: Version-aware query proxy when the model is known.
+        """
+        query_name = self._MODEL_QUERY_NAMES.get(model.__name__)
+        if query_name is None:
+            return None
+        query_module = import_module("shopify_sdk.gql.queries")
+        query_factory = getattr(query_module, query_name, None)
+        return cast(Optional[QueryFactory], query_factory)
+
+    def _legacy_query_class(self, model: Type[BaseModel]) -> Optional[Type[Query]]:
+        """Fall back to historical subclass discovery for custom query classes.
+
+        :param model: GraphQL object model to query.
+        :returns: Query class discovered from loaded subclasses, when available.
+        """
+        for conn_class in self._connection_subclasses():
             node_type = self._get_node_type(conn_class)
-            if node_type and issubclass(node_type, model):
-                for query_class in query_subclasses:
+            if isinstance(node_type, type) and issubclass(node_type, model):
+                for query_class in self._query_subclasses():
                     if (
                         query_class.return_type
                         and query_class.return_type == conn_class
@@ -124,16 +185,32 @@ class MapManager(BaseModel):
                         return query_class
         return None
 
+    def _connection_subclasses(self) -> Iterable[Type[connection]]:
+        """Yield loaded connection subclasses recursively."""
+        yield from self._subclasses(connection)
+
+    def _query_subclasses(self) -> Iterable[Type[Query]]:
+        """Yield loaded query subclasses recursively."""
+        yield from self._subclasses(Query)
+
+    def _subclasses(self, cls: Type[Any]) -> Iterable[Type[Any]]:
+        """Yield all loaded subclasses of a class recursively.
+
+        :param cls: Parent class to inspect.
+        :returns: Iterator of subclasses at any depth.
+        """
+        for subclass in cls.__subclasses__():
+            yield subclass
+            yield from self._subclasses(subclass)
+
     def _get_node_type(
         self,
         connection_class: Type[connection],
     ) -> Optional[Type[BaseModel]]:
-        """
-        Retrieves the node type from a connection class.
+        """Retrieve the node type from a connection class.
 
-        :type connection_class: Type[connection]
-        :return: The node type if found, None otherwise.
-        :rtype: Type[BaseModel]
+        :param connection_class: Connection model class to inspect.
+        :returns: Node model type when available.
         """
         fields = connection_class.__pydantic_fields__
         if "nodes" not in fields.keys():
