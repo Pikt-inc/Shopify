@@ -1,276 +1,50 @@
 from __future__ import annotations
-from functools import cached_property
-from typing import Optional, cast
 
-from shopify_sdk.common.store.locations import get_locations
-from shopify_sdk.common.store.inventory import update_inventory
-from shopify_sdk.common.product.query import variants_by_product
-from shopify_sdk.common.product.publish import publish_product_to_all_publications
-from shopify_sdk.common.product.media import set_product_images
-from shopify_sdk.common.variant.update_or_create import update_variant
-from shopify_sdk.common.product.create import (
-    create_product as create_product_mutation,
-    update_product as update_product_mutation,
-)
+from shopify_sdk.common.proxy_product_service import calculate_inventory_delta
+from shopify_sdk.common.proxy_product_service import ProductCreateWorkflow
+from shopify_sdk.common.proxy_product_service import ProductUpdateWorkflow
 
-from shopify_sdk.gql.core.types import *
-from shopify_sdk.gql.core.types.input_objects import *
-from shopify_sdk.gql.core.types.enums import *
-from shopify_sdk.gql.core.types.objects import *
-from shopify_sdk.gql.core.types.connections import *
 from .types import ProxyProduct
 
 
+class ProductCreate(ProductCreateWorkflow):
+    """Backward-compatible public name for the proxy product create workflow."""
+
+
+class ProductUpdate(ProductUpdateWorkflow):
+    """Backward-compatible public name for the proxy product update workflow."""
+
+
 def _calculate_inventory_delta(
-    desired_quantity: Optional[int],
-    current_quantity: Optional[int],
+    desired_quantity: int | None,
+    current_quantity: int | None,
 ) -> int:
-    if desired_quantity is None:
-        return 0
-    return int(desired_quantity) - int(current_quantity or 0)
+    """Return the inventory delta needed to reach the desired quantity."""
+    return calculate_inventory_delta(desired_quantity, current_quantity)
 
 
 def create_product(product: ProxyProduct) -> str:
+    """Create a Shopify product from a proxy product and return its ID."""
     try:
         pc = ProductCreate.execute(proxy_product=product)
         return pc.product_id
-    except Exception as e:
-        raise ValueError(f"Product creation failed: {e}")
+    except Exception as exc:
+        raise ValueError(f"Product creation failed: {exc}") from exc
 
 
 def update_product(product: ProxyProduct) -> str:
+    """Update a Shopify product from a proxy product and return its ID."""
     try:
         pu = ProductUpdate.execute(proxy_product=product)
         return pu.product_id
-    except Exception as e:
-        raise ValueError(f"Product update failed: {e}")
+    except Exception as exc:
+        raise ValueError(f"Product update failed: {exc}") from exc
 
 
-class ProductCreate:
-    DEFAULT_LOCATION_NAME = "Shop location"
-
-    def __init__(self, proxy_product: ProxyProduct):
-        self._proxy_product = proxy_product
-
-    @cached_property
-    def shop_location_id(self) -> ID:
-        locations = get_locations()
-        if locations.count == 0:
-            raise ValueError("No shop locations found.")
-        for location in locations:
-            if location.name == self.DEFAULT_LOCATION_NAME:
-                return ID(str(location.id))
-        raise ValueError(
-            f"Location with name '{self.DEFAULT_LOCATION_NAME}' not found."
-        )
-
-    @cached_property
-    def product_id(self) -> str:
-        return self._get_product_id()
-
-    @cached_property
-    def variant(self) -> ProductVariant:
-        variant_connection = variants_by_product(product_id=self.product_id)
-        if not variant_connection or not variant_connection.nodes:
-            raise ValueError(f"No variants found for product ID '{self.product_id}'.")
-        variant = variant_connection.first
-        if variant is None:
-            raise ValueError(f"No variants found for product ID '{self.product_id}'.")
-        return cast(ProductVariant, variant)
-
-    @cached_property
-    def _get_product_create_input(self) -> ProductCreateInput:
-        return ProductCreateInput(
-            title=self._proxy_product.title,
-            descriptionHtml=self._proxy_product.description_html,
-            vendor=self._proxy_product.vendor,
-            productType=self._proxy_product.type,
-            tags=self._proxy_product.tags or [],
-            status=ProductStatus.ACTIVE,
-            seo=SEOInput(
-                title=self._proxy_product.seo_title,
-                description=self._proxy_product.seo_description,
-            ),
-            metafields=self._proxy_product.metafields,
-        )
-
-    @cached_property
-    def _get_variant_create_input(self) -> ProductVariantsBulkInput:
-        return ProductVariantsBulkInput(
-            id=self.variant.id,
-            price=self._proxy_product.price,
-            inventoryPolicy=ProductVariantInventoryPolicy.DENY,
-            inventoryItem=InventoryItemInput(
-                sku=self._proxy_product.sku, tracked=True, requiresShipping=True
-            ),
-        )
-
-    @classmethod
-    def execute(cls, proxy_product: ProxyProduct) -> "ProductCreate":
-        instance = cls(proxy_product=proxy_product)
-        instance._set_variant()
-        instance._set_inventory()
-        instance._set_images()
-        publish_product_to_all_publications(product_id=instance.product_id)
-        return instance
-
-    def _set_variant(self) -> bool:
-        success = update_variant(
-            product_id=self.product_id,
-            variant_update_input=self._get_variant_create_input,
-        )
-        if not success:
-            raise ValueError("Variant update failed.")
-        return success
-
-    def _get_product_id(self) -> str:
-        return self._set_product()
-
-    def _set_product(self) -> str:
-        product_id = create_product_mutation(input=self._get_product_create_input)
-        if not product_id:
-            raise ValueError("Product creation failed.")
-        return product_id
-
-    def _set_inventory(self) -> bool:
-        delta = _calculate_inventory_delta(
-            desired_quantity=self._proxy_product.quantity,
-            current_quantity=self.variant.inventoryQuantity,
-        )
-        if delta == 0:
-            return True
-        success = update_inventory(
-            input=InventoryAdjustQuantitiesInput(
-                name="available",
-                reason="correction",
-                changes=[
-                    InventoryChangeInput(
-                        inventoryItemId=self.variant.inventoryItem.id,
-                        locationId=self.shop_location_id,
-                        delta=delta,
-                    )
-                ],
-            )
-        )
-        if not success:
-            raise ValueError("Inventory update failed.")
-        return True
-
-    def _set_images(self) -> bool:
-        return set_product_images(self.product_id, self._proxy_product.images)
-
-
-class ProductUpdate:
-    DEFAULT_LOCATION_NAME = "Shop location"
-
-    def __init__(self, proxy_product: ProxyProduct):
-        self._proxy_product = proxy_product
-
-    @cached_property
-    def shop_location_id(self) -> ID:
-        locations = get_locations()
-        if locations.count == 0:
-            raise ValueError("No shop locations found.")
-        for location in locations:
-            if location.name == self.DEFAULT_LOCATION_NAME:
-                return ID(str(location.id))
-        raise ValueError(
-            f"Location with name '{self.DEFAULT_LOCATION_NAME}' not found."
-        )
-
-    @cached_property
-    def product_id(self) -> str:
-        if not self._proxy_product.id:
-            raise ValueError("Product ID is required for update.")
-        return str(self._proxy_product.id)
-
-    @cached_property
-    def variant(self) -> ProductVariant:
-        variant_connection = variants_by_product(product_id=self.product_id)
-        if not variant_connection or not variant_connection.nodes:
-            raise ValueError(f"No variants found for product ID '{self.product_id}'.")
-        variant = variant_connection.first
-        if variant is None:
-            raise ValueError(f"No variants found for product ID '{self.product_id}'.")
-        return cast(ProductVariant, variant)
-
-    @cached_property
-    def _get_product_update_input(self) -> ProductUpdateInput:
-        return ProductUpdateInput(
-            id=self.product_id,
-            title=self._proxy_product.title,
-            descriptionHtml=self._proxy_product.description_html,
-            vendor=self._proxy_product.vendor,
-            productType=self._proxy_product.type,
-            tags=self._proxy_product.tags or [],
-            status=ProductStatus.ACTIVE,
-            seo=SEOInput(
-                title=self._proxy_product.seo_title,
-                description=self._proxy_product.seo_description,
-            ),
-            metafields=self._proxy_product.metafields,
-        )
-
-    @cached_property
-    def _get_variant_update_input(self) -> ProductVariantsBulkInput:
-        return ProductVariantsBulkInput(
-            id=self.variant.id,
-            price=self._proxy_product.price,
-            inventoryPolicy=ProductVariantInventoryPolicy.DENY,
-            inventoryItem=InventoryItemInput(
-                sku=self._proxy_product.sku, tracked=True, requiresShipping=True
-            ),
-        )
-
-    @classmethod
-    def execute(cls, proxy_product: ProxyProduct) -> "ProductUpdate":
-        instance = cls(proxy_product=proxy_product)
-        instance._update_product()
-        instance._set_variant()
-        instance._set_inventory()
-        instance._set_images()
-        publish_product_to_all_publications(product_id=instance.product_id)
-        return instance
-
-    def _set_variant(self) -> bool:
-        success = update_variant(
-            product_id=self.product_id,
-            variant_update_input=self._get_variant_update_input,
-        )
-        if not success:
-            raise ValueError("Variant update failed.")
-        return success
-
-    def _update_product(self) -> str:
-        product_id = update_product_mutation(input=self._get_product_update_input)
-        if not product_id:
-            raise ValueError("Product update failed.")
-        self._proxy_product.id = product_id
-        return product_id
-
-    def _set_inventory(self) -> bool:
-        delta = _calculate_inventory_delta(
-            desired_quantity=self._proxy_product.quantity,
-            current_quantity=self.variant.inventoryQuantity,
-        )
-        if delta == 0:
-            return True
-        success = update_inventory(
-            input=InventoryAdjustQuantitiesInput(
-                name="available",
-                reason="correction",
-                changes=[
-                    InventoryChangeInput(
-                        inventoryItemId=self.variant.inventoryItem.id,
-                        locationId=self.shop_location_id,
-                        delta=delta,
-                    )
-                ],
-            )
-        )
-        if not success:
-            raise ValueError("Inventory update failed.")
-        return True
-
-    def _set_images(self) -> bool:
-        return set_product_images(self.product_id, self._proxy_product.images)
+__all__ = [
+    "ProductCreate",
+    "ProductUpdate",
+    "_calculate_inventory_delta",
+    "create_product",
+    "update_product",
+]
