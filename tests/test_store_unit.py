@@ -26,7 +26,7 @@ class TestStoreManager(unittest.TestCase):
             ) as ctx:
                 self.assertIs(ctx, manager)
 
-        self.assertEqual(calls[0]["api_version"], "2025-10")
+        self.assertEqual(calls[0]["api_version"], "2026-07")
 
     def test_credentials_context_prefers_env_version(self) -> None:
         calls = []

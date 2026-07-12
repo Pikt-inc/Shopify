@@ -4,7 +4,10 @@ from .queries import (
     products,
     productVariants,
     publications,
+    productByIdentifier,
     deliveryProfile,
+    deliveryProfiles,
+    deliveryMethodDefinition,
     locations,
     bulkOperation,
     productSetOperation,
@@ -35,6 +38,7 @@ from .mutations import (
     stagedUploadsCreate,
     bulkOperationRunMutation,
     bulkOperationRunQuery,
+    inventoryAdjustQuantities,
 )
 from .core import client, client_context
 
@@ -45,7 +49,10 @@ __all__ = [
     "products",
     "productVariants",
     "publications",
+    "productByIdentifier",
     "deliveryProfile",
+    "deliveryProfiles",
+    "deliveryMethodDefinition",
     "productUnpublish",
     "productPublish",
     "productCreate",
@@ -71,6 +78,7 @@ __all__ = [
     "stagedUploadsCreate",
     "bulkOperationRunMutation",
     "bulkOperationRunQuery",
+    "inventoryAdjustQuantities",
     "client",
     "client_context",
     "locations",

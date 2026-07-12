@@ -62,7 +62,7 @@ def unpublish_product_by_sku(
 
     If publication_ids is omitted, the helper unpublishes the product from every
     publication currently attached to it (fetched via resourcePublications).
-    Shopify docs: https://shopify.dev/docs/api/admin-graphql/2025-10/mutations/productUnpublish
+    Shopify docs: https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/productUnpublish
     """
     success = False
     message: str | None = None

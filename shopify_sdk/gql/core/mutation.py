@@ -31,10 +31,25 @@ class Mutation(Query):
 
         if len(mutations) == 0:
             yield from iter(())
+            return
 
         responses: Iterator["BulkOperationResultPayload"] = bulk_mutation(
             mutations=mutations,
         )
+        yield from cls._build_bulk_payloads(mutations, responses)
+
+    @classmethod
+    def _build_bulk_payloads(
+        cls,
+        mutations: List["Mutation"],
+        responses: Iterator["BulkOperationResultPayload"],
+    ) -> Iterator[BaseModel]:
+        """Build typed mutation payloads from bulk operation result payloads.
+
+        :param mutations: Mutation instances included in the bulk operation.
+        :param responses: Bulk result payload iterator.
+        :returns: Iterator of typed mutation payload models.
+        """
         return_type = mutations[0].return_type
         if return_type is None:
             raise ValueError("return_type must be defined for bulk mutations.")

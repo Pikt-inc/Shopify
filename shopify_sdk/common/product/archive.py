@@ -8,7 +8,7 @@ from .query import product_by_sku
 def archive_product_by_sku(sku: str) -> ProductActionResponse:
     """
     Archive a product by SKU using Shopify's productUpdate mutation (status=ARCHIVED).
-    Shopify docs: https://shopify.dev/docs/api/admin-graphql/2025-10/mutations/productUpdate
+    Shopify docs: https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/productUpdate
     """
     success = True
     message = f"Successfully archived product for SKU '{sku}'."

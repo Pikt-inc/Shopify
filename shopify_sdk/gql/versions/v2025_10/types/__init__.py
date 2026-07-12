@@ -1,4 +1,4 @@
-from .base import (
+from shopify_sdk.gql.core.types.base import (
     ID,
     String,
     Boolean,
@@ -14,9 +14,6 @@ from .objects import (
     Order,
     LineItem,
     Product,
-    ComponentizedProductsBundleConsolidatedOption,
-    ComponentizedProductsBundleConsolidatedOptionSelection,
-    ComponentizedProductsBundleConsolidatedOptionSelectionComponent,
     ProductOption,
     ProductVariant,
     PageInfo,
@@ -111,7 +108,7 @@ from .enums import (
     CombinedListingsRole,
     CountryCode,
 )
-from .registry import type_registry
+from shopify_sdk.gql.core.types.registry import type_registry
 
 # Resolve forward references for interdependent Pydantic models using the shared registry.
 type_registry.rebuild_all()
@@ -133,9 +130,6 @@ __all__ = [
     "PageInfo",
     "Order",
     "Product",
-    "ComponentizedProductsBundleConsolidatedOption",
-    "ComponentizedProductsBundleConsolidatedOptionSelection",
-    "ComponentizedProductsBundleConsolidatedOptionSelectionComponent",
     "ProductOption",
     "ProductVariant",
     "Publication",

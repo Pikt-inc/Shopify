@@ -34,6 +34,11 @@ def _get_current_client() -> ShopifyClient:
     return _current_client.get()
 
 
+def current_api_version() -> str:
+    """Return the active Shopify Admin GraphQL API version for this context."""
+    return _get_current_client().gql_version
+
+
 class _ClientProxy:
     __slots__ = ()
 
@@ -91,4 +96,5 @@ __all__ = [
     "GQLExtensions",
     "client",
     "client_context",
+    "current_api_version",
 ]

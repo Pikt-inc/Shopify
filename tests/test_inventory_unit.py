@@ -8,12 +8,17 @@ from shopify_sdk.gql.core.types.input_objects import (
     InventoryChangeInput,
 )
 from shopify_sdk.gql.core.types.payload import InventoryAdjustQuantitiesPayload
+from shopify_sdk.gql.core.client import client_context
 from shopify_sdk.gql.mutations import inventoryAdjustQuantities
 
 
 class TestInventoryAdjustQuantitiesMutation(unittest.TestCase):
     def test_mutation_declares_typed_payload(self) -> None:
-        self.assertIs(inventoryAdjustQuantities.return_type, InventoryAdjustQuantitiesPayload)
+        with client_context("example.myshopify.com", "token", "2026-07"):
+            self.assertIs(
+                inventoryAdjustQuantities.return_type,
+                InventoryAdjustQuantitiesPayload,
+            )
 
 
 class TestUpdateInventoryHelper(unittest.TestCase):

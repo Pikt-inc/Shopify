@@ -32,7 +32,7 @@ from shopify_sdk.gql import client_context, products
 with client_context(
     shop_domain="example.myshopify.com",
     access_token="<SHOPIFY_ADMIN_ACCESS_TOKEN>",
-    api_version="2025-10",
+    api_version="2026-07",
 ):
     query = products(query="status:active")
     connection = query.bulk()
@@ -48,6 +48,12 @@ The SDK models Shopify GraphQL inputs and responses with Pydantic-backed types:
 - connections, edges, and mutation payloads
 
 This makes call sites easier to validate and review than raw dictionaries or ad hoc GraphQL strings.
+
+Version-specific schema import paths live under
+`shopify_sdk.gql.versions.<version>.types`. The compatibility imports under
+`shopify_sdk.gql.core.types` point at the latest default version, while
+manager/query/mutation entry points resolve the active version from the current
+client context.
 
 Example:
 

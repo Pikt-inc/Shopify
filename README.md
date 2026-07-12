@@ -58,13 +58,20 @@ from shopify_sdk import store
 with store.credentials_context(
     shop_domain=os.environ["SHOPIFY_SHOP_DOMAIN"],
     access_token=os.environ["SHOPIFY_ACCESS_TOKEN"],
-    api_version=os.getenv("SHOPIFY_API_VERSION", "2025-10"),
+    api_version=os.getenv("SHOPIFY_API_VERSION", "2026-07"),
 ):
     products = store.products.query_all(query="status:active")
 
 for product in products.nodes:
     print(product.id, product.handle, product.title)
 ```
+
+## API versions
+
+The SDK defaults to Shopify Admin GraphQL API version `2026-07`. Set
+`SHOPIFY_API_VERSION` or pass `api_version` to `credentials_context` to use a
+different supported schema version. The currently versioned GraphQL
+implementations are `2025-10` and `2026-07`.
 
 ## Manager examples
 

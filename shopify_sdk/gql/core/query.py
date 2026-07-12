@@ -7,6 +7,7 @@ from typing import (
     Optional,
     Dict,
     Any,
+    Iterator,
     Type,
     List,
     Tuple,
@@ -367,16 +368,19 @@ class Query:
     def _get_type_hints(self, model: Type[BaseModel]) -> Dict[str, Any]:
         try:
             module = sys.modules.get(model.__module__)
-            globalns: Dict[str, Any] = type_registry.types
+            globalns: Dict[str, Any] = type_registry.namespace_for_module(
+                model.__module__
+            )
             if module:
-                globalns.update(module.__dict__)
+                globalns = {**globalns, **module.__dict__}
             return get_type_hints(model, globalns=globalns, localns=globalns)
         except Exception:
             annotations = getattr(model, "__annotations__", {}) or {}
             resolved = {}
+            namespace = type_registry.namespace_for_module(model.__module__)
             for key, value in annotations.items():
-                if isinstance(value, str) and value in type_registry.types:
-                    resolved[key] = type_registry.types[value]
+                if isinstance(value, str) and value in namespace:
+                    resolved[key] = namespace[value]
                 else:
                     resolved[key] = value
             return resolved
@@ -385,9 +389,11 @@ class Query:
         init_method = self.__class__.__init__
         try:
             module = sys.modules.get(init_method.__module__)
-            globalns: Dict[str, Any] = type_registry.types
+            globalns: Dict[str, Any] = type_registry.namespace_for_module(
+                init_method.__module__
+            )
             if module:
-                globalns = {**module.__dict__, **globalns}
+                globalns = {**globalns, **module.__dict__}
             hints = get_type_hints(init_method, globalns=globalns, localns=globalns)
         except Exception:
             hints = getattr(init_method, "__annotations__", {}) or {}
@@ -580,6 +586,14 @@ class Query:
         """
         from .bulk import bulk_query
 
+        return self._build_bulk_response(bulk_query(query=self))
+
+    def _build_bulk_response(self, results: Iterator[Any]) -> BaseModel:
+        """Build the typed connection model from bulk operation result payloads.
+
+        :param results: Bulk result payload iterator.
+        :returns: Query return type populated with bulk result nodes.
+        """
         return_type = self.return_type
         if return_type is None:
             raise ValueError("return_type must be defined to cast the response.")
@@ -587,7 +601,7 @@ class Query:
             raise TypeError("return_type must be a class type derived from BaseModel.")
         objects: list[BaseModel] = []
         cast_type = self._get_bulk_base_type()
-        for result in bulk_query(query=self):
+        for result in results:
             payload_data = result.data
             if payload_data is None:
                 raise ValueError("Bulk query result payload is missing data.")

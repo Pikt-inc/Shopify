@@ -41,7 +41,7 @@ def main() -> None:
     with store.credentials_context(
         shop_domain=os.environ["SHOPIFY_SHOP_DOMAIN"],
         access_token=os.environ["SHOPIFY_ACCESS_TOKEN"],
-        api_version=os.getenv("SHOPIFY_API_VERSION", "2025-10"),
+        api_version=os.getenv("SHOPIFY_API_VERSION", "2026-07"),
     ):
         payloads = store.products.bulk.set([build_product_with_metafields()])
 

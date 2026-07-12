@@ -1,7 +1,8 @@
-import os
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import TYPE_CHECKING, Iterator, Optional, cast
 from pydantic import BaseModel, Field
+
+from shopify_sdk.api_versions import resolve_api_version
 
 from .products import ProductManager
 from .orders import OrderManager
@@ -34,7 +35,7 @@ class StoreManager(BaseModel):
     ) -> Iterator["StoreManager"]:
         from shopify_sdk import client_context
 
-        version = api_version or os.getenv("SHOPIFY_API_VERSION") or "2025-10"
+        version = resolve_api_version(api_version)
         with client_context(
             shop_domain=shop_domain,
             access_token=access_token,
@@ -83,7 +84,7 @@ class StoreManager(BaseModel):
                 "Publication": set({"id", "name", "status", "publishedAt", "updatedAt"})
             },
         )
-        response = query.execute(client)
+        response = cast("PublicationConnection", query.execute(client))
         return response
 
 

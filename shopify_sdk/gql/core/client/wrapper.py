@@ -1,5 +1,7 @@
-import os
 from typing import Optional, Dict, Any
+
+from shopify_sdk.api_versions import resolve_api_version
+
 from .root import RootClient
 from .types import GQLResponse
 
@@ -11,7 +13,7 @@ class ShopifyClientWrapper:
         self._shop_domain = shop_domain
         self._access_token = access_token
         # Prefer explicit version, then env, then a modern default that supports newer fields.
-        self._api_version = api_version or os.getenv("SHOPIFY_API_VERSION") or "2025-10"
+        self._api_version = resolve_api_version(api_version)
         self._client: Optional[RootClient] = None
 
     @property
@@ -25,6 +27,11 @@ class ShopifyClientWrapper:
     ) -> GQLResponse:
         res = self.client.request(query=query, variables=variables)
         return res
+
+    @property
+    def gql_version(self) -> str:
+        """Return the Shopify Admin GraphQL API version used by this wrapper."""
+        return self._api_version
 
     def _generate_client(self) -> RootClient:
         try:

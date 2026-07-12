@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Optional, Union
 from pydantic import Field
 
-from .base import *
+from shopify_sdk.gql.core.types.base import *
 
 if TYPE_CHECKING:
     from .connections import (
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
         SellingPlanGroupConnection,
         LocationConnection,
     )
-    from .enums import *
+    from .enums import *  # type: ignore[assignment]
 
 
 class input_object(AutoRegisterModel):
@@ -201,29 +201,9 @@ class ProductPriceRangeV2(AutoRegisterModel):
     minVariantPrice: MoneyV2
 
 
-class ComponentizedProductsBundleConsolidatedOptionSelectionComponent(
-    AutoRegisterModel
-):
-    optionId: ID
-    value: String
-
-
-class ComponentizedProductsBundleConsolidatedOptionSelection(AutoRegisterModel):
-    components: List[ComponentizedProductsBundleConsolidatedOptionSelectionComponent]
-    value: String
-
-
-class ComponentizedProductsBundleConsolidatedOption(AutoRegisterModel):
-    name: String
-    selections: List[ComponentizedProductsBundleConsolidatedOptionSelection]
-
-
 class Product(AutoRegisterModel):
     availablePublicationsCount: Optional[Count] = Field(default=None)
     bundleComponents: ProductBundleComponentConnection
-    bundleConsolidatedOptions: Optional[
-        List[ComponentizedProductsBundleConsolidatedOption]
-    ] = Field(default=None)
     category: Optional[TaxonomyCategory] = Field(default=None)
     collections: "CollectionConnection"
     combinedListingRole: Optional["CombinedListingsRole"] = Field(default=None)
