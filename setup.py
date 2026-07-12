@@ -8,7 +8,7 @@ with open("README.md", encoding="utf-8") as readme_file:
 
 setup(
     name="shopify_sdk",
-    version="0.2.2",
+    version="0.2.3",
     author="Patten Whiting",
     author_email="patten.whiting@gmail.com",
     description="Typed Python SDK for the Shopify Admin GraphQL API",
