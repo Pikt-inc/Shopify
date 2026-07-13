@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from shopify_sdk.gql.core import Mutation
 from .types.input_objects import *
 from .types.payload import *
-from .types.enums import OrderCancelReason
+from .types.enums import OrderCancelReason, WebhookSubscriptionTopic
 from typing import Iterator, Type, Dict, Set, Optional
 
 
@@ -75,6 +75,61 @@ class productDelete(VersionedMutation):
         field_inclusions: Optional[Dict[str, Set[str]]] = None,
     ):
         self.input: ProductDeleteInput = input
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
+
+
+class webhookSubscriptionCreate(VersionedMutation):
+    """Create an API-managed shop-scoped webhook subscription."""
+
+    return_type: Type[BaseModel] = WebhookSubscriptionCreatePayload
+
+    def __init__(
+        self,
+        topic: WebhookSubscriptionTopic,
+        webhookSubscription: WebhookSubscriptionInput,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
+    ):
+        """Initialize a webhook subscription create mutation."""
+        self.topic: WebhookSubscriptionTopic = topic
+        self.webhookSubscription: WebhookSubscriptionInput = webhookSubscription
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
+
+
+class webhookSubscriptionUpdate(VersionedMutation):
+    """Update an API-managed shop-scoped webhook subscription."""
+
+    return_type: Type[BaseModel] = WebhookSubscriptionUpdatePayload
+
+    def __init__(
+        self,
+        id: ID,
+        webhookSubscription: WebhookSubscriptionInput,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
+    ):
+        """Initialize a webhook subscription update mutation."""
+        self.id: ID = id
+        self.webhookSubscription: WebhookSubscriptionInput = webhookSubscription
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
+
+
+class webhookSubscriptionDelete(VersionedMutation):
+    """Delete an API-managed shop-scoped webhook subscription."""
+
+    return_type: Type[BaseModel] = WebhookSubscriptionDeletePayload
+
+    def __init__(
+        self,
+        id: ID,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
+    ):
+        """Initialize a webhook subscription delete mutation."""
+        self.id: ID = id
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
 

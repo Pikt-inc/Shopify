@@ -27,6 +27,7 @@ if TYPE_CHECKING:
         ProductEdge,
         OrderTransactionEdge,
         MediaEdge,
+        WebhookSubscriptionEdge,
     )
     from .objects import (
         Collection,
@@ -52,12 +53,19 @@ if TYPE_CHECKING:
         Product,
         OrderTransaction,
         Media,
+        WebhookSubscription,
     )
 
 
 class OrderConnection(connection):
     edges: list[OrderEdge]
     nodes: list[Order]
+    pageInfo: PageInfo
+
+
+class WebhookSubscriptionConnection(connection):
+    edges: list[WebhookSubscriptionEdge]
+    nodes: list[WebhookSubscription]
     pageInfo: PageInfo
 
 

@@ -29,11 +29,16 @@ if TYPE_CHECKING:
         DeliveryLocationGroupZone,
         OrderTransaction,
         Media,
+        WebhookSubscription,
     )
 
 
 class OrderEdge(edge):
     node: Order
+
+
+class WebhookSubscriptionEdge(edge):
+    node: WebhookSubscription
 
 
 class LineItemEdge(edge):

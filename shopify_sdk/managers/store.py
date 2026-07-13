@@ -8,6 +8,7 @@ from .products import ProductManager
 from .orders import OrderManager
 from .delivery import DeliveryManager
 from .map import MapManager
+from .webhooks import WebhookManager
 
 if TYPE_CHECKING:
     from shopify_sdk.gql.core.types.connections import (
@@ -22,6 +23,7 @@ class StoreManager(BaseModel):
     orders: OrderManager = Field(default_factory=OrderManager)
     delivery: DeliveryManager = Field(default_factory=DeliveryManager)
     map: "MapManager" = Field(default_factory=lambda: MapManager())
+    webhooks: WebhookManager = Field(default_factory=WebhookManager)
     model_config = {
         "arbitrary_types_allowed": True,
     }

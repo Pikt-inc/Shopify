@@ -41,6 +41,18 @@ class ProductIdentifierInput(input_object):
     id: Optional[ID]
 
 
+class WebhookSubscriptionInput(input_object):
+    filter: Optional[String] = Field(default=None)
+    includeFields: Optional[List[String]] = Field(default=None)
+    metafieldNamespaces: Optional[List[String]] = Field(default=None)
+    name: Optional[String] = Field(default=None)
+    uri: Optional[URL] = Field(default=None)
+
+    def to_graphql(self) -> dict:
+        """Serialize only explicitly supplied fields for safe partial updates."""
+        return self.model_dump(exclude_unset=True)
+
+
 class FileUpdateInput(input_object):
     alt: Optional[String] = Field(default=None)
     filename: Optional[String] = Field(default=None)

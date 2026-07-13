@@ -32,6 +32,7 @@ from .objects import (
     BulkOperation,
     Job,
     ProductSetOperation,
+    WebhookSubscription,
 )
 from .connections import (
     OrderConnection,
@@ -40,6 +41,7 @@ from .connections import (
     ProductVariantConnection,
     PublicationConnection,
     ResourcePublicationConnection,
+    WebhookSubscriptionConnection,
 )
 from .edges import (
     OrderEdge,
@@ -48,6 +50,7 @@ from .edges import (
     ProductVariantEdge,
     PublicationEdge,
     ResourcePublicationEdge,
+    WebhookSubscriptionEdge,
 )
 from .input_objects import (
     OrderIdentifierInput,
@@ -95,6 +98,7 @@ from .input_objects import (
     ProductIdentifierInput,
     MetafieldInput,
     StagedUploadInput,
+    WebhookSubscriptionInput,
 )
 from .enums import (
     OrderReturnStatus,
@@ -110,6 +114,7 @@ from .enums import (
     ProductSetUserErrorCode,
     CombinedListingsRole,
     CountryCode,
+    WebhookSubscriptionTopic,
 )
 from shopify_sdk.gql.core.types.registry import type_registry
 
@@ -140,6 +145,7 @@ __all__ = [
     "ProductVariant",
     "Publication",
     "ResourcePublication",
+    "WebhookSubscription",
     "OrderIdentifierInput",
     "OrderCloseInput",
     "OrderOpenInput",
@@ -157,18 +163,21 @@ __all__ = [
     "ProductSetUserErrorCode",
     "CombinedListingsRole",
     "CountryCode",
+    "WebhookSubscriptionTopic",
     "LineItemConnection",
     "OrderConnection",
     "FulfillmentOrderConnection",
     "ProductVariantConnection",
     "PublicationConnection",
     "ResourcePublicationConnection",
+    "WebhookSubscriptionConnection",
     "LineItemEdge",
     "OrderEdge",
     "FulfillmentOrderEdge",
     "ProductVariantEdge",
     "PublicationEdge",
     "ResourcePublicationEdge",
+    "WebhookSubscriptionEdge",
     "type_registry",
     "TYPES_NAMESPACE",
     "FulfillmentV2Input",
@@ -215,6 +224,7 @@ __all__ = [
     "Metafield",
     "MetafieldConnection",
     "StagedUploadInput",
+    "WebhookSubscriptionInput",
     "BulkOperation",
     "Job",
     "ProductVariantSetInput",

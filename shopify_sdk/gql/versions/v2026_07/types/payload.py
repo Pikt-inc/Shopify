@@ -10,6 +10,21 @@ class ProductCreatePayload(AutoRegisterModel):
     userErrors: List[UserError]
 
 
+class WebhookSubscriptionCreatePayload(AutoRegisterModel):
+    userErrors: List[UserError]
+    webhookSubscription: Optional[WebhookSubscription] = Field(default=None)
+
+
+class WebhookSubscriptionUpdatePayload(AutoRegisterModel):
+    userErrors: List[UserError]
+    webhookSubscription: Optional[WebhookSubscription] = Field(default=None)
+
+
+class WebhookSubscriptionDeletePayload(AutoRegisterModel):
+    deletedWebhookSubscriptionId: Optional[ID] = Field(default=None)
+    userErrors: List[UserError]
+
+
 class StagedUploadsCreatePayload(AutoRegisterModel):
     stagedTargets: List[StagedMediaUploadTarget]
     userErrors: List[UserError]

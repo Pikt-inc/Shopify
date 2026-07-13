@@ -6,6 +6,8 @@ def test_public_top_level_imports_remain_available() -> None:
     from shopify_sdk.common import ProxyProduct, create_product
     from shopify_sdk.common.resolver import ProductIdSkuResolver
     from shopify_sdk.managers.map import MapManager
+    from shopify_sdk.webhooks import WebhookDeliveryParser
+    from shopify_sdk.webhooks import WebhookSubscriptionCreateRequest
 
     assert shopify_sdk.store is store
     assert callable(client_context)
@@ -15,6 +17,9 @@ def test_public_top_level_imports_remain_available() -> None:
     assert ProductIdSkuResolver.__name__ == "ProductIdSkuResolver"
     assert MapManager.__name__ == "MapManager"
     assert hasattr(shopify_sdk.gql, "products")
+    assert WebhookDeliveryParser.__name__ == "WebhookDeliveryParser"
+    assert WebhookSubscriptionCreateRequest.__name__ == "WebhookSubscriptionCreateRequest"
+    assert hasattr(store, "webhooks")
 
 
 def test_public_common_resolver_module_imports() -> None:

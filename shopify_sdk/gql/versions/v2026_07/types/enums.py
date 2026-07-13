@@ -104,6 +104,15 @@ class ProductStatus(enum):
     DRAFT = "DRAFT"
 
 
+class WebhookSubscriptionTopic(str):
+    """GraphQL webhook topic wrapper for the 2026-07 schema.
+
+    Shopify adds topics over time. This string wrapper keeps subscription
+    management forward-compatible while operation annotations still declare
+    ``WebhookSubscriptionTopic`` rather than ``String``.
+    """
+
+
 class CombinedListingsRole(enum):
     NONE = "NONE"
     PRIMARY = "PRIMARY"

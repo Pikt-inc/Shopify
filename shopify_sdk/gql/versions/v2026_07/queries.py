@@ -128,6 +128,42 @@ class products(VersionedQuery):
         return result
 
 
+class webhookSubscriptions(VersionedQuery):
+    """Retrieve API-created shop-scoped webhook subscriptions."""
+
+    return_type: Type[BaseModel] = WebhookSubscriptionConnection
+
+    def __init__(
+        self,
+        first: Int = 100,
+        topics: Optional[list[WebhookSubscriptionTopic]] = None,
+        uri: Optional[URL] = None,
+        query: Optional[String] = None,
+        reverse: Boolean = False,
+        after: Optional[String] = None,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
+        connection_arguments: Optional[Dict[str, Dict[str, Any]]] = None,
+    ):
+        """Initialize a paginated webhook subscription query."""
+        self.first: Int = first
+        self.topics: Optional[list[WebhookSubscriptionTopic]] = topics
+        self.uri: Optional[URL] = uri
+        self.query: Optional[String] = query
+        self.reverse: Boolean = reverse
+        self.after: Optional[String] = after
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
+        self._connection_arguments = connection_arguments or dict(
+            self.__class__._connection_arguments
+        )
+
+    def execute(self, client: ShopifyClient) -> WebhookSubscriptionConnection:
+        """Execute the subscription query against the Shopify Admin API."""
+        result: WebhookSubscriptionConnection = super().execute(client=client)
+        return result
+
+
 class publications(VersionedQuery):
     return_type: Type[BaseModel] = PublicationConnection
 
