@@ -1,11 +1,19 @@
 import os
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, Iterator, Optional, cast
+from typing import Any, Iterator, cast
 
 from dotenv import load_dotenv
 
 from .wrapper import ShopifyClientWrapper as ShopifyClient
+from .errors import ShopifyGraphQLError
+from .errors import ShopifyHttpError
+from .errors import ShopifyResponseDecodeError
+from .errors import ShopifyResponseValidationError
+from .errors import ShopifyTransportError
+from .transport import RequestsTransport
+from .transport import ShopifyHttpResponse
+from .transport import ShopifyTransport
 from .types import (
     GQLRequestParams,
     GQLResponse,
@@ -43,7 +51,9 @@ class _ClientProxy:
     __slots__ = ()
 
     def request(
-        self, query: str, variables: Optional[Dict[Any, Any]] = None
+        self,
+        query: str,
+        variables: dict[str, object] | None = None,
     ) -> GQLResponse:
         return _get_current_client().request(query=query, variables=variables)
 
@@ -65,6 +75,8 @@ def client_context(
     shop_domain: str,
     access_token: str,
     api_version: str,
+    *,
+    transport: ShopifyTransport | None = None,
 ) -> Iterator[ShopifyClient]:
     """
     Temporarily set the active Shopify client for the current context.
@@ -72,11 +84,17 @@ def client_context(
     Within the context, the module-level ``client`` proxy uses the provided
     credentials and API version. When the context exits, the previous client
     is restored.
+
+    :param shop_domain: Shopify shop domain.
+    :param access_token: Shopify Admin API access token.
+    :param api_version: Shopify Admin GraphQL API version.
+    :param transport: Optional HTTP transport for the active client.
     """
     wrapper = ShopifyClient(
         shop_domain=shop_domain,
         access_token=access_token,
         api_version=api_version,
+        transport=transport,
     )
     token = _current_client.set(wrapper)
     try:
@@ -94,7 +112,15 @@ __all__ = [
     "GQLCost",
     "GQLThrottleStatus",
     "GQLExtensions",
+    "RequestsTransport",
+    "ShopifyGraphQLError",
+    "ShopifyHttpError",
+    "ShopifyHttpResponse",
     "client",
     "client_context",
     "current_api_version",
+    "ShopifyResponseDecodeError",
+    "ShopifyResponseValidationError",
+    "ShopifyTransport",
+    "ShopifyTransportError",
 ]

@@ -1,110 +1,205 @@
-import json
+from __future__ import annotations
+
 import time
-from typing import Optional, Dict, Any
+from collections.abc import Mapping
+from typing import cast
 
-import requests
-from requests import Response
+from pydantic import ValidationError
 from requests.exceptions import RequestException
-from .singleton import SingletonBase
-from .types import (
-    GQLRequestParams,
-    GQLResponse,
-)
+
+from shopify_sdk.gql.core.client.errors import ShopifyGraphQLError
+from shopify_sdk.gql.core.client.errors import ShopifyHttpError
+from shopify_sdk.gql.core.client.errors import ShopifyResponseDecodeError
+from shopify_sdk.gql.core.client.errors import ShopifyResponseMetadata
+from shopify_sdk.gql.core.client.errors import ShopifyResponseValidationError
+from shopify_sdk.gql.core.client.errors import ShopifyTransportError
+from shopify_sdk.gql.core.client.transport import RequestsTransport
+from shopify_sdk.gql.core.client.transport import ShopifyHttpResponse
+from shopify_sdk.gql.core.client.transport import ShopifyTransport
+from shopify_sdk.gql.core.client.types import GQLRequestParams
+from shopify_sdk.gql.core.client.types import GQLResponse
 
 
-class RootClient(SingletonBase):
-    def __init__(self, shop_domain: str, access_token: str, api_version: str):
+class RootClient:
+    """Low-level Shopify Admin GraphQL client with an injectable HTTP transport."""
+
+    REQUEST_TIMEOUT = (10.0, 30.0)
+
+    def __init__(
+        self,
+        shop_domain: str,
+        access_token: str,
+        api_version: str,
+        transport: ShopifyTransport | None = None,
+    ) -> None:
+        """Initialize a Shopify client for one shop and Admin API version.
+
+        :param shop_domain: Shopify shop domain.
+        :param access_token: Shopify Admin API access token.
+        :param api_version: Shopify Admin GraphQL API version.
+        :param transport: Optional HTTP transport used for GraphQL requests.
+        """
         self._shop_domain = shop_domain
         self._access_token = access_token
         self._api_version = api_version
+        self._transport = transport or RequestsTransport()
         self._last_request_time = 0.0
 
-    @staticmethod
-    def _response_snippet(response: Response, limit: int = 500) -> str:
-        try:
-            text = response.text or ""
-        except Exception:
-            return "<unavailable>"
-        return text[:limit]
-
     def check_limit(self) -> None:
-        """
-        Ensures that the request rate limit of 2 requests per second is not exceeded.
-        If the limit is about to be exceeded, it waits for the required time.
-        """
+        """Apply the existing fixed two-requests-per-second pacing guard."""
         current_time = time.time()
         time_since_last_request = current_time - self._last_request_time
-        if time_since_last_request < 0.5:  # 0.5 seconds = 2 requests per second
+        if time_since_last_request < 0.5:
             time.sleep(0.5 - time_since_last_request)
 
     def request(
-        self, query: str, variables: Optional[Dict[Any, Any]] = None
+        self,
+        query: str,
+        variables: dict[str, object] | None = None,
     ) -> GQLResponse:
-        self.check_limit()  # Ensure rate limit is respected
-        _params = GQLRequestParams(query=query, variables=variables)
+        """Execute one Shopify Admin GraphQL request through the configured transport.
 
-        headers = {
-            "Content-Type": "application/json",
-            "X-Shopify-Access-Token": f"{self._access_token}",
-        }
-
-        payload: Dict[str, Any] = {"query": query}
-        if variables:
-            if not isinstance(variables, dict):
-                raise TypeError("variables must be a dictionary.")
-            payload["variables"] = variables
-        else:
-            payload["variables"] = {}
-
-        try:
-            response = requests.post(
-                self.graphql_request_url,
-                headers=headers,
-                json=payload,
-                timeout=(10, 30),
-            )
-        except RequestException as e:
-            raise ValueError(f"Shopify request failed: {e}") from e
-
+        :param query: GraphQL query or mutation document.
+        :param variables: GraphQL variable mapping.
+        :returns: Validated Shopify GraphQL response.
+        :raises ShopifyTransportError: If request transport or response handling fails.
+        """
+        self.check_limit()
+        parameters = GQLRequestParams(query=query, variables=variables)
+        response = self._post(parameters)
         self._last_request_time = time.time()
+        self._raise_for_http_error(response)
+        response_json = self._decode_response(response)
+        self._raise_for_graphql_errors(response_json, response)
+        return self._validate_response(response_json, response)
 
-        response_json: Dict[str, Any] | None = None
+    def _post(self, parameters: GQLRequestParams) -> ShopifyHttpResponse:
+        """Send one GraphQL request and normalize network failures.
+
+        :param parameters: GraphQL document and variable mapping.
+        :returns: HTTP response from the configured transport.
+        :raises ShopifyTransportError: If the request cannot be sent.
+        """
+        try:
+            return cast(
+                ShopifyHttpResponse,
+                self._transport.post(
+                    self.graphql_request_url,
+                    headers=self._headers,
+                    json={
+                        "query": parameters.query,
+                        "variables": parameters.variables or {},
+                    },
+                    timeout=self.REQUEST_TIMEOUT,
+                ),
+            )
+        except RequestException as exc:
+            raise ShopifyTransportError("Shopify transport request failed.") from exc
+
+    def _raise_for_http_error(self, response: ShopifyHttpResponse) -> None:
+        """Raise a safe structured error for a non-2xx HTTP response."""
+        if 200 <= response.status_code < 300:
+            return
+        raise ShopifyHttpError(
+            f"Shopify HTTP request failed with status {response.status_code}.",
+            metadata=self._response_metadata(response),
+        )
+
+    def _decode_response(
+        self,
+        response: ShopifyHttpResponse,
+    ) -> Mapping[str, object]:
+        """Decode a successful response as JSON without exposing its raw body."""
         try:
             response_json = response.json()
-        except json.JSONDecodeError as e:
-            status = response.status_code
-            content_type = response.headers.get("Content-Type", "<missing>")
-            snippet = self._response_snippet(response)
-            raise ValueError(
-                "Shopify response was not valid JSON. "
-                f"status={status}, content_type={content_type}, body_snippet={snippet!r}"
-            ) from e
+        except ValueError as exc:
+            raise ShopifyResponseDecodeError(
+                "Shopify response was not valid JSON.",
+                metadata=self._response_metadata(response),
+            ) from exc
+        if not isinstance(response_json, Mapping):
+            raise ShopifyResponseValidationError(
+                "Shopify response root must be a JSON object.",
+                metadata=self._response_metadata(response),
+            )
+        return response_json
 
-        if response.status_code >= 400:
-            raise ValueError(
-                "Shopify request failed. "
-                f"status={response.status_code}, body={response_json}"
+    def _raise_for_graphql_errors(
+        self,
+        response_json: Mapping[str, object],
+        response: ShopifyHttpResponse,
+    ) -> None:
+        """Raise structured errors for top-level Shopify GraphQL failures."""
+        errors = response_json.get("errors")
+        if errors is not None:
+            graphql_errors = errors if isinstance(errors, list) else [errors]
+            raise ShopifyGraphQLError(
+                graphql_errors,
+                metadata=self._response_metadata(response),
             )
 
-        if "errors" in response_json:
-            raise ValueError(f"GraphQL errors occurred: {response_json.get('errors')}")
+    def _validate_response(
+        self,
+        response_json: Mapping[str, object],
+        response: ShopifyHttpResponse,
+    ) -> GQLResponse:
+        """Validate a decoded Shopify GraphQL response against SDK response models."""
+        try:
+            return GQLResponse.model_validate(response_json)
+        except ValidationError as exc:
+            raise ShopifyResponseValidationError(
+                "Shopify response did not match the SDK response schema.",
+                metadata=self._response_metadata(response),
+            ) from exc
 
-        _response = GQLResponse(**response_json)
-        return _response
+    def _response_metadata(
+        self,
+        response: ShopifyHttpResponse,
+    ) -> ShopifyResponseMetadata:
+        """Return safe, case-insensitive response metadata for errors."""
+        return ShopifyResponseMetadata(
+            status_code=response.status_code,
+            request_id=self._header(response.headers, "X-Request-ID"),
+            retry_after=self._header(response.headers, "Retry-After"),
+            content_type=self._header(response.headers, "Content-Type"),
+        )
 
-    def _handle_errors(self, response: GQLResponse) -> None:
-        if hasattr(response, "errors") and response.errors:
-            error_messages = [error.message for error in response.errors]
-            raise ValueError(f"GraphQL Errors: {error_messages}")
+    def _header(self, headers: Mapping[str, str], name: str) -> str | None:
+        """Return a case-insensitive HTTP header value.
+
+        :param headers: HTTP response headers.
+        :param name: Header name to resolve.
+        :returns: Header value when present.
+        """
+        normalized_name = name.casefold()
+        return next(
+            (
+                value
+                for header_name, value in headers.items()
+                if header_name.casefold() == normalized_name
+            ),
+            None,
+        )
+
+    @property
+    def _headers(self) -> dict[str, str]:
+        """Return Admin GraphQL request headers without exposing mutable state."""
+        return {
+            "Content-Type": "application/json",
+            "X-Shopify-Access-Token": self._access_token,
+        }
 
     @property
     def access_token(self) -> str:
+        """Return the configured Shopify Admin API access token."""
         return self._access_token
 
     @property
     def graphql_request_url(self) -> str:
+        """Return the Shopify Admin GraphQL endpoint for this client."""
         return f"https://{self._shop_domain}/admin/api/{self._api_version}/graphql.json"
 
     @property
     def gql_version(self) -> str:
+        """Return the Shopify Admin GraphQL API version for this client."""
         return self._api_version

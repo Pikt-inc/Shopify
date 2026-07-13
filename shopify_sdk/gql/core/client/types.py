@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 class GQLRequestParams(BaseModel):
     query: str
-    variables: dict | None
+    variables: dict[str, object] | None
 
 
 class GQLThrottleStatus(BaseModel):
@@ -13,15 +13,18 @@ class GQLThrottleStatus(BaseModel):
 
 
 class GQLCost(BaseModel):
-    requested_query_cost: int = Field(..., alias="requestedQueryCost")
-    actual_query_cost: int = Field(..., alias="actualQueryCost")
-    throttle_status: GQLThrottleStatus = Field(..., alias="throttleStatus")
+    requested_query_cost: int | None = Field(default=None, alias="requestedQueryCost")
+    actual_query_cost: int | None = Field(default=None, alias="actualQueryCost")
+    throttle_status: GQLThrottleStatus | None = Field(
+        default=None,
+        alias="throttleStatus",
+    )
 
 
 class GQLExtensions(BaseModel):
-    cost: GQLCost
+    cost: GQLCost | None = Field(default=None)
 
 
 class GQLResponse(BaseModel):
-    data: dict | None
-    extensions: GQLExtensions | None
+    data: dict[str, object] | None = Field(default=None)
+    extensions: GQLExtensions | None = Field(default=None)

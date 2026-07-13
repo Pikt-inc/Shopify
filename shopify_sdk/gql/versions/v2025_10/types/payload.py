@@ -36,6 +36,12 @@ class ProductUpdatePayload(AutoRegisterModel):
     userErrors: List[UserError]
 
 
+class ProductUnpublishPayload(AutoRegisterModel):
+    product: Optional[Product] = Field(default=None)
+    shop: Optional[Shop] = Field(default=None)
+    userErrors: List[UserError]
+
+
 class ProductCreateMediaPayload(AutoRegisterModel):
     media: List[Media]
     mediaUserErrors: List[UserError]
@@ -61,7 +67,17 @@ class FulfillmentCreatePayload(AutoRegisterModel):
     userErrors: List[UserError]
 
 
+class FulfillmentCreateV2Payload(AutoRegisterModel):
+    fulfillment: Optional[Fulfillment] = Field(default=None)
+    userErrors: List[UserError]
+
+
 class OrderCreatePayload(AutoRegisterModel):
+    order: Optional[Order] = Field(default=None)
+    userErrors: List[UserError]
+
+
+class OrderUpdatePayload(AutoRegisterModel):
     order: Optional[Order] = Field(default=None)
     userErrors: List[UserError]
 
@@ -121,3 +137,15 @@ class ProductVariantsBulkUpdatePayload(AutoRegisterModel):
     product: Optional[Product] = Field(default=None)
     productVariants: Optional[List[ProductVariant]] = Field(default=None)
     userErrors: List[ProductVariantsBulkUpdateUserError]
+
+
+class ProductVariantsBulkCreateUserError(AutoRegisterModel):
+    code: Optional[String] = Field(default=None)
+    field: Optional[List[String]] = Field(default=None)
+    message: String
+
+
+class ProductVariantsBulkCreatePayload(AutoRegisterModel):
+    product: Optional[Product] = Field(default=None)
+    productVariants: Optional[List[ProductVariant]] = Field(default=None)
+    userErrors: List[ProductVariantsBulkCreateUserError]

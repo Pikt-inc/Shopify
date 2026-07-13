@@ -24,6 +24,8 @@ class VersionedMutation(Mutation):
 
 
 class productUnpublish(VersionedMutation):
+    return_type: Type[BaseModel] = ProductUnpublishPayload
+
     def __init__(
         self,
         input: ProductUnpublishInput,
@@ -225,6 +227,8 @@ class productVariantsBulkUpdate(VersionedMutation):
 
 
 class productVariantsBulkCreate(VersionedMutation):
+    return_type: Type[BaseModel] = ProductVariantsBulkCreatePayload
+
     def __init__(
         self,
         productId: ID,
@@ -239,6 +243,8 @@ class productVariantsBulkCreate(VersionedMutation):
 
 
 class orderUpdate(VersionedMutation):
+    return_type: Type[BaseModel] = OrderUpdatePayload
+
     def __init__(
         self,
         input: OrderInput,
@@ -345,6 +351,8 @@ class fulfillmentCreate(VersionedMutation):
 
 
 class fulfillmentCreateV2(VersionedMutation):
+    return_type: Type[BaseModel] = FulfillmentCreateV2Payload
+
     def __init__(
         self,
         fulfillment: FulfillmentV2Input,

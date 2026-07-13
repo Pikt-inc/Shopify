@@ -2,6 +2,12 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.2
+
+- Added injectable Shopify HTTP transport and structured transport errors.
+- Added deterministic offline transport tests and CI unit-test verification.
+- Added typed payloads for existing product, order, and fulfillment mutations.
+
 ## 0.3.1
 
 - Declared runtime dependencies in package metadata.
