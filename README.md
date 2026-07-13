@@ -98,6 +98,23 @@ payload = ProductSetInput(
 responses = store.products.bulk.set([payload])
 ```
 
+Resume a bulk query result stream after persisting a checkpoint:
+
+```python
+from shopify_sdk.gql.core.bulk import bulk_query_handle
+from shopify_sdk.gql.queries import products
+
+handle = bulk_query_handle(products(first=50))
+for event in handle.iter_results():
+    process(event.payload.data)
+    save_checkpoint(event.checkpoint.model_dump())
+```
+
+Use a persisted `BulkOperationCheckpoint` with `handle.iter_results(checkpoint)` to
+reattach without resubmitting the Shopify bulk operation. A non-completed operation
+raises `BulkOperationTerminalError`, whose `state` preserves `error_code` and
+`partial_data_url` when Shopify provides them.
+
 Query recent paid orders:
 
 ```python

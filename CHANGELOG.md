@@ -2,6 +2,12 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.4
+
+- Added typed bulk-operation terminal metadata and resumable JSONL result checkpoints.
+- Preserved bulk result `__lineNumber` and `__parentId` provenance in typed payloads.
+- Added terminal failure details for Shopify error codes and partial-result URLs.
+
 ## 0.3.3
 
 - Added safe cursor pagination for top-level locations and publications.

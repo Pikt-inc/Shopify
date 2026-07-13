@@ -18,6 +18,8 @@ POLL_INTERVAL_S = 5  # seconds
 if TYPE_CHECKING:
     from shopify_sdk.gql.core.types.payload import BulkOperationResultPayload
 
+    from .poll import BulkOperationHandle
+
 
 class BulkQueryRunner:
     def __init__(
@@ -49,13 +51,19 @@ class BulkQueryRunner:
 
         return payload.bulkOperation.id
 
+    @property
+    def handle(self) -> "BulkOperationHandle":
+        """Return a resumable handle for the submitted bulk query operation."""
+        from .poll import BulkOperationHandle
+
+        return BulkOperationHandle(
+            operation_id=self.operation_id,
+            client=self._client,
+        )
+
     def run(
         self,
     ) -> Iterator["BulkOperationResultPayload"]:
-        from .poll import BulkActionResultManager
-
-        for result in BulkActionResultManager.yield_results(
-            bulk_operation_id=self.operation_id,
-            client=self._client,
-        ):
-            yield result
+        """Yield legacy payloads while delegating recovery state to the bulk handle."""
+        for result in self.handle.iter_results():
+            yield result.payload
