@@ -2,6 +2,12 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.1
+
+- Declared runtime dependencies in package metadata.
+- Added a clean-install package verification script and GitHub Actions workflow.
+- Added development extras for test, lint, type-check, and static-analysis tools.
+
 ## 0.1.88
 
 - Added typed inventory adjustment payload support.

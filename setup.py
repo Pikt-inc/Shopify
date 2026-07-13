@@ -8,7 +8,7 @@ with open("README.md", encoding="utf-8") as readme_file:
 
 setup(
     name="shopify_sdk",
-    version="0.3.0",
+    version="0.3.1",
     author="Patten Whiting",
     author_email="patten.whiting@gmail.com",
     description="Typed Python SDK for the Shopify Admin GraphQL API",
@@ -21,6 +21,21 @@ setup(
         "Issues": "https://github.com/Pikt-inc/Shopify/issues",
     },
     packages=find_packages(),
+    install_requires=[
+        "pydantic>=2.6.0,<3.0.0",
+        "python-dotenv>=1.0.0,<2.0.0",
+        "requests>=2.31.0,<3.0.0",
+    ],
+    extras_require={
+        "dev": [
+            "mypy>=1.11.0",
+            "pytest>=8.0.0",
+            "ruff>=0.0.289",
+            "types-requests>=2.32.0.20240622",
+            "types-urllib3>=1.26.25.14",
+            "vulture",
+        ],
+    },
     license="MIT",
     keywords=[
         "shopify",

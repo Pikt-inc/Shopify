@@ -1,6 +1,6 @@
 # Shopify SDK
 
-[![PR checks](https://github.com/Pikt-inc/Shopify/actions/workflows/pr.yml/badge.svg)](https://github.com/Pikt-inc/Shopify/actions/workflows/pr.yml)
+[![Package verification](https://github.com/Pikt-inc/Shopify/actions/workflows/package.yml/badge.svg)](https://github.com/Pikt-inc/Shopify/actions/workflows/package.yml)
 
 Typed Python SDK for the Shopify Admin GraphQL API.
 
@@ -43,8 +43,7 @@ git clone https://github.com/Pikt-inc/Shopify.git
 cd Shopify
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-pip install -e .
+pip install -e ".[dev]"
 ```
 
 ## Quick start
