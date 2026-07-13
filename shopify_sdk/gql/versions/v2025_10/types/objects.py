@@ -405,10 +405,10 @@ class FulfillmentService(AutoRegisterModel):
 
 
 class PageInfo(AutoRegisterModel):
-    endCursor: String
+    endCursor: Optional[String] = Field(default=None)
     hasNextPage: Boolean
     hasPreviousPage: Boolean
-    startCursor: String
+    startCursor: Optional[String] = Field(default=None)
 
 
 class MailingAddress(AutoRegisterModel):

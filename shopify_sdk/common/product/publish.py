@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Sequence
+from typing import Sequence, cast
 
 from shopify_sdk import client
 from shopify_sdk.gql import productPublish, publications as publications_query
+from shopify_sdk.gql.core.pagination import (
+    CursorPager,
+    connection_page_info,
+    is_empty_connection,
+)
 from shopify_sdk.gql.core.types import (
+    PublicationConnection,
     ProductPublicationInput,
     ProductPublishInput,
     Publication,
@@ -15,15 +21,32 @@ from .types import ProductActionResponse
 
 
 def list_publications(page_size: int = 20) -> list[Publication]:
-    """
-    Return all available sales channel publications (id and name).
-    Pagination is handled internally using the provided page_size.
-    """
-    publications: list[Publication] = []
-    after: str | None = None
+    """Return all available sales channel publications with valid identifiers."""
+    def fetch_page(after: str | None) -> PublicationConnection:
+        """Fetch one page using the requested publication page size."""
+        return _fetch_publications_page(page_size, after)
 
-    while True:
-        connection = publications_query(
+    pages: list[PublicationConnection] = CursorPager(
+        fetch_page=fetch_page,
+        get_page_info=connection_page_info,
+        is_empty_page=is_empty_connection,
+    ).collect()
+    return [
+        publication
+        for page in pages
+        for publication in page.nodes
+        if publication.id
+    ]
+
+
+def _fetch_publications_page(
+    page_size: int,
+    after: str | None,
+) -> PublicationConnection:
+    """Fetch one publication page after an optional cursor."""
+    return cast(
+        PublicationConnection,
+        publications_query(
             first=page_size,
             after=after,
             field_inclusions={
@@ -33,28 +56,8 @@ def list_publications(page_size: int = 20) -> list[Publication]:
             field_exclusions={
                 "PublicationConnection": {"edges"},
             },
-        ).execute(client=client)
-
-        if not connection:
-            break
-
-        publications.extend(
-            [
-                node
-                for node in getattr(connection, "nodes", []) or []
-                if getattr(node, "id", None)
-            ]
-        )
-
-        page_info = getattr(connection, "pageInfo", None)
-        has_next = (
-            bool(getattr(page_info, "hasNextPage", False)) if page_info else False
-        )
-        after = getattr(page_info, "endCursor", None) if has_next else None
-        if not has_next:
-            break
-
-    return publications
+        ).execute(client=client),
+    )
 
 
 def build_product_publications(

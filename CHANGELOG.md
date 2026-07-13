@@ -2,6 +2,12 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.3
+
+- Added safe cursor pagination for top-level locations and publications.
+- Added cursor safety checks for missing, repeated, and empty continuation pages.
+- Corrected nullable terminal cursors in the `2025-10` `PageInfo` contract.
+
 ## 0.3.2
 
 - Added injectable Shopify HTTP transport and structured transport errors.
