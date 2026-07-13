@@ -17,6 +17,7 @@ from shopify_sdk.gql.core.types.payload import BulkOperationResultPayload
 from shopify_sdk.gql.queries import bulkOperation
 
 from .models import (
+    BulkFlatOperationResult,
     BulkOperationCheckpoint,
     BulkOperationResult,
     BulkOperationTerminalError,
@@ -72,6 +73,14 @@ class BulkActionResultManager:
             results_url=terminal_state.result_url,
             checkpoint=active_checkpoint,
         )
+
+    def iter_flat_result_events(
+        self,
+        checkpoint: BulkOperationCheckpoint | None = None,
+    ) -> Iterator[BulkFlatOperationResult]:
+        """Yield flat records that preserve parent provenance and checkpoints."""
+        for result in self.iter_result_events(checkpoint=checkpoint):
+            yield result.as_flat_result()
 
     def _resolve_checkpoint(
         self,
@@ -237,3 +246,10 @@ class BulkOperationHandle:
     ) -> Iterator[BulkOperationResult]:
         """Yield unacknowledged parsed results with a successor checkpoint per result."""
         yield from self._manager.iter_result_events(checkpoint=checkpoint)
+
+    def iter_flat_results(
+        self,
+        checkpoint: BulkOperationCheckpoint | None = None,
+    ) -> Iterator[BulkFlatOperationResult]:
+        """Yield unacknowledged flat records with a successor checkpoint per result."""
+        yield from self._manager.iter_flat_result_events(checkpoint=checkpoint)

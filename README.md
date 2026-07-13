@@ -98,22 +98,23 @@ payload = ProductSetInput(
 responses = store.products.bulk.set([payload])
 ```
 
-Resume a bulk query result stream after persisting a checkpoint:
+Stream flat bulk-query records after persisting a checkpoint:
 
 ```python
 from shopify_sdk.gql.core.bulk import bulk_query_handle
 from shopify_sdk.gql.queries import products
 
-handle = bulk_query_handle(products(first=50))
-for event in handle.iter_results():
-    process(event.payload.data)
+handle = bulk_query_handle(products(first=50), group_objects=False)
+for event in handle.iter_flat_results():
+    process(event.record.data, parent_id=event.record.parent_id)
     save_checkpoint(event.checkpoint.model_dump())
 ```
 
-Use a persisted `BulkOperationCheckpoint` with `handle.iter_results(checkpoint)` to
-reattach without resubmitting the Shopify bulk operation. A non-completed operation
+Use a persisted `BulkOperationCheckpoint` with `handle.iter_flat_results(checkpoint)`
+to reattach without resubmitting the Shopify bulk operation. A non-completed operation
 raises `BulkOperationTerminalError`, whose `state` preserves `error_code` and
-`partial_data_url` when Shopify provides them.
+`partial_data_url` when Shopify provides them. `group_objects` defaults to `True`; use
+flat mode only when callers need Shopify's explicit parent-child JSONL relationships.
 
 Query recent paid orders:
 

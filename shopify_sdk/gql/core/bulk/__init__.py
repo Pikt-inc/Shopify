@@ -2,6 +2,8 @@
 
 from .api import bulk_mutation, bulk_query, bulk_query_handle
 from .models import (
+    BulkFlatOperationResult,
+    BulkFlatRecord,
     BulkOperationCheckpoint,
     BulkOperationResult,
     BulkOperationTerminalError,
@@ -13,6 +15,8 @@ __all__ = [
     "bulk_mutation",
     "bulk_query",
     "bulk_query_handle",
+    "BulkFlatOperationResult",
+    "BulkFlatRecord",
     "BulkOperationCheckpoint",
     "BulkOperationHandle",
     "BulkOperationResult",

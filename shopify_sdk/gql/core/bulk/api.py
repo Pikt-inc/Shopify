@@ -31,10 +31,17 @@ def bulk_query(query: Query) -> Iterator["BulkOperationResultPayload"]:
     yield from BulkQueryRunner(query=query).run()
 
 
-def bulk_query_handle(query: Query) -> "BulkOperationHandle":
+def bulk_query_handle(
+    query: Query,
+    *,
+    group_objects: bool = True,
+) -> "BulkOperationHandle":
     """Submit a bulk query and return a checkpoint-capable operation handle."""
     from .query import BulkQueryRunner
 
     if not isinstance(query, Query):
         raise TypeError("query must be a Query instance.")
-    return BulkQueryRunner(query=query).handle
+    return BulkQueryRunner(
+        query=query,
+        group_objects=group_objects,
+    ).handle

@@ -115,9 +115,86 @@ class BulkOperationTerminalError(ValueError):
         return "Bulk operation did not complete successfully. " + ", ".join(details)
 
 
+class BulkFlatRecord(BaseModel):
+    """A flat Shopify JSONL record with typed provenance fields."""
+
+    data: dict[str, object]
+    line_number: int
+    parent_id: str | None = None
+    errors: list[dict[str, object]] | None = None
+    model_config = ConfigDict(frozen=True)
+
+    @classmethod
+    def from_payload(
+        cls,
+        payload: "BulkOperationResultPayload",
+    ) -> "BulkFlatRecord":
+        """Map a parsed payload while removing Shopify metadata from business data."""
+        if payload.data is None:
+            raise ValueError("Bulk flat record payload is missing data.")
+        if not isinstance(payload.data, dict):
+            raise TypeError(
+                "Bulk flat record payload data must be a dictionary, "
+                f"got {type(payload.data).__name__}."
+            )
+        if payload.lineNumber is None:
+            raise ValueError("Bulk flat record payload is missing a line number.")
+        return cls(
+            data=cls._business_data(payload.data),
+            line_number=payload.lineNumber,
+            parent_id=payload.parentId,
+            errors=cls._errors(payload.errors),
+        )
+
+    @staticmethod
+    def _business_data(data: dict[object, object]) -> dict[str, object]:
+        """Remove Shopify JSONL metadata while retaining all business result fields."""
+        metadata_keys = {"__lineNumber", "__parentId", "errors"}
+        return {
+            key: value
+            for key, value in data.items()
+            if isinstance(key, str) and key not in metadata_keys
+        }
+
+    @staticmethod
+    def _errors(errors: object) -> list[dict[str, object]] | None:
+        """Return typed raw error dictionaries from Shopify's dynamic error payload."""
+        if errors is None:
+            return None
+        if not isinstance(errors, list):
+            raise TypeError("Bulk flat record errors must be a list when provided.")
+        typed_errors: list[dict[str, object]] = []
+        for error in errors:
+            if not isinstance(error, dict):
+                raise TypeError("Bulk flat record errors must contain dictionaries.")
+            typed_errors.append(
+                {
+                    key: value
+                    for key, value in error.items()
+                    if isinstance(key, str)
+                }
+            )
+        return typed_errors
+
+
 @dataclass(frozen=True)
 class BulkOperationResult:
     """A parsed bulk result payload with its next resumable checkpoint."""
 
     payload: "BulkOperationResultPayload"
+    checkpoint: BulkOperationCheckpoint
+
+    def as_flat_result(self) -> "BulkFlatOperationResult":
+        """Build a flat record event while preserving the successor checkpoint."""
+        return BulkFlatOperationResult(
+            record=BulkFlatRecord.from_payload(self.payload),
+            checkpoint=self.checkpoint,
+        )
+
+
+@dataclass(frozen=True)
+class BulkFlatOperationResult:
+    """A flat bulk record with its next resumable checkpoint."""
+
+    record: BulkFlatRecord
     checkpoint: BulkOperationCheckpoint

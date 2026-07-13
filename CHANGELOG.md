@@ -2,6 +2,11 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.5
+
+- Added opt-in flat bulk-query records for Shopify `groupObjects: false` output.
+- Preserved typed parent provenance and resumable checkpoints for flat JSONL records.
+
 ## 0.3.4
 
 - Added typed bulk-operation terminal metadata and resumable JSONL result checkpoints.
