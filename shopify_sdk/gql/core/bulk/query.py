@@ -1,14 +1,13 @@
 from typing import Iterator, TYPE_CHECKING
 from functools import cached_property
-import logging
 
 from shopify_sdk import client as default_client
 from shopify_sdk.gql.core.client import ShopifyClient
 from shopify_sdk.gql.core.query import Query
 from shopify_sdk.gql.mutations import bulkOperationRunQuery
 from shopify_sdk.gql.core.types.payload import BulkOperationRunQueryPayload
-
-logger = logging.getLogger(__name__)
+from .models import BulkSubmissionErrorMapper
+from .models import BulkSubmissionStage
 
 MAX_JSONL_BYTES = 5 * 1024 * 1024  # 5 MB
 UPLOAD_TIMEOUT_S = 300  # 5 minutes
@@ -46,13 +45,14 @@ class BulkQueryRunner:
             groupObjects=self._group_objects,
         ).execute(client=self._client)
         if payload is None:
-            logger.error("bulkOperationRunQuery returned no payload.")
             raise ValueError("bulkOperationRunQuery returned no payload.")
+        if payload.userErrors:
+            raise BulkSubmissionErrorMapper.from_bulk_operation_errors(
+                stage=BulkSubmissionStage.BULK_QUERY,
+                errors=payload.userErrors,
+            )
 
         if not payload.bulkOperation:
-            logger.error(
-                "bulkOperationRunQuery returned no bulk operation. payload=%s", payload
-            )
             raise ValueError("bulkOperationRunQuery returned no bulk operation.")
 
         return payload.bulkOperation.id

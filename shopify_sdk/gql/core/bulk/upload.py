@@ -13,6 +13,7 @@ from shopify_sdk.gql import stagedUploadsCreate
 from shopify_sdk.gql.core.types.payload import StagedUploadsCreatePayload
 from shopify_sdk.gql.core.types.objects import StagedMediaUploadTarget
 from shopify_sdk.gql.core.types.input_objects import StagedUploadInput
+from .models import BulkSubmissionErrorMapper
 
 
 UPLOAD_TIMEOUT_S = 300  # 5 minutes
@@ -56,6 +57,10 @@ class JSONUploadManager:
         if not staged:
             logger.error(f"stagedUploadsCreate returned no payload: {staged}")
             raise ValueError("stagedUploadsCreate returned no payload.")
+        if staged.userErrors:
+            raise BulkSubmissionErrorMapper.from_staged_upload_errors(
+                errors=staged.userErrors,
+            )
 
         return staged
 

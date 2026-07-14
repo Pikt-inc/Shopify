@@ -5,9 +5,12 @@ from .models import (
     BulkFlatOperationResult,
     BulkFlatRecord,
     BulkOperationCheckpoint,
+    BulkOperationSubmissionError,
     BulkOperationResult,
     BulkOperationTerminalError,
     BulkOperationTerminalState,
+    BulkSubmissionStage,
+    BulkSubmissionUserError,
 )
 from .poll import BulkOperationHandle
 
@@ -18,8 +21,11 @@ __all__ = [
     "BulkFlatOperationResult",
     "BulkFlatRecord",
     "BulkOperationCheckpoint",
+    "BulkOperationSubmissionError",
     "BulkOperationHandle",
     "BulkOperationResult",
     "BulkOperationTerminalError",
     "BulkOperationTerminalState",
+    "BulkSubmissionStage",
+    "BulkSubmissionUserError",
 ]

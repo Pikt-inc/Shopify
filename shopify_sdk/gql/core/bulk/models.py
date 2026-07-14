@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from collections.abc import Sequence
+from enum import StrEnum
 from typing import TYPE_CHECKING, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -113,6 +115,111 @@ class BulkOperationTerminalError(ValueError):
         if state.partial_data_url:
             details.append(f"partialDataUrl: {state.partial_data_url}")
         return "Bulk operation did not complete successfully. " + ", ".join(details)
+
+
+class BulkSubmissionStage(StrEnum):
+    """Identify the Shopify bulk workflow step that rejected a submission."""
+
+    BULK_MUTATION = "bulk_mutation"
+    BULK_QUERY = "bulk_query"
+    STAGED_UPLOAD = "staged_upload"
+
+
+class SupportsSubmissionUserError(Protocol):
+    """Describe common Shopify user-error fields across bulk submission payloads."""
+
+    @property
+    def field(self) -> Sequence[str] | None:
+        """Return the Shopify input field path when available."""
+
+    @property
+    def message(self) -> str:
+        """Return Shopify's safe human-readable user error message."""
+
+
+class SupportsCodedSubmissionUserError(SupportsSubmissionUserError, Protocol):
+    """Describe bulk-operation user errors that also expose a machine-readable code."""
+
+    @property
+    def code(self) -> str | None:
+        """Return Shopify's optional bulk-operation user-error code."""
+
+
+class BulkSubmissionUserError(BaseModel):
+    """Stable typed representation of one Shopify bulk submission user error."""
+
+    code: str | None = None
+    field: tuple[str, ...] | None = None
+    message: str
+    model_config = ConfigDict(frozen=True)
+
+
+class BulkOperationSubmissionError(ValueError):
+    """Raised when Shopify rejects a bulk query, mutation, or staged upload submission."""
+
+    def __init__(
+        self,
+        stage: BulkSubmissionStage,
+        errors: Sequence[BulkSubmissionUserError],
+    ) -> None:
+        """Preserve typed Shopify user errors without retaining an entire response payload."""
+        self.stage = stage
+        self.errors = tuple(errors)
+        super().__init__(self._message(stage, self.errors))
+
+    @staticmethod
+    def _message(
+        stage: BulkSubmissionStage,
+        errors: Sequence[BulkSubmissionUserError],
+    ) -> str:
+        """Format a safe submission failure summary from Shopify user-error messages."""
+        messages = "; ".join(error.message for error in errors)
+        return f"Shopify {stage.value} submission failed: {messages}"
+
+
+class BulkSubmissionErrorMapper:
+    """Map versioned Shopify user-error models into stable bulk submission errors."""
+
+    @classmethod
+    def from_bulk_operation_errors(
+        cls,
+        stage: BulkSubmissionStage,
+        errors: Sequence[SupportsCodedSubmissionUserError],
+    ) -> BulkOperationSubmissionError:
+        """Map coded bulk-operation user errors from query or mutation submission."""
+        return BulkOperationSubmissionError(
+            stage=stage,
+            errors=[
+                BulkSubmissionUserError(
+                    code=error.code,
+                    field=cls._field_path(error.field),
+                    message=error.message,
+                )
+                for error in errors
+            ],
+        )
+
+    @classmethod
+    def from_staged_upload_errors(
+        cls,
+        errors: Sequence[SupportsSubmissionUserError],
+    ) -> BulkOperationSubmissionError:
+        """Map staged-upload user errors, which do not provide Shopify error codes."""
+        return BulkOperationSubmissionError(
+            stage=BulkSubmissionStage.STAGED_UPLOAD,
+            errors=[
+                BulkSubmissionUserError(
+                    field=cls._field_path(error.field),
+                    message=error.message,
+                )
+                for error in errors
+            ],
+        )
+
+    @staticmethod
+    def _field_path(field: Sequence[str] | None) -> tuple[str, ...] | None:
+        """Freeze Shopify's mutable error field path when it is supplied."""
+        return tuple(field) if field is not None else None
 
 
 class BulkFlatRecord(BaseModel):

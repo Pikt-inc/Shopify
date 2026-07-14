@@ -8,6 +8,8 @@ from shopify_sdk.gql.core.types.payload import (
     BulkOperationResultPayload,
 )
 from .chunker import iter_jsonl_chunks, JsonlChunk
+from .models import BulkSubmissionErrorMapper
+from .models import BulkSubmissionStage
 
 MAX_JSONL_BYTES = 5 * 1024 * 1024  # 5 MB
 UPLOAD_TIMEOUT_S = 300  # 5 minutes
@@ -104,6 +106,13 @@ class BulkMutationRunner:
         response: BulkOperationRunMutationPayload = bulkOperationRunMutation(
             mutation=self.inner_mutation, stagedUploadPath=staged_upload_path
         ).execute(client=self._client)
+        if response is None:
+            raise ValueError("bulkOperationRunMutation returned no payload.")
+        if response.userErrors:
+            raise BulkSubmissionErrorMapper.from_bulk_operation_errors(
+                stage=BulkSubmissionStage.BULK_MUTATION,
+                errors=response.userErrors,
+            )
         if not response.bulkOperation:
             raise ValueError("No bulk operation was created.")
 

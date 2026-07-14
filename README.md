@@ -116,6 +116,18 @@ raises `BulkOperationTerminalError`, whose `state` preserves `error_code` and
 `partial_data_url` when Shopify provides them. `group_objects` defaults to `True`; use
 flat mode only when callers need Shopify's explicit parent-child JSONL relationships.
 
+Handle rejected bulk submissions with stable error details:
+
+```python
+from shopify_sdk.gql.core.bulk import BulkOperationSubmissionError, bulk_query_handle
+
+try:
+    handle = bulk_query_handle(products(first=50), group_objects=False)
+except BulkOperationSubmissionError as error:
+    for user_error in error.errors:
+        print(error.stage, user_error.code, user_error.field, user_error.message)
+```
+
 ### Retry behavior
 
 SDK query execution retries temporary Shopify failures by default; mutations and direct

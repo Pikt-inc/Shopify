@@ -2,6 +2,11 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.7
+
+- Added typed bulk submission errors for query, mutation, and staged-upload user errors.
+- Preserved Shopify error codes, field paths, and messages without retaining raw payloads.
+
 ## 0.3.6
 
 - Added bounded retries for idempotent GraphQL query execution.
