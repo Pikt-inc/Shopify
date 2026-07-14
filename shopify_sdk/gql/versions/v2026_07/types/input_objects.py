@@ -304,6 +304,32 @@ class InventoryLevelInput(input_object):
     availableQuantity: Int
 
 
+class InventoryQuantityInput(input_object):
+    inventoryItemId: ID
+    locationId: ID
+    quantity: Int
+    changeFromQuantity: Optional[Int]
+
+    def to_graphql(self) -> dict:
+        """Serialize the required compare-and-swap field even when its value is null."""
+        payload = super().to_graphql()
+        payload["changeFromQuantity"] = self.changeFromQuantity
+        return payload
+
+
+class InventorySetQuantitiesInput(input_object):
+    name: String
+    quantities: List[InventoryQuantityInput]
+    reason: String
+    referenceDocumentUri: Optional[String] = Field(default=None)
+
+    def to_graphql(self) -> dict:
+        """Serialize every quantity with its required compare-and-swap value."""
+        payload = super().to_graphql()
+        payload["quantities"] = [quantity.to_graphql() for quantity in self.quantities]
+        return payload
+
+
 class ProductSetInventoryInput(input_object):
     locationId: ID
     name: String

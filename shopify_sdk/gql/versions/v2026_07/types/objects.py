@@ -973,6 +973,26 @@ class InventoryQuantity(AutoRegisterModel):
     updatedAt: Optional[DateTime] = Field(default=None)
 
 
+class InventoryChange(AutoRegisterModel):
+    delta: Int
+    name: String
+    quantityAfterChange: Optional[Int] = Field(default=None)
+
+
+class InventoryAdjustmentGroup(AutoRegisterModel):
+    id: ID
+    changes: List[InventoryChange]
+    createdAt: DateTime
+    reason: String
+    referenceDocumentUri: Optional[String] = Field(default=None)
+
+
+class InventorySetQuantitiesUserError(AutoRegisterModel):
+    code: Optional[String] = Field(default=None)
+    field: Optional[List[String]] = Field(default=None)
+    message: String
+
+
 class InventoryItemMeasurement(AutoRegisterModel):
     id: ID
     weight: Optional[Weight] = Field(default=None)

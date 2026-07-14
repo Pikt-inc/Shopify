@@ -143,6 +143,11 @@ class InventoryAdjustQuantitiesPayload(AutoRegisterModel):
     userErrors: List[UserError]
 
 
+class InventorySetQuantitiesPayload(AutoRegisterModel):
+    inventoryAdjustmentGroup: Optional[InventoryAdjustmentGroup] = Field(default=None)
+    userErrors: List[InventorySetQuantitiesUserError]
+
+
 class ProductVariantsBulkUpdateUserError(AutoRegisterModel):
     code: Optional[String] = Field(default=None)
     field: Optional[List[String]] = Field(default=None)

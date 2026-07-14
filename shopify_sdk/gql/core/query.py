@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 class Query:
     return_type: Optional[Type[BaseModel]] = None
     _connection_arguments: Dict[str, Dict[str, Any]] = {}
+    _field_arguments: Dict[str, Dict[str, Dict[str, object]]] = {}
     _field_exclusions: Dict[str, Set[str]] = {}
     _field_inclusions: Dict[str, Set[str]] = {}
     _indent: int = 2
@@ -54,6 +55,32 @@ class Query:
         return getattr(
             self, "_connection_arguments", self.__class__._connection_arguments
         )
+
+    @property
+    def field_arguments(self) -> Dict[str, Dict[str, Dict[str, object]]]:
+        """Return typed GraphQL arguments for named fields on named response models."""
+        return getattr(self, "_field_arguments", self.__class__._field_arguments)
+
+    def with_field_arguments(
+        self,
+        field_arguments: Dict[str, Dict[str, Dict[str, object]]],
+    ) -> "Query":
+        """Configure arguments for non-connection fields and return this query.
+
+        :param field_arguments: Mapping of model name to field name to GraphQL arguments.
+        :returns: This query instance for fluent configuration.
+        """
+        normalized_arguments: Dict[str, Dict[str, Dict[str, object]]] = {}
+        for model_name, model_arguments in field_arguments.items():
+            if not isinstance(model_name, str):
+                raise TypeError("Field argument model names must be strings.")
+            normalized_arguments[model_name] = {}
+            for field_name, arguments in model_arguments.items():
+                if not isinstance(field_name, str):
+                    raise TypeError("Field argument field names must be strings.")
+                normalized_arguments[model_name][field_name] = dict(arguments)
+        self._field_arguments = normalized_arguments
+        return self
 
     @property
     def field_exclusions(self) -> Dict[str, Set[str]]:
@@ -114,25 +141,41 @@ class Query:
             field_info = model_fields.get(name)
             alias = getattr(field_info, "alias", None) if field_info else None
             lines.append(
-                self._build_field_selection(name, type_hints.get(name), indent, alias)
+                self._build_field_selection(
+                    model,
+                    name,
+                    type_hints.get(name),
+                    indent,
+                    alias,
+                )
             )
         return "\n".join(lines)
 
     def _build_field_selection(
-        self, name: str, annotation: Any, indent: int, graphql_name: str | None = None
+        self,
+        model: Type[BaseModel],
+        name: str,
+        annotation: Any,
+        indent: int,
+        graphql_name: str | None = None,
     ) -> str:
         resolved = self._unwrap_annotation(annotation)
         spacer = " " * indent
         field_label = graphql_name or name
+        field_arguments = self._format_field_arguments(model, name)
 
         if self._is_connection(resolved):
             return self._build_connection_selection(
-                name, resolved, indent, graphql_name=field_label
+                name,
+                resolved,
+                indent,
+                graphql_name=field_label,
+                field_arguments=field_arguments,
             )
 
         if self._is_model(resolved):
             nested = self._build_model_selection(resolved, indent + self._indent)
-            return f"{spacer}{field_label} {{\n{nested}\n{spacer}}}"
+            return f"{spacer}{field_label}{field_arguments} {{\n{nested}\n{spacer}}}"
 
         if isinstance(resolved, tuple):
             nested_parts = []
@@ -146,9 +189,9 @@ class Query:
                         f"{' ' * (indent + self._indent)}... on {union_type.__name__} {{\n{union_body}\n{' ' * (indent + self._indent)}}}"
                     )
             nested = "\n".join(nested_parts)
-            return f"{spacer}{field_label} {{\n{nested}\n{spacer}}}"
+            return f"{spacer}{field_label}{field_arguments} {{\n{nested}\n{spacer}}}"
 
-        return f"{spacer}{field_label}"
+        return f"{spacer}{field_label}{field_arguments}"
 
     def _build_connection_selection(
         self,
@@ -156,6 +199,7 @@ class Query:
         conn_type: Type[BaseModel],
         indent: int,
         graphql_name: str | None = None,
+        field_arguments: str = "",
     ) -> str:
         spacer = " " * indent
         inner_indent = indent + self._indent
@@ -195,12 +239,27 @@ class Query:
                 f"{' ' * inner_indent}pageInfo {{\n{page_info_body}\n{' ' * inner_indent}}}"
             )
 
-        args_fragment = self._format_connection_args(name, conn_type)
+        args_fragment = field_arguments or self._format_connection_args(name, conn_type)
         if not sections:
             return f"{spacer}{field_label}{args_fragment}"
 
         section_body = "\n".join(sections)
         return f"{spacer}{field_label}{args_fragment} {{\n{section_body}\n{spacer}}}"
+
+    def _format_field_arguments(
+        self,
+        model: Type[BaseModel],
+        field_name: str,
+    ) -> str:
+        """Render configured arguments for a named non-connection GraphQL field."""
+        arguments = self.field_arguments.get(model.__name__, {}).get(field_name)
+        if not arguments:
+            return ""
+        formatted = ", ".join(
+            f"{key}: {self._format_literal(value)}"
+            for key, value in arguments.items()
+        )
+        return f"({formatted})"
 
     def _format_connection_args(
         self, field_name: str, conn_type: Type[BaseModel]

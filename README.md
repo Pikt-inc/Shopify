@@ -98,6 +98,58 @@ payload = ProductSetInput(
 responses = store.products.bulk.set([payload])
 ```
 
+Read named inventory quantity states:
+
+```python
+from shopify_sdk import client
+from shopify_sdk.gql.queries import locations
+
+inventory_query = locations(
+    field_inclusions={
+        "Location": {"id", "inventoryLevels"},
+        "InventoryLevel": {"id", "quantities"},
+        "InventoryQuantity": {"name", "quantity"},
+    },
+).with_field_arguments(
+    {
+        "InventoryLevel": {
+            "quantities": {"names": ["available", "on_hand"]},
+        }
+    }
+)
+
+location_connection = inventory_query.execute(client)
+```
+
+Set an absolute inventory quantity when the application is the source of truth:
+
+```python
+from shopify_sdk import client
+from shopify_sdk.gql.core.types import (
+    InventoryQuantityInput,
+    InventorySetQuantitiesInput,
+)
+from shopify_sdk.gql.mutations import inventorySetQuantities
+
+payload = inventorySetQuantities(
+    input=InventorySetQuantitiesInput(
+        name="available",
+        reason="correction",
+        quantities=[
+            InventoryQuantityInput(
+                inventoryItemId="gid://shopify/InventoryItem/1",
+                locationId="gid://shopify/Location/1",
+                quantity=42,
+                changeFromQuantity=None,
+            )
+        ],
+    )
+).execute(client)
+```
+
+On `2026-07`, the SDK generates the required idempotency key automatically. Pass
+`idempotency_key=` to `inventorySetQuantities` to provide a stable application key.
+
 Stream flat bulk-query records after persisting a checkpoint:
 
 ```python

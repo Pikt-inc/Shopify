@@ -35,6 +35,7 @@ bulkOperationRunQuery = VersionedGraphQLSymbol("mutations", "bulkOperationRunQue
 inventoryAdjustQuantities = VersionedGraphQLSymbol(
     "mutations", "inventoryAdjustQuantities"
 )
+inventorySetQuantities = VersionedGraphQLSymbol("mutations", "inventorySetQuantities")
 
 __all__ = [
     "productUnpublish",
@@ -63,4 +64,5 @@ __all__ = [
     "bulkOperationRunMutation",
     "bulkOperationRunQuery",
     "inventoryAdjustQuantities",
+    "inventorySetQuantities",
 ]

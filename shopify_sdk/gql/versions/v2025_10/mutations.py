@@ -325,6 +325,21 @@ class inventoryAdjustQuantities(VersionedMutation):
         self._field_inclusions = field_inclusions or {}
 
 
+class inventorySetQuantities(VersionedMutation):
+    return_type: Type[BaseModel] = InventorySetQuantitiesPayload
+
+    def __init__(
+        self,
+        input: InventorySetQuantitiesInput,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
+    ) -> None:
+        """Initialize an absolute inventory quantity update for API version 2025-10."""
+        self.input: InventorySetQuantitiesInput = input
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
+
+
 class productCreateMedia(VersionedMutation):
     return_type: Type[BaseModel] = ProductCreateMediaPayload
 

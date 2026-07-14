@@ -2,6 +2,12 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.9
+
+- Added typed `inventorySetQuantities` support for `2025-10` and `2026-07`.
+- Added typed nested field arguments, including required inventory quantity state names.
+- Added SDK-generated per-mutation idempotency keys for `2026-07` inventory quantity writes.
+
 ## 0.3.8
 
 - Added bounded retries for safe bulk result-file downloads.

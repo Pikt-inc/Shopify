@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from pydantic import BaseModel
 from shopify_sdk.gql.core import Mutation
 from .types.input_objects import *
@@ -378,6 +380,38 @@ class inventoryAdjustQuantities(VersionedMutation):
         self.input: InventoryAdjustQuantitiesInput = input
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
+
+
+class inventorySetQuantities(VersionedMutation):
+    return_type: Type[BaseModel] = InventorySetQuantitiesPayload
+
+    def __init__(
+        self,
+        input: InventorySetQuantitiesInput,
+        idempotency_key: Optional[String] = None,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
+    ) -> None:
+        """Initialize an idempotent absolute inventory quantity update for API version 2026-07."""
+        if idempotency_key == "":
+            raise ValueError("idempotency_key must not be empty.")
+        self.input: InventorySetQuantitiesInput = input
+        self.idempotencyKey: String = idempotency_key or str(uuid4())
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
+
+    @property
+    def body(self) -> str:
+        """Render Shopify's required idempotency directive beside the mutation field."""
+        return "\n".join(
+            [
+                f"{self.action_type} {self.class_name}({self.arguments}) {{",
+                f"{' ' * self._indent}{self.class_name}(input: $input) @idempotent(key: $idempotencyKey) {{",
+                f"{self.fields}",
+                f"{' ' * self._indent}}}",
+                "}",
+            ]
+        )
 
 
 class productCreateMedia(VersionedMutation):

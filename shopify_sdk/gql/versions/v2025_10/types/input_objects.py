@@ -292,6 +292,21 @@ class InventoryLevelInput(input_object):
     availableQuantity: Int
 
 
+class InventoryQuantityInput(input_object):
+    inventoryItemId: ID
+    locationId: ID
+    quantity: Int
+    compareQuantity: Optional[Int] = Field(default=None)
+
+
+class InventorySetQuantitiesInput(input_object):
+    name: String
+    quantities: List[InventoryQuantityInput]
+    reason: String
+    referenceDocumentUri: Optional[String] = Field(default=None)
+    ignoreCompareQuantity: Optional[Boolean] = Field(default=None)
+
+
 class ProductSetInventoryInput(input_object):
     locationId: ID
     name: String

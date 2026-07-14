@@ -39,6 +39,7 @@ from .mutations import (
     bulkOperationRunMutation,
     bulkOperationRunQuery,
     inventoryAdjustQuantities,
+    inventorySetQuantities,
 )
 from .core import client, client_context
 
@@ -79,6 +80,7 @@ __all__ = [
     "bulkOperationRunMutation",
     "bulkOperationRunQuery",
     "inventoryAdjustQuantities",
+    "inventorySetQuantities",
     "client",
     "client_context",
     "locations",
