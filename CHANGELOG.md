@@ -2,6 +2,11 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.8
+
+- Added bounded retries for safe bulk result-file downloads.
+- Redacted signed URLs and result contents from bulk download, parse, terminal, and upload failure messages.
+
 ## 0.3.7
 
 - Added typed bulk submission errors for query, mutation, and staged-upload user errors.

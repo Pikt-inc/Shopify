@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from types import SimpleNamespace
 from unittest.mock import patch
 from datetime import datetime
@@ -24,6 +25,8 @@ class FakeResponse:
         """Store JSONL lines returned by the fake streamed response."""
         self._lines = lines
         self.closed = False
+        self.status_code = 200
+        self.headers: dict[str, str] = {}
 
     def raise_for_status(self) -> None:
         """Simulate a successful result-file response."""
@@ -36,6 +39,32 @@ class FakeResponse:
     def close(self) -> None:
         """Record response cleanup."""
         self.closed = True
+
+
+class FakeResultDownloader:
+    def __init__(self, response: FakeResponse) -> None:
+        """Store one streamed result response for an injected poller test seam."""
+        self._response = response
+
+    def iter_lines(
+        self,
+        *,
+        results_url: str,
+        operation_id: str,
+        timeout_s: float,
+        start_line_number: int = 1,
+    ) -> Iterator[tuple[int, str]]:
+        """Yield unacknowledged physical lines while closing the fake response."""
+        assert results_url == "https://example.test/results.jsonl"
+        assert operation_id == "gid://shopify/BulkOperation/1"
+        assert timeout_s == 1200
+        try:
+            for line_number, line in enumerate(self._response.iter_lines(True), start=1):
+                if line_number < start_line_number or not line:
+                    continue
+                yield line_number, line
+        finally:
+            self._response.close()
 
 
 class StaticBulkQuery(Query):
@@ -154,6 +183,7 @@ class TestBulkOperationTerminalState:
         assert state.error_code == "INTERNAL_SERVER_ERROR"
         assert state.partial_data_url == "https://example.test/partial.jsonl"
         assert "errorCode: INTERNAL_SERVER_ERROR" in str(captured_error.value)
+        assert "partial.jsonl" not in str(captured_error.value)
 
     def test_handle_returns_typed_terminal_state(self) -> None:
         """Allow callers to inspect terminal metadata without starting a download."""
@@ -181,15 +211,12 @@ class TestBulkResultParsing:
                 '{"productCreate":{"product":{"id":"two"}}}',
             ]
         )
-        manager = BulkActionResultManager("gid://shopify/BulkOperation/1")
+        manager = BulkActionResultManager(
+            "gid://shopify/BulkOperation/1",
+            downloader=FakeResultDownloader(response),
+        )
 
-        with (
-            patch.object(manager, "_poll_operation", return_value=completed_operation()),
-            patch(
-                "shopify_sdk.gql.core.bulk.poll.requests.get",
-                return_value=response,
-            ),
-        ):
+        with patch.object(manager, "_poll_operation", return_value=completed_operation()):
             results = list(manager.iter_result_events())
 
         assert results[0].payload.lineNumber == 8
@@ -220,15 +247,12 @@ class TestBulkResultParsing:
             operation_id="gid://shopify/BulkOperation/1",
             next_line_number=3,
         )
-        manager = BulkActionResultManager("gid://shopify/BulkOperation/1")
+        manager = BulkActionResultManager(
+            "gid://shopify/BulkOperation/1",
+            downloader=FakeResultDownloader(response),
+        )
 
-        with (
-            patch.object(manager, "_poll_operation", return_value=completed_operation()),
-            patch(
-                "shopify_sdk.gql.core.bulk.poll.requests.get",
-                return_value=response,
-            ),
-        ):
+        with patch.object(manager, "_poll_operation", return_value=completed_operation()):
             results = list(manager.iter_result_events(checkpoint=checkpoint))
 
         assert results[0].payload.data == {
@@ -246,15 +270,12 @@ class TestBulkResultParsing:
                 '{"id":"child","__parentId":"root","errors":[{"code":"INVALID"}]}',
             ]
         )
-        manager = BulkActionResultManager("gid://shopify/BulkOperation/1")
+        manager = BulkActionResultManager(
+            "gid://shopify/BulkOperation/1",
+            downloader=FakeResultDownloader(response),
+        )
 
-        with (
-            patch.object(manager, "_poll_operation", return_value=completed_operation()),
-            patch(
-                "shopify_sdk.gql.core.bulk.poll.requests.get",
-                return_value=response,
-            ),
-        ):
+        with patch.object(manager, "_poll_operation", return_value=completed_operation()):
             results = list(manager.iter_flat_result_events())
 
         assert all(isinstance(result, BulkFlatOperationResult) for result in results)
@@ -279,15 +300,12 @@ class TestBulkResultParsing:
             operation_id="gid://shopify/BulkOperation/1",
             next_line_number=3,
         )
-        manager = BulkActionResultManager("gid://shopify/BulkOperation/1")
+        manager = BulkActionResultManager(
+            "gid://shopify/BulkOperation/1",
+            downloader=FakeResultDownloader(response),
+        )
 
-        with (
-            patch.object(manager, "_poll_operation", return_value=completed_operation()),
-            patch(
-                "shopify_sdk.gql.core.bulk.poll.requests.get",
-                return_value=response,
-            ),
-        ):
+        with patch.object(manager, "_poll_operation", return_value=completed_operation()):
             results = list(manager.iter_flat_result_events(checkpoint=checkpoint))
 
         assert results[0].record.data == {"id": "second"}

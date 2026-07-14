@@ -1,6 +1,7 @@
 import unittest
 from collections.abc import Iterator
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import patch
 
 from shopify_sdk.api_versions import (
@@ -12,8 +13,11 @@ from shopify_sdk.api_versions import (
 from shopify_sdk.gql.core.client import client_context, current_api_version
 from shopify_sdk.gql.queries import products
 from shopify_sdk.gql.versions.v2025_10.queries import products as Products202510
+from shopify_sdk.gql.versions.v2025_10.queries import orders as Orders202510
 from shopify_sdk.gql.versions.v2025_10.mutations import productCreate
 from shopify_sdk.gql.versions.v2025_10.types import ProductCreateInput
+from shopify_sdk.gql.versions.v2025_10.types.objects import PageInfo as PageInfo202510
+from shopify_sdk.gql.versions.v2025_10.types.connections import OrderConnection as OrderConnection202510
 from shopify_sdk.gql.versions.v2025_10.types.objects import Product as Product202510
 from shopify_sdk.gql.versions.v2026_07.queries import products as Products202607
 from shopify_sdk.gql.versions.v2026_07.types.objects import Product as Product202607
@@ -85,6 +89,16 @@ class TestApiVersions(unittest.TestCase):
         self.assertEqual(calls, [[mutation]])
         product = getattr(payloads[0], "product")
         self.assertEqual(getattr(product, "id"), "gid://shopify/Product/1")
+
+    def test_2025_bulk_connection_builds_its_own_versioned_page_info(self) -> None:
+        """Build a 2025-10 bulk connection without passing a 2026-07 PageInfo model."""
+        query = Orders202510(field_inclusions={"Order": {"id"}})
+        results = iter([SimpleNamespace(data={"id": "gid://shopify/Order/1"})])
+
+        connection = cast(OrderConnection202510, query._build_bulk_response(results))
+
+        self.assertIsInstance(connection.pageInfo, PageInfo202510)
+        self.assertFalse(connection.pageInfo.hasNextPage)
 
 
 if __name__ == "__main__":

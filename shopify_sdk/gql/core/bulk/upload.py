@@ -97,8 +97,8 @@ class JSONUploadManager:
             )
             response.raise_for_status()
             return True
-        except RequestException as e:
-            logging.error(f"Upload failed: {e}")
+        except RequestException:
+            logger.error("Staged upload request failed.")
             return False
 
     @cached_property

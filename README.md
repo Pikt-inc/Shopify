@@ -128,6 +128,10 @@ except BulkOperationSubmissionError as error:
         print(error.stage, user_error.code, user_error.field, user_error.message)
 ```
 
+Bulk result-file downloads retry temporary network and `429`/`5xx` failures safely.
+Exceptions and logs retain operation, status, and line metadata but redact signed URLs and
+result contents. Bulk submissions and staged-upload POSTs remain single-attempt.
+
 ### Retry behavior
 
 SDK query execution retries temporary Shopify failures by default; mutations and direct

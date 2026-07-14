@@ -56,7 +56,7 @@ class Mutation(Query):
         for response in responses:
             if response.errors:
                 raise ValueError(
-                    f"Errors encountered during bulk mutation: {response.errors}"
+                    "Bulk mutation result contains Shopify errors."
                 )
             response_data = response.data
             if response_data is None:

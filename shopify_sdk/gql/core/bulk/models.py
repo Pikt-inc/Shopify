@@ -112,9 +112,50 @@ class BulkOperationTerminalError(ValueError):
         details = [f"status: {state.status}"]
         if state.error_code:
             details.append(f"errorCode: {state.error_code}")
-        if state.partial_data_url:
-            details.append(f"partialDataUrl: {state.partial_data_url}")
         return "Bulk operation did not complete successfully. " + ", ".join(details)
+
+
+class BulkResultDownloadError(ValueError):
+    """Raised when a bulk result file cannot be retrieved after safe retry attempts."""
+
+    def __init__(
+        self,
+        operation_id: str,
+        attempts: int,
+        *,
+        status_code: int | None = None,
+    ) -> None:
+        """Preserve safe download context without retaining a signed result URL."""
+        self.operation_id = operation_id
+        self.attempts = attempts
+        self.status_code = status_code
+        super().__init__(self._message())
+
+    def _message(self) -> str:
+        """Format safe operation and HTTP metadata for a failed result download."""
+        details = [f"operation_id={self.operation_id!r}", f"attempts={self.attempts}"]
+        if self.status_code is not None:
+            details.append(f"status_code={self.status_code}")
+        return "Bulk result download failed: " + ", ".join(details)
+
+
+class BulkResultParseError(ValueError):
+    """Raised when a bulk result line cannot be parsed without exposing its contents."""
+
+    def __init__(
+        self,
+        operation_id: str,
+        line_number: int,
+        reason: str,
+    ) -> None:
+        """Preserve safe parse context without retaining JSONL content or result URLs."""
+        self.operation_id = operation_id
+        self.line_number = line_number
+        self.reason = reason
+        super().__init__(
+            "Bulk result parsing failed: "
+            f"operation_id={operation_id!r}, line_number={line_number}, reason={reason}."
+        )
 
 
 class BulkSubmissionStage(StrEnum):

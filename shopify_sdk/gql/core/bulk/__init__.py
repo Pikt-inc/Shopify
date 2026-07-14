@@ -9,10 +9,16 @@ from .models import (
     BulkOperationResult,
     BulkOperationTerminalError,
     BulkOperationTerminalState,
+    BulkResultDownloadError,
+    BulkResultParseError,
     BulkSubmissionStage,
     BulkSubmissionUserError,
 )
 from .poll import BulkOperationHandle
+from .download import BulkDownloadRetryEvent
+from .download import BulkResultDownloader
+from .download import BulkResultLineDownloader
+from .download import BulkResultDownloadRetryPolicy
 
 __all__ = [
     "bulk_mutation",
@@ -26,6 +32,12 @@ __all__ = [
     "BulkOperationResult",
     "BulkOperationTerminalError",
     "BulkOperationTerminalState",
+    "BulkResultDownloadError",
+    "BulkDownloadRetryEvent",
+    "BulkResultDownloader",
+    "BulkResultLineDownloader",
+    "BulkResultDownloadRetryPolicy",
+    "BulkResultParseError",
     "BulkSubmissionStage",
     "BulkSubmissionUserError",
 ]

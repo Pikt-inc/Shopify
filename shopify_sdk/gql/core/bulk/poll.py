@@ -5,9 +5,7 @@ import time
 from collections.abc import Iterator
 from typing import cast
 
-import requests
 from pydantic import ValidationError
-from requests.exceptions import RequestException
 
 from shopify_sdk import client as default_client
 from shopify_sdk.gql.core.client import ShopifyClient
@@ -22,7 +20,10 @@ from .models import (
     BulkOperationResult,
     BulkOperationTerminalError,
     BulkOperationTerminalState,
+    BulkResultParseError,
 )
+from .download import BulkResultDownloader
+from .download import BulkResultLineDownloader
 
 # Starting defaults retained from the prior bulk runner.
 # Calibrate these values from operation-duration telemetry.
@@ -38,19 +39,26 @@ class BulkActionResultManager:
         self,
         bulk_operation_id: ID,
         client: ShopifyClient = default_client,
+        downloader: BulkResultLineDownloader | None = None,
     ) -> None:
-        """Bind the manager to one bulk operation and GraphQL client."""
+        """Bind the manager to one bulk operation, GraphQL client, and result downloader."""
         self._client = client
         self._bulk_operation_id = bulk_operation_id
+        self._downloader = downloader or BulkResultDownloader()
 
     @classmethod
     def yield_results(
         cls,
         bulk_operation_id: ID,
         client: ShopifyClient = default_client,
+        downloader: BulkResultLineDownloader | None = None,
     ) -> Iterator[BulkOperationResultPayload]:
         """Yield legacy result payloads after the operation completes successfully."""
-        manager = cls(bulk_operation_id=bulk_operation_id, client=client)
+        manager = cls(
+            bulk_operation_id=bulk_operation_id,
+            client=client,
+            downloader=downloader,
+        )
         for result in manager.iter_result_events():
             yield result.payload
 
@@ -164,48 +172,38 @@ class BulkActionResultManager:
         """Stream and parse unacknowledged JSONL lines with physical line positions."""
         if start_line_number < 1:
             raise ValueError("start_line_number must be at least one.")
-        response: requests.Response | None = None
-        try:
-            response = requests.get(results_url, stream=True, timeout=timeout_s)
-            response.raise_for_status()
-            for line_number, line in enumerate(
-                response.iter_lines(decode_unicode=True),
-                start=1,
-            ):
-                if line_number < start_line_number or not line:
-                    continue
-                yield line_number, self._parse_result_line(
-                    line=line,
-                    line_number=line_number,
-                    results_url=results_url,
-                )
-        except RequestException as error:
-            raise ValueError(
-                f"Failed to download bulk results from {results_url}: {error}"
-            ) from error
-        finally:
-            if response is not None:
-                response.close()
+        for line_number, line in self._downloader.iter_lines(
+            results_url=results_url,
+            operation_id=self._bulk_operation_id,
+            timeout_s=timeout_s,
+            start_line_number=start_line_number,
+        ):
+            yield line_number, self._parse_result_line(
+                line=line,
+                line_number=line_number,
+                operation_id=self._bulk_operation_id,
+            )
 
     @staticmethod
     def _parse_result_line(
         line: str,
         line_number: int,
-        results_url: str,
+        operation_id: str,
     ) -> BulkOperationResultPayload:
         """Normalize Shopify JSONL metadata while retaining the full result record."""
         try:
             parsed_line = json.loads(line)
-        except json.JSONDecodeError as error:
-            snippet = line[:500]
-            raise ValueError(
-                f"Invalid JSON in bulk results from {results_url} at line {line_number}: "
-                f"{snippet}"
-            ) from error
+        except json.JSONDecodeError:
+            raise BulkResultParseError(
+                operation_id=operation_id,
+                line_number=line_number,
+                reason="invalid_json",
+            ) from None
         if not isinstance(parsed_line, dict):
-            raise ValueError(
-                f"Bulk results from {results_url} must be JSON objects; got "
-                f"{type(parsed_line).__name__}."
+            raise BulkResultParseError(
+                operation_id=operation_id,
+                line_number=line_number,
+                reason="expected_json_object",
             )
         try:
             return BulkOperationResultPayload.model_validate(
@@ -216,10 +214,12 @@ class BulkActionResultManager:
                     "errors": parsed_line.get("errors"),
                 }
             )
-        except ValidationError as error:
-            raise ValueError(
-                f"Invalid bulk result payload from {results_url} at line {line_number}."
-            ) from error
+        except ValidationError:
+            raise BulkResultParseError(
+                operation_id=operation_id,
+                line_number=line_number,
+                reason="invalid_payload",
+            ) from None
 
 
 class BulkOperationHandle:
@@ -229,11 +229,13 @@ class BulkOperationHandle:
         self,
         operation_id: ID,
         client: ShopifyClient = default_client,
+        downloader: BulkResultLineDownloader | None = None,
     ) -> None:
         """Create a handle for a known Shopify bulk operation identifier."""
         self._manager = BulkActionResultManager(
             bulk_operation_id=operation_id,
             client=client,
+            downloader=downloader,
         )
 
     def wait_for_terminal_state(self) -> BulkOperationTerminalState:

@@ -637,15 +637,11 @@ class Query:
             raise ValueError("Unable to determine bulk base type from return_type.")
         return inner_type
 
-    def _fake_page_info(self) -> BaseModel:
-        """
-        Faked PageInfo for bulk queries since pagination is not applicable.
-        """
-        from shopify_sdk.gql.core.types.objects import PageInfo
-
-        return PageInfo(
-            endCursor="",
-            startCursor="",
-            hasNextPage=False,
-            hasPreviousPage=False,
-        )
+    def _fake_page_info(self) -> dict[str, object]:
+        """Return version-neutral synthetic pagination data for a bulk response."""
+        return {
+            "endCursor": "",
+            "startCursor": "",
+            "hasNextPage": False,
+            "hasPreviousPage": False,
+        }
