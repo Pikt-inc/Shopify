@@ -4,18 +4,25 @@ from collections.abc import Mapping
 from typing import cast
 
 import pytest
+from pydantic import BaseModel
 from requests.exceptions import ConnectTimeout
 from requests.exceptions import ReadTimeout
 
 from shopify_sdk.gql.core.client import ShopifyGraphQLError
+from shopify_sdk.gql.core.client import GQLResponse
 from shopify_sdk.gql.core.client import ShopifyHttpError
+from shopify_sdk.gql.core.client import ShopifyNetworkError
 from shopify_sdk.gql.core.client import ShopifyResponseDecodeError
 from shopify_sdk.gql.core.client import ShopifyResponseValidationError
 from shopify_sdk.gql.core.client import ShopifyTransportError
 from shopify_sdk.gql.core.client import client_context
 from shopify_sdk.gql.core.client.root import RootClient
+from shopify_sdk.gql.core.client.retry import RequestRetryMode
+from shopify_sdk.gql.core.client.retry import ShopifyRetryPolicy
 from shopify_sdk.gql.core.client.transport import ShopifyHttpResponse
 from shopify_sdk.gql.core.client.wrapper import ShopifyClientWrapper
+from shopify_sdk.gql.core.mutation import Mutation
+from shopify_sdk.gql.core.query import Query
 
 
 class FakeResponse:
@@ -67,12 +74,83 @@ class FakeTransport:
         return cast(ShopifyHttpResponse, response)
 
 
-def _client(transport: FakeTransport) -> RootClient:
+class FakeRuntime:
+    def __init__(self) -> None:
+        """Initialize a deterministic monotonic clock and recorded sleep calls."""
+        self.current_time = 0.0
+        self.sleeps: list[float] = []
+
+    def monotonic(self) -> float:
+        """Return the current deterministic monotonic time."""
+        return self.current_time
+
+    def sleep(self, delay_seconds: float) -> None:
+        """Record a requested delay and advance deterministic time."""
+        self.sleeps.append(delay_seconds)
+        self.current_time += delay_seconds
+
+    @staticmethod
+    def random() -> float:
+        """Return midpoint jitter so tests receive the nominal retry delay."""
+        return 0.5
+
+
+class ProbePayload(BaseModel):
+    """Minimal payload used to test query and mutation retry mode propagation."""
+
+    ok: bool
+
+
+class ReadProbe(Query):
+    """Minimal read operation for retry mode propagation tests."""
+
+    return_type = ProbePayload
+
+
+class MutationProbe(Mutation):
+    """Minimal mutation operation for retry mode propagation tests."""
+
+    return_type = ProbePayload
+
+
+class RetryModeRecordingClient:
+    def __init__(self) -> None:
+        """Initialize captured retry modes from executed SDK operations."""
+        self.retry_modes: list[RequestRetryMode] = []
+
+    def request(
+        self,
+        query: str,
+        variables: dict[str, object],
+        *,
+        retry_mode: RequestRetryMode = RequestRetryMode.NEVER,
+    ) -> GQLResponse:
+        """Capture retry mode and return successful payloads for both probes."""
+        self.retry_modes.append(retry_mode)
+        return GQLResponse(
+            data={
+                "ReadProbe": {"ok": True},
+                "MutationProbe": {"ok": True},
+            }
+        )
+
+
+def _client(
+    transport: FakeTransport,
+    *,
+    retry_policy: ShopifyRetryPolicy | None = None,
+    runtime: FakeRuntime | None = None,
+) -> RootClient:
+    active_runtime = runtime or FakeRuntime()
     return RootClient(
         shop_domain="example.myshopify.com",
         access_token="token",
         api_version="2026-07",
         transport=transport,
+        retry_policy=retry_policy,
+        sleep=active_runtime.sleep,
+        monotonic_clock=active_runtime.monotonic,
+        random_value=active_runtime.random,
     )
 
 
@@ -128,6 +206,158 @@ def test_request_exposes_429_metadata_without_response_body() -> None:
     assert error.request_id == "request-1"
     assert error.retry_after == "2"
     assert "customer@example.com" not in str(error)
+
+
+def test_safe_read_retries_429_after_retry_after_delay() -> None:
+    """Retry a safe read after Shopify's explicit numeric Retry-After delay."""
+    runtime = FakeRuntime()
+    transport = FakeTransport(
+        [
+            FakeResponse(status_code=429, headers={"Retry-After": "2"}),
+            _success_response({"shop": {"id": "shop-1"}}),
+        ]
+    )
+
+    response = _client(transport, runtime=runtime).request(
+        "query { shop { id } }",
+        retry_mode=RequestRetryMode.SAFE_READ,
+    )
+
+    assert response.data == {"shop": {"id": "shop-1"}}
+    assert len(transport.calls) == 2
+    assert runtime.sleeps == [2.0]
+
+
+def test_safe_read_uses_backoff_when_retry_after_is_invalid() -> None:
+    """Fall back to the Shopify-recommended one-second delay for invalid headers."""
+    runtime = FakeRuntime()
+    transport = FakeTransport(
+        [
+            FakeResponse(status_code=429, headers={"Retry-After": "tomorrow"}),
+            _success_response({"shop": {"id": "shop-1"}}),
+        ]
+    )
+
+    _client(transport, runtime=runtime).request(
+        "query { shop { id } }",
+        retry_mode=RequestRetryMode.SAFE_READ,
+    )
+
+    assert runtime.sleeps == [1.0]
+
+
+def test_safe_read_retries_network_timeout_with_documented_one_second_backoff() -> None:
+    """Retry a network timeout after Shopify's recommended one-second backoff."""
+    runtime = FakeRuntime()
+    transport = FakeTransport(
+        [
+            ConnectTimeout("connect"),
+            _success_response({"shop": {"id": "shop-1"}}),
+        ]
+    )
+
+    response = _client(transport, runtime=runtime).request(
+        "query { shop { id } }",
+        retry_mode=RequestRetryMode.SAFE_READ,
+    )
+
+    assert response.data == {"shop": {"id": "shop-1"}}
+    assert len(transport.calls) == 2
+    assert runtime.sleeps == [1.0]
+
+
+def test_direct_request_does_not_retry_even_for_retryable_statuses() -> None:
+    """Keep direct client requests conservative unless a caller opts into safe reads."""
+    runtime = FakeRuntime()
+    transport = FakeTransport(
+        [
+            FakeResponse(status_code=503),
+            _success_response({"shop": {"id": "shop-1"}}),
+        ]
+    )
+
+    with pytest.raises(ShopifyHttpError):
+        _client(transport, runtime=runtime).request("query { shop { id } }")
+
+    assert len(transport.calls) == 1
+    assert runtime.sleeps == []
+
+
+def test_safe_read_stops_after_configured_retry_attempts() -> None:
+    """Preserve the final structured failure after bounded safe-read retries."""
+    runtime = FakeRuntime()
+    transport = FakeTransport(
+        [
+            FakeResponse(status_code=503),
+            FakeResponse(status_code=503),
+            FakeResponse(status_code=503),
+        ]
+    )
+    policy = ShopifyRetryPolicy(jitter_ratio=0)
+
+    with pytest.raises(ShopifyHttpError) as captured_error:
+        _client(transport, retry_policy=policy, runtime=runtime).request(
+            "query { shop { id } }",
+            retry_mode=RequestRetryMode.SAFE_READ,
+        )
+
+    assert captured_error.value.status_code == 503
+    assert len(transport.calls) == 3
+    assert runtime.sleeps == [1.0, 2.0]
+
+
+def test_safe_read_uses_graphql_cost_to_delay_throttled_retry() -> None:
+    """Use Shopify throttle cost metadata when it exceeds exponential backoff."""
+    runtime = FakeRuntime()
+    throttled_payload = {
+        "errors": [{"extensions": {"code": "THROTTLED"}}],
+        "extensions": {
+            "cost": {
+                "requestedQueryCost": 100,
+                "throttleStatus": {
+                    "maximumAvailable": 100,
+                    "currentlyAvailable": 0,
+                    "restoreRate": 50,
+                },
+            }
+        },
+    }
+    transport = FakeTransport(
+        [
+            FakeResponse(payload=throttled_payload),
+            _success_response({"shop": {"id": "shop-1"}}),
+        ]
+    )
+
+    response = _client(transport, runtime=runtime).request(
+        "query { shop { id } }",
+        retry_mode=RequestRetryMode.SAFE_READ,
+    )
+
+    assert response.data == {"shop": {"id": "shop-1"}}
+    assert len(transport.calls) == 2
+    assert runtime.sleeps == [2.0]
+
+
+def test_network_failures_are_distinct_from_non_retryable_transport_failures() -> None:
+    """Expose the retryable network subtype without exposing provider error content."""
+    with pytest.raises(ShopifyNetworkError):
+        _client(FakeTransport([ConnectTimeout("connect")])).request(
+            "query { shop { id } }"
+        )
+
+
+def test_query_and_mutation_execution_use_different_retry_modes() -> None:
+    """Allow automatic retries only for SDK query execution paths."""
+    client = RetryModeRecordingClient()
+
+    ReadProbe().execute(cast(ShopifyClientWrapper, client))
+    MutationProbe().execute(cast(ShopifyClientWrapper, client))
+
+    assert client.retry_modes == [
+        RequestRetryMode.SAFE_READ,
+        RequestRetryMode.NEVER,
+    ]
 
 
 @pytest.mark.parametrize("status_code", [500, 503])

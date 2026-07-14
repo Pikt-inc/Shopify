@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from .types import GQLCost
+
 
 @dataclass(frozen=True)
 class ShopifyResponseMetadata:
@@ -36,6 +38,10 @@ class ShopifyTransportError(ValueError):
         super().__init__(message)
 
 
+class ShopifyNetworkError(ShopifyTransportError):
+    """Raised when no Shopify HTTP response was received from the transport."""
+
+
 class ShopifyHttpError(ShopifyTransportError):
     """Raised for non-successful Shopify HTTP responses."""
 
@@ -52,6 +58,7 @@ class ShopifyGraphQLError(ShopifyTransportError):
         errors: Sequence[object],
         *,
         metadata: ShopifyResponseMetadata | None = None,
+        cost: GQLCost | None = None,
     ) -> None:
         """Initialize a GraphQL error with structured error entries.
 
@@ -59,7 +66,15 @@ class ShopifyGraphQLError(ShopifyTransportError):
         :param metadata: Safe HTTP response metadata.
         """
         self.graphql_errors = list(errors)
+        self.cost = cost
         super().__init__("Shopify returned GraphQL errors.", metadata=metadata)
+
+    @property
+    def is_throttled(self) -> bool:
+        """Return whether Shopify identified this GraphQL failure as throttling."""
+        from .retry import is_throttled_graphql_error
+
+        return is_throttled_graphql_error(self.graphql_errors)
 
 
 class ShopifyResponseValidationError(ShopifyTransportError):

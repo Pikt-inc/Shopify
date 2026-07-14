@@ -6,6 +6,7 @@ from typing import cast
 import pytest
 
 from shopify_sdk.gql.core.client import GQLResponse
+from shopify_sdk.gql.core.client import RequestRetryMode
 from shopify_sdk.gql.core.client import ShopifyClient
 
 
@@ -18,6 +19,8 @@ class FakeClient:
         self,
         query: str,
         variables: dict[str, object],
+        *,
+        retry_mode: RequestRetryMode = RequestRetryMode.NEVER,
     ) -> GQLResponse:
         return GQLResponse(data={self._mutation_name: self._payload})
 

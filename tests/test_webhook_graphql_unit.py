@@ -5,11 +5,18 @@ from shopify_sdk.gql.versions.v2026_07.types.input_objects import (
     WebhookSubscriptionInput,
 )
 from shopify_sdk.gql.core.client import ShopifyClient
+from shopify_sdk.gql.core.client import RequestRetryMode
 from typing import cast
 
 
 class FakeGraphQLClient:
-    def request(self, query: str, variables: dict[str, object]):
+    def request(
+        self,
+        query: str,
+        variables: dict[str, object],
+        *,
+        retry_mode: RequestRetryMode = RequestRetryMode.NEVER,
+    ):
         return type(
             "Response",
             (),

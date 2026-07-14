@@ -25,6 +25,7 @@ from pydantic import BaseModel
 from .types import type_registry
 from .types.base import connection
 from .client import ShopifyClient
+from .client import RequestRetryMode
 
 logger = logging.getLogger(__name__)
 
@@ -557,7 +558,16 @@ class Query:
         for name, value in self._input_arguments.items():
             variables[name] = self._serialize_value(value)
 
-        response = client.request(query=self.body, variables=variables)
+        retry_mode = (
+            RequestRetryMode.SAFE_READ
+            if self.action_type == "query"
+            else RequestRetryMode.NEVER
+        )
+        response = client.request(
+            query=self.body,
+            variables=variables,
+            retry_mode=retry_mode,
+        )
 
         if response.data is None:
             raise ValueError("Response data is None.")

@@ -2,6 +2,12 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.6
+
+- Added bounded retries for idempotent GraphQL query execution.
+- Added Shopify `Retry-After` and GraphQL throttle-cost recovery handling.
+- Kept mutations and direct client requests single-attempt by default.
+
 ## 0.3.5
 
 - Added opt-in flat bulk-query records for Shopify `groupObjects: false` output.

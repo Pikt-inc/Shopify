@@ -22,6 +22,7 @@ if TYPE_CHECKING:
         PublicationConnection,
     )
     from shopify_sdk.gql.core.types.base import ID
+    from shopify_sdk.gql.core.client.retry import ShopifyRetryPolicy
 
 
 class StoreManager(BaseModel):
@@ -40,7 +41,15 @@ class StoreManager(BaseModel):
         shop_domain: str,
         access_token: str,
         api_version: Optional[str] = None,
+        retry_policy: "ShopifyRetryPolicy | None" = None,
     ) -> Iterator["StoreManager"]:
+        """Yield the manager with context-scoped credentials and retry policy.
+
+        :param shop_domain: Shopify shop domain.
+        :param access_token: Shopify Admin API access token.
+        :param api_version: Optional Shopify Admin GraphQL API version.
+        :param retry_policy: Optional policy for safe GraphQL query retries.
+        """
         from shopify_sdk import client_context
 
         version = resolve_api_version(api_version)
@@ -48,6 +57,7 @@ class StoreManager(BaseModel):
             shop_domain=shop_domain,
             access_token=access_token,
             api_version=version,
+            retry_policy=retry_policy,
         ):
             yield self
 

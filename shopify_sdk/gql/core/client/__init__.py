@@ -8,12 +8,15 @@ from dotenv import load_dotenv
 from .wrapper import ShopifyClientWrapper as ShopifyClient
 from .errors import ShopifyGraphQLError
 from .errors import ShopifyHttpError
+from .errors import ShopifyNetworkError
 from .errors import ShopifyResponseDecodeError
 from .errors import ShopifyResponseValidationError
 from .errors import ShopifyTransportError
 from .transport import RequestsTransport
 from .transport import ShopifyHttpResponse
 from .transport import ShopifyTransport
+from .retry import RequestRetryMode
+from .retry import ShopifyRetryPolicy
 from .types import (
     GQLRequestParams,
     GQLResponse,
@@ -54,8 +57,14 @@ class _ClientProxy:
         self,
         query: str,
         variables: dict[str, object] | None = None,
+        *,
+        retry_mode: RequestRetryMode = RequestRetryMode.NEVER,
     ) -> GQLResponse:
-        return _get_current_client().request(query=query, variables=variables)
+        return _get_current_client().request(
+            query=query,
+            variables=variables,
+            retry_mode=retry_mode,
+        )
 
     def __getattr__(self, name: str):
         return getattr(_get_current_client(), name)
@@ -77,6 +86,7 @@ def client_context(
     api_version: str,
     *,
     transport: ShopifyTransport | None = None,
+    retry_policy: ShopifyRetryPolicy | None = None,
 ) -> Iterator[ShopifyClient]:
     """
     Temporarily set the active Shopify client for the current context.
@@ -89,12 +99,14 @@ def client_context(
     :param access_token: Shopify Admin API access token.
     :param api_version: Shopify Admin GraphQL API version.
     :param transport: Optional HTTP transport for the active client.
+    :param retry_policy: Optional policy for safe read retries.
     """
     wrapper = ShopifyClient(
         shop_domain=shop_domain,
         access_token=access_token,
         api_version=api_version,
         transport=transport,
+        retry_policy=retry_policy,
     )
     token = _current_client.set(wrapper)
     try:
@@ -115,6 +127,7 @@ __all__ = [
     "RequestsTransport",
     "ShopifyGraphQLError",
     "ShopifyHttpError",
+    "ShopifyNetworkError",
     "ShopifyHttpResponse",
     "client",
     "client_context",
@@ -123,4 +136,6 @@ __all__ = [
     "ShopifyResponseValidationError",
     "ShopifyTransport",
     "ShopifyTransportError",
+    "RequestRetryMode",
+    "ShopifyRetryPolicy",
 ]

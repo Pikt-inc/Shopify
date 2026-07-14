@@ -116,6 +116,28 @@ raises `BulkOperationTerminalError`, whose `state` preserves `error_code` and
 `partial_data_url` when Shopify provides them. `group_objects` defaults to `True`; use
 flat mode only when callers need Shopify's explicit parent-child JSONL relationships.
 
+### Retry behavior
+
+SDK query execution retries temporary Shopify failures by default; mutations and direct
+`client.request()` calls remain single-attempt to avoid duplicate writes. The starting
+policy uses three total attempts, a one-second exponential-backoff delay, an eight-second
+maximum delay, and 20% jitter. A valid numeric Shopify `Retry-After` value takes priority.
+
+Pass a policy through `credentials_context` to change this behavior for a shop context:
+
+```python
+from shopify_sdk import store
+from shopify_sdk.gql.core.client import ShopifyRetryPolicy
+
+policy = ShopifyRetryPolicy(max_attempts=1)
+with store.credentials_context(
+    shop_domain="example.myshopify.com",
+    access_token="token",
+    retry_policy=policy,
+):
+    products = store.products.query_all()
+```
+
 Query recent paid orders:
 
 ```python
