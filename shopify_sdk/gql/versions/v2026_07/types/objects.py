@@ -311,6 +311,36 @@ class Metafield(AutoRegisterModel):
     value: String
 
 
+class MetafieldCapabilityUniqueValues(AutoRegisterModel):
+    """Expose whether unique metafield values are eligible and enabled."""
+
+    eligible: Boolean
+    enabled: Boolean
+
+
+class MetafieldCapabilities(AutoRegisterModel):
+    """Expose metafield definition capabilities needed for custom IDs."""
+
+    uniqueValues: MetafieldCapabilityUniqueValues
+
+
+class MetafieldDefinitionType(AutoRegisterModel):
+    """Expose the Shopify metafield type name."""
+
+    name: String
+
+
+class MetafieldDefinition(AutoRegisterModel):
+    """Typed projection used to validate a product custom-ID definition."""
+
+    id: ID
+    key: String
+    namespace: String
+    ownerType: "MetafieldOwnerType"
+    type: MetafieldDefinitionType
+    capabilities: MetafieldCapabilities
+
+
 class MetafieldEdge(AutoRegisterModel):
     cursor: String
     node: Metafield

@@ -15,6 +15,7 @@ locations = VersionedGraphQLSymbol("queries", "locations")
 bulkOperation = VersionedGraphQLSymbol("queries", "bulkOperation")
 productSetOperation = VersionedGraphQLSymbol("queries", "productSetOperation")
 productByIdentifier = VersionedGraphQLSymbol("queries", "productByIdentifier")
+metafieldDefinition = VersionedGraphQLSymbol("queries", "metafieldDefinition")
 
 __all__ = [
     "orderByIdentifier",
@@ -29,4 +30,5 @@ __all__ = [
     "bulkOperation",
     "productSetOperation",
     "productByIdentifier",
+    "metafieldDefinition",
 ]

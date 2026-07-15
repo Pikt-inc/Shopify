@@ -4,6 +4,7 @@ from .enums import (
     ProductVariantInventoryPolicy,
     CombinedListingsRole,
     CountryCode,
+    MetafieldOwnerType,
     WeightUnit,
 )
 from shopify_sdk.gql.core.types.base import (
@@ -36,9 +37,36 @@ class OrderMarkAsPaidInput(input_object):
     id: ID
 
 
+class UniqueMetafieldValueInput(input_object):
+    """Identify a resource by a caller-supplied unique metafield value."""
+
+    namespace: String = Field(min_length=1)
+    key: String = Field(min_length=1)
+    value: String = Field(min_length=1)
+
+
+class ProductSetIdentifiers(input_object):
+    """Identify a product for an upsert through ``productSet``."""
+
+    customId: Optional[UniqueMetafieldValueInput] = Field(default=None)
+    handle: Optional[String] = Field(default=None)
+    id: Optional[ID] = Field(default=None)
+
+
 class ProductIdentifierInput(input_object):
-    handle: Optional[String]
-    id: Optional[ID]
+    """Identify a product by GID, handle, or custom ID."""
+
+    customId: Optional[UniqueMetafieldValueInput] = Field(default=None)
+    handle: Optional[String] = Field(default=None)
+    id: Optional[ID] = Field(default=None)
+
+
+class MetafieldDefinitionIdentifierInput(input_object):
+    """Identify a metafield definition by owner type, namespace, and key."""
+
+    key: String = Field(min_length=1)
+    namespace: String = Field(min_length=1)
+    ownerType: MetafieldOwnerType
 
 
 class WebhookSubscriptionInput(input_object):
@@ -415,6 +443,14 @@ class ProductSetInput(input_object):
     templateSuffix: Optional[String] = Field(default=None)
     variants: List[ProductVariantSetInput] = Field(default_factory=list)
     id: Optional[ID] = Field(default=None)
+
+    def to_graphql(self) -> dict:
+        """Serialize only fields explicitly supplied by the caller.
+
+        Explicit empty lists remain present so callers can intentionally replace
+        Shopify list fields, while omitted lists remain unchanged.
+        """
+        return self.model_dump(exclude_unset=True, exclude_none=True)
 
 
 class InventoryChangeInput(input_object):

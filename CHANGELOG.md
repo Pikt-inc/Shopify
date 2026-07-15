@@ -2,6 +2,12 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.10
+
+- Added typed Shopify `2026-07` product custom-ID lookup and `productSet` upsert identifiers.
+- Added read-only product custom-ID metafield definition inspection.
+- Changed `ProductSetInput` serialization to omit unspecified list fields while preserving explicit empty lists.
+
 ## 0.3.9
 
 - Added typed `inventorySetQuantities` support for `2025-10` and `2026-07`.

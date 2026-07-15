@@ -8,6 +8,10 @@ from .publish import (
 )
 from .query import product_details, product_by_sku, variants_by_product
 from .types import ProductActionResponse
+from .custom_ids import (
+    ProductCustomIdDefinitionInspection,
+    ProductCustomIdDefinitionInspector,
+)
 
 __all__ = [
     "unpublish_product_by_sku",
@@ -20,4 +24,6 @@ __all__ = [
     "product_details",
     "product_by_sku",
     "variants_by_product",
+    "ProductCustomIdDefinitionInspection",
+    "ProductCustomIdDefinitionInspector",
 ]

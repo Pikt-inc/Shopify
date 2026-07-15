@@ -36,6 +36,10 @@ from .objects import (
     Job,
     ProductSetOperation,
     WebhookSubscription,
+    MetafieldCapabilityUniqueValues,
+    MetafieldCapabilities,
+    MetafieldDefinition,
+    MetafieldDefinitionType,
 )
 from .connections import (
     OrderConnection,
@@ -101,6 +105,9 @@ from .input_objects import (
     FulfillmentOrderLineItemsInput,
     FulfillmentOrderLineItemInput,
     ProductIdentifierInput,
+    ProductSetIdentifiers,
+    UniqueMetafieldValueInput,
+    MetafieldDefinitionIdentifierInput,
     MetafieldInput,
     StagedUploadInput,
     WebhookSubscriptionInput,
@@ -120,6 +127,7 @@ from .enums import (
     CombinedListingsRole,
     CountryCode,
     WebhookSubscriptionTopic,
+    MetafieldOwnerType,
 )
 from shopify_sdk.gql.core.types.registry import type_registry
 
@@ -228,6 +236,9 @@ __all__ = [
     "ShippingLine",
     "Fulfillment",
     "ProductIdentifierInput",
+    "ProductSetIdentifiers",
+    "UniqueMetafieldValueInput",
+    "MetafieldDefinitionIdentifierInput",
     "InventoryItem",
     "SelectedOption",
     "MetafieldInput",
@@ -240,6 +251,11 @@ __all__ = [
     "ProductVariantSetInput",
     "ProductSetInput",
     "ProductSetOperation",
+    "MetafieldCapabilityUniqueValues",
+    "MetafieldCapabilities",
+    "MetafieldDefinition",
+    "MetafieldDefinitionType",
+    "MetafieldOwnerType",
     "OptionValueUpdateInput",
     "OptionValueCreateInput",
 ]

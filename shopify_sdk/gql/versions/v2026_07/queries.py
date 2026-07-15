@@ -210,6 +210,28 @@ class productByIdentifier(VersionedQuery):
         return result
 
 
+class metafieldDefinition(VersionedQuery):
+    """Read one metafield definition by owner type, namespace, and key."""
+
+    return_type: Type[BaseModel] = MetafieldDefinition
+
+    def __init__(
+        self,
+        identifier: MetafieldDefinitionIdentifierInput,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
+    ) -> None:
+        """Initialize a read-only metafield definition query."""
+        self.identifier: MetafieldDefinitionIdentifierInput = identifier
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
+
+    def execute(self, client: ShopifyClient) -> Optional[MetafieldDefinition]:
+        """Return the matching metafield definition when one exists."""
+        result: Optional[MetafieldDefinition] = super().execute(client=client)
+        return result
+
+
 class locations(VersionedQuery):
     return_type: Type[BaseModel] = LocationConnection
 

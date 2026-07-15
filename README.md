@@ -98,6 +98,48 @@ payload = ProductSetInput(
 responses = store.products.bulk.set([payload])
 ```
 
+Lookup or upsert a product with a caller-supplied Shopify custom ID on `2026-07`:
+
+```python
+from shopify_sdk import client
+from shopify_sdk.gql.core.types import (
+    ProductIdentifierInput,
+    ProductSetIdentifiers,
+    ProductSetInput,
+    UniqueMetafieldValueInput,
+)
+from shopify_sdk.gql.mutations import productSet
+from shopify_sdk.gql.queries import productByIdentifier
+
+custom_id = UniqueMetafieldValueInput(
+    namespace="your_app",
+    key="external_product_id",
+    value="catalog-product-123",
+)
+
+product = productByIdentifier(
+    identifier=ProductIdentifierInput(customId=custom_id),
+    field_inclusions={"Product": {"id", "handle"}},
+).execute(client)
+
+payload = productSet(
+    identifier=ProductSetIdentifiers(customId=custom_id),
+    input=ProductSetInput(title="Example Product"),
+    synchronous=True,
+    field_inclusions={
+        "ProductSetPayload": {"product", "userErrors"},
+        "Product": {"id", "handle"},
+        "ProductSetUserError": {"code", "field", "message"},
+    },
+).execute(client)
+```
+
+`ProductSetInput` now omits unspecified fields. Explicitly passing a list such as
+`tags=[]` still sends an empty list and intentionally clears that Shopify list field.
+Use `ProductCustomIdDefinitionInspector` from `shopify_sdk.common.product` for a
+read-only check of the definition owner, namespace/key, `id` type, and unique-values
+capability before using it as a custom ID.
+
 Read named inventory quantity states:
 
 ```python

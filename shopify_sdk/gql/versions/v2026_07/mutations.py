@@ -191,9 +191,13 @@ class productSet(VersionedMutation):
         synchronous: Boolean = False,
         field_exclusions: Optional[Dict[str, Set[str]]] = None,
         field_inclusions: Optional[Dict[str, Set[str]]] = None,
-    ):
+        identifier: Optional[ProductSetIdentifiers] = None,
+    ) -> None:
+        """Initialize a product upsert with an optional typed identifier."""
         self.input: ProductSetInput = input
         self.synchronous: Boolean = synchronous
+        if identifier is not None:
+            self.identifier: ProductSetIdentifiers = identifier
         self._field_exclusions = field_exclusions or {}
         self._field_inclusions = field_inclusions or {}
 
