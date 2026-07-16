@@ -3,10 +3,11 @@
 from dataclasses import dataclass
 from datetime import datetime
 from collections.abc import Sequence
-from enum import StrEnum
 from typing import TYPE_CHECKING, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from shopify_sdk.gql.core.string_enum import StringEnum
 
 if TYPE_CHECKING:
     from shopify_sdk.gql.core.types.payload import BulkOperationResultPayload
@@ -158,7 +159,7 @@ class BulkResultParseError(ValueError):
         )
 
 
-class BulkSubmissionStage(StrEnum):
+class BulkSubmissionStage(StringEnum):
     """Identify the Shopify bulk workflow step that rejected a submission."""
 
     BULK_MUTATION = "bulk_mutation"
