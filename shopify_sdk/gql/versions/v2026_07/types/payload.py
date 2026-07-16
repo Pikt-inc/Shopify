@@ -10,6 +10,13 @@ class ProductCreatePayload(AutoRegisterModel):
     userErrors: List[UserError]
 
 
+class MetafieldDefinitionCreatePayload(AutoRegisterModel):
+    """Result of one non-retrying metafield-definition create mutation."""
+
+    createdDefinition: Optional[MetafieldDefinition] = Field(default=None)
+    userErrors: List[MetafieldDefinitionCreateUserError]
+
+
 class WebhookSubscriptionCreatePayload(AutoRegisterModel):
     userErrors: List[UserError]
     webhookSubscription: Optional[WebhookSubscription] = Field(default=None)

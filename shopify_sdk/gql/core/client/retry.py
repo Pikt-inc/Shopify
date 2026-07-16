@@ -2,7 +2,6 @@
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from enum import StrEnum
 from math import isfinite
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -11,9 +10,10 @@ from .errors import ShopifyGraphQLError
 from .errors import ShopifyHttpError
 from .errors import ShopifyNetworkError
 from .errors import ShopifyTransportError
+from ..string_enum import StringEnum
 
 
-class RequestRetryMode(StrEnum):
+class RequestRetryMode(StringEnum):
     """Describe whether a request is safe for automatic retry."""
 
     NEVER = "never"

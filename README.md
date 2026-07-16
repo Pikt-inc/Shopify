@@ -65,6 +65,11 @@ for product in products.nodes:
     print(product.id, product.handle, product.title)
 ```
 
+The SDK never loads dotenv files at import time. Applications own environment
+loading and should prefer explicit `credentials_context` or `client_context`
+scopes. Legacy unscoped client access resolves its environment credentials only
+when that proxy is first used.
+
 ## API versions
 
 The SDK defaults to Shopify Admin GraphQL API version `2026-07`. Set
@@ -139,6 +144,11 @@ payload = productSet(
 Use `ProductCustomIdDefinitionInspector` from `shopify_sdk.common.product` for a
 read-only check of the definition owner, namespace/key, `id` type, and unique-values
 capability before using it as a custom ID.
+
+Deployment tooling may explicitly use `ProductCustomIdDefinitionCreator` to create
+a missing `PRODUCT` definition of type `id`. Always inspect first, never retry the
+mutation blindly, and inspect again after creation. The creator does not update or
+delete incompatible definitions and does not perform any product mutation.
 
 Read named inventory quantity states:
 

@@ -2,6 +2,13 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.11
+
+- Added typed Shopify `2026-07` metafield-definition creation for explicit deployment bootstrap operations.
+- Preserved structured definition-create user errors and retained the SDK's no-retry mutation behavior.
+- Removed import-time dotenv and credential loading; legacy unscoped environment credentials now resolve lazily.
+- Restored package import compatibility with supported Python 3.10 runtimes.
+
 ## 0.3.10
 
 - Added typed Shopify `2026-07` product custom-ID lookup and `productSet` upsert identifiers.

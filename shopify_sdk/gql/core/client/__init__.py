@@ -3,8 +3,6 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Iterator, cast
 
-from dotenv import load_dotenv
-
 from .wrapper import ShopifyClientWrapper as ShopifyClient
 from .errors import ShopifyGraphQLError
 from .errors import ShopifyHttpError
@@ -25,9 +23,6 @@ from .types import (
     GQLExtensions,
 )
 
-load_dotenv()
-
-
 def _build_env_client() -> ShopifyClient:
     return ShopifyClient(
         shop_domain=os.getenv("SHOPIFY_SHOP_DOMAIN") or "",
@@ -35,14 +30,19 @@ def _build_env_client() -> ShopifyClient:
     )
 
 
-_current_client: ContextVar[ShopifyClient] = ContextVar(
+_current_client: ContextVar[ShopifyClient | None] = ContextVar(
     "shopify_client",
-    default=_build_env_client(),
+    default=None,
 )
 
 
 def _get_current_client() -> ShopifyClient:
-    return _current_client.get()
+    current = _current_client.get()
+    if current is not None:
+        return current
+    current = _build_env_client()
+    _current_client.set(current)
+    return current
 
 
 def current_api_version() -> str:

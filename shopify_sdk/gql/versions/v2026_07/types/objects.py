@@ -1100,6 +1100,14 @@ class UserError(AutoRegisterModel):
     message: String
 
 
+class MetafieldDefinitionCreateUserError(AutoRegisterModel):
+    """Structured Shopify error returned while creating a definition."""
+
+    code: Optional[String] = Field(default=None)
+    field: Optional[List[String]] = Field(default=None)
+    message: String
+
+
 class WebhookSubscription(AutoRegisterModel):
     filter: Optional[String] = Field(default=None)
     format: Optional[String] = Field(default=None)
