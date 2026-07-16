@@ -432,7 +432,6 @@ class ProductVariant(AutoRegisterModel):
     productParents: ProductConnection
     productVariantComponents: ProductVariantComponentConnection
     requiresComponents: Boolean = Field(default=False)
-    requiresShipping: Boolean
     selectedOptions: List[SelectedOption] = Field(default_factory=list)
     sellableOnlineQuantity: Int
     sellingPlanGroups: SellingPlanGroupConnection

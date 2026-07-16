@@ -4,9 +4,9 @@ All notable changes to this package are documented here.
 
 ## 0.3.12
 
-- Added a version-resolved typed custom-ID product query for bounded DRAFT reconciliation.
-- Kept API-specific field and connection selection inside each generated version bundle.
-- Read shipping requirements from `InventoryItem` without querying the removed `ProductVariant.requiresShipping` field.
+- Corrected the Shopify `2026-07` `ProductVariant` model by removing the retired `requiresShipping` field.
+- Exported generated product readback object types through the SDK's public typed facade.
+- Preserved `requiresShipping` on `InventoryItem`, matching Shopify's current fulfillment model.
 
 ## 0.3.11
 
