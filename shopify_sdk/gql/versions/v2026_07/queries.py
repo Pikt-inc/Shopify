@@ -210,6 +210,97 @@ class productByIdentifier(VersionedQuery):
         return result
 
 
+class draftProductByIdentifier(productByIdentifier):
+    """Read the bounded product state required for safe DRAFT reconciliation."""
+
+    def __init__(self, identifier: ProductIdentifierInput, location_id: str):
+        """Build the version-specific typed projection and inventory location scope."""
+
+        super().__init__(
+            identifier=identifier,
+            field_inclusions={
+                "Product": {
+                    "createdAt",
+                    "descriptionHtml",
+                    "handle",
+                    "id",
+                    "media",
+                    "mediaCount",
+                    "metafields",
+                    "options",
+                    "productType",
+                    "publishedAt",
+                    "resourcePublications",
+                    "status",
+                    "tags",
+                    "title",
+                    "updatedAt",
+                    "variants",
+                    "vendor",
+                },
+                "MetafieldConnection": {"nodes", "pageInfo"},
+                "Metafield": {"namespace", "key", "type", "value"},
+                "ProductOption": {"name", "position", "values"},
+                "ProductVariantConnection": {"nodes", "pageInfo"},
+                "ProductVariant": {
+                    "barcode",
+                    "compareAtPrice",
+                    "id",
+                    "inventoryItem",
+                    "inventoryPolicy",
+                    "price",
+                    "selectedOptions",
+                    "sku",
+                    "title",
+                },
+                "SelectedOption": {"name", "value"},
+                "InventoryItem": {
+                    "id",
+                    "tracked",
+                    "requiresShipping",
+                    "inventoryLevel",
+                },
+                "InventoryLevel": {"location", "quantities"},
+                "InventoryQuantity": {"name", "quantity"},
+                "Location": {"id"},
+                "MediaConnection": {"nodes", "pageInfo"},
+                "Media": {
+                    "id",
+                    "mediaContentType",
+                    "alt",
+                    "status",
+                    "mediaErrors",
+                    "preview",
+                },
+                "MediaError": {"code", "message"},
+                "MediaPreviewImage": {"image"},
+                "Image": {"url", "width", "height"},
+                "ResourcePublicationConnection": {"nodes", "pageInfo"},
+                "ResourcePublication": {"isPublished", "publication"},
+                "Publication": {"id"},
+                "Count": {"count"},
+                "PageInfo": {"hasNextPage", "endCursor"},
+            },
+            connection_arguments={
+                "metafields": {"first": 250},
+                "variants": {"first": 2},
+                "media": {"first": 250},
+                "resourcePublications": {"first": 250, "onlyPublished": False},
+            },
+        )
+        self._field_arguments = {
+            "InventoryItem": {
+                "inventoryLevel": {"locationId": location_id},
+            }
+        }
+
+    @property
+    def class_name(self) -> str:
+        """Execute the underlying Shopify product-by-identifier field."""
+
+        return "productByIdentifier"
+
+
 class metafieldDefinition(VersionedQuery):
     """Read one metafield definition by owner type, namespace, and key."""
 

@@ -2,6 +2,12 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.12
+
+- Added a version-resolved typed custom-ID product query for bounded DRAFT reconciliation.
+- Kept API-specific field and connection selection inside each generated version bundle.
+- Read shipping requirements from `InventoryItem` without querying the removed `ProductVariant.requiresShipping` field.
+
 ## 0.3.11
 
 - Added typed Shopify `2026-07` metafield-definition creation for explicit deployment bootstrap operations.
