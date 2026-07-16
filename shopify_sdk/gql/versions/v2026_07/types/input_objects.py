@@ -494,7 +494,7 @@ class MetafieldInput(input_object):
     id: Optional[ID] = Field(default=None)
     key: String
     namespace: String
-    type: String
+    type: Optional[String] = Field(default=None)
     value: String
 
 

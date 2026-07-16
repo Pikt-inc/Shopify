@@ -27,6 +27,7 @@ from shopify_sdk.gql.versions.v2026_07.queries import productByIdentifier
 from shopify_sdk.gql.versions.v2026_07.types import (
     ProductIdentifierInput,
     MetafieldDefinitionInput,
+    MetafieldInput,
     MetafieldOwnerType,
     ProductSetIdentifiers,
     ProductSetInput,
@@ -145,6 +146,29 @@ def test_product_set_builds_custom_id_identifier() -> None:
     assert payload.product is not None
     assert payload.product.id == "gid://shopify/Product/1"
     assert fake_client.retry_mode is RequestRetryMode.NEVER
+
+
+def test_product_set_custom_id_metafield_can_use_its_definition_type() -> None:
+    """Omit type when Shopify already owns an exact metafield definition."""
+
+    product_input = ProductSetInput(
+        title="Example product",
+        metafields=[
+            MetafieldInput(
+                namespace=NAMESPACE,
+                key=KEY,
+                value=VALUE,
+            )
+        ],
+    )
+
+    assert product_input.to_graphql()["metafields"] == [
+        {
+            "namespace": NAMESPACE,
+            "key": KEY,
+            "value": VALUE,
+        }
+    ]
 
 
 def test_product_set_omits_unspecified_destructive_list_fields() -> None:

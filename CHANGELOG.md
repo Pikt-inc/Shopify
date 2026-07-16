@@ -2,6 +2,11 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.13
+
+- Corrected Shopify `2026-07` `MetafieldInput.type` to be optional when a metafield definition supplies the type.
+- Preserved omission of an unspecified metafield type in generated GraphQL variables.
+
 ## 0.3.12
 
 - Corrected the Shopify `2026-07` `ProductVariant` model by removing the retired `requiresShipping` field.
