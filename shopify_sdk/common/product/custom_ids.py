@@ -1,6 +1,6 @@
 """Inspect and explicitly create Shopify product custom-ID definitions."""
 
-from typing import Self, cast
+from typing import cast
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -82,7 +82,7 @@ class ProductCustomIdDefinitionInspection(BaseModel):
         )
 
     @model_validator(mode="after")
-    def validate_definition_identity(self) -> Self:
+    def validate_definition_identity(self) -> "ProductCustomIdDefinitionInspection":
         """Require found definitions to retain their Shopify GID."""
 
         if self.definition_found != (self.definition_id is not None):
@@ -138,7 +138,7 @@ class ProductCustomIdDefinitionCreateResult(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     @model_validator(mode="after")
-    def validate_outcome(self) -> Self:
+    def validate_outcome(self) -> "ProductCustomIdDefinitionCreateResult":
         """Require a created definition or structured Shopify errors."""
 
         if self.created_definition_id is None and not self.user_errors:
