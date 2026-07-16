@@ -69,6 +69,24 @@ class productCreate(VersionedMutation):
         self._field_inclusions = field_inclusions or {}
 
 
+class metafieldDefinitionCreate(VersionedMutation):
+    """Create one metafield definition without automatic mutation retries."""
+
+    return_type: Type[BaseModel] = MetafieldDefinitionCreatePayload
+
+    def __init__(
+        self,
+        definition: MetafieldDefinitionInput,
+        field_exclusions: Optional[Dict[str, Set[str]]] = None,
+        field_inclusions: Optional[Dict[str, Set[str]]] = None,
+    ) -> None:
+        """Initialize one exact definition create mutation."""
+
+        self.definition: MetafieldDefinitionInput = definition
+        self._field_exclusions = field_exclusions or {}
+        self._field_inclusions = field_inclusions or {}
+
+
 class productDelete(VersionedMutation):
     return_type: Type[BaseModel] = ProductDeletePayload
 

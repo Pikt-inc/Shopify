@@ -6,6 +6,7 @@ from pydantic import ValidationError
 import pytest
 
 from shopify_sdk.common.product.custom_ids import (
+    ProductCustomIdDefinitionCreator,
     ProductCustomIdDefinitionInspection,
     ProductCustomIdDefinitionInspector,
 )
@@ -15,10 +16,15 @@ from shopify_sdk.gql.core.client import (
     ShopifyClient,
     client_context,
 )
-from shopify_sdk.gql.versions.v2026_07.mutations import productSet
+from shopify_sdk.gql.versions.v2026_07.mutations import (
+    metafieldDefinitionCreate,
+    productSet,
+)
 from shopify_sdk.gql.versions.v2026_07.queries import productByIdentifier
 from shopify_sdk.gql.versions.v2026_07.types import (
     ProductIdentifierInput,
+    MetafieldDefinitionInput,
+    MetafieldOwnerType,
     ProductSetIdentifiers,
     ProductSetInput,
     UniqueMetafieldValueInput,
@@ -257,3 +263,81 @@ def test_definition_inspection_reports_requirement_mismatches() -> None:
         "type_must_be_id",
         "unique_values_must_be_enabled",
     )
+
+
+def test_metafield_definition_create_uses_exact_variables_without_retry() -> None:
+    """Create the exact PRODUCT/id definition and disable mutation retries."""
+
+    mutation = metafieldDefinitionCreate(
+        definition=MetafieldDefinitionInput(
+            name="Pikt Source Product ID",
+            namespace=NAMESPACE,
+            key=KEY,
+            ownerType=MetafieldOwnerType.PRODUCT,
+            type="id",
+        )
+    )
+    fake_client = FakeClient(
+        "metafieldDefinitionCreate",
+        {
+            "createdDefinition": {
+                "id": "gid://shopify/MetafieldDefinition/1",
+                "ownerType": "PRODUCT",
+                "namespace": NAMESPACE,
+                "key": KEY,
+                "type": {"name": "id"},
+                "capabilities": {
+                    "uniqueValues": {"eligible": True, "enabled": True}
+                },
+            },
+            "userErrors": [],
+        },
+    )
+
+    payload = mutation.execute(cast(ShopifyClient, fake_client))
+
+    assert mutation.variables == {
+        "definition": {
+            "name": "Pikt Source Product ID",
+            "namespace": NAMESPACE,
+            "key": KEY,
+            "ownerType": "PRODUCT",
+            "type": "id",
+        }
+    }
+    assert "$definition: MetafieldDefinitionInput!" in mutation.body
+    assert payload.createdDefinition is not None
+    assert payload.createdDefinition.id == "gid://shopify/MetafieldDefinition/1"
+    assert fake_client.retry_mode is RequestRetryMode.NEVER
+
+
+def test_definition_creator_preserves_structured_user_errors() -> None:
+    """Return mutation user errors without treating them as transport failures."""
+
+    fake_client = FakeClient(
+        "metafieldDefinitionCreate",
+        {
+            "createdDefinition": None,
+            "userErrors": [
+                {
+                    "code": "TAKEN",
+                    "field": ["definition", "key"],
+                    "message": "Key is already in use.",
+                }
+            ],
+        },
+    )
+
+    result = ProductCustomIdDefinitionCreator(
+        client=cast(ShopifyClient, fake_client)
+    ).create(
+        name="Pikt Source Product ID",
+        namespace=NAMESPACE,
+        key=KEY,
+    )
+
+    assert result.created_definition_id is None
+    assert len(result.user_errors) == 1
+    assert result.user_errors[0].code == "TAKEN"
+    assert result.user_errors[0].field == ("definition", "key")
+    assert fake_client.retry_mode is RequestRetryMode.NEVER

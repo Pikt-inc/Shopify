@@ -69,6 +69,16 @@ class MetafieldDefinitionIdentifierInput(input_object):
     ownerType: MetafieldOwnerType
 
 
+class MetafieldDefinitionInput(input_object):
+    """Create one explicitly named and scoped metafield definition."""
+
+    name: String = Field(min_length=1)
+    namespace: String = Field(min_length=1)
+    key: String = Field(min_length=1)
+    ownerType: MetafieldOwnerType
+    type: String = Field(min_length=1)
+
+
 class WebhookSubscriptionInput(input_object):
     filter: Optional[String] = Field(default=None)
     includeFields: Optional[List[String]] = Field(default=None)

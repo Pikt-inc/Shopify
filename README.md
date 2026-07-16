@@ -140,6 +140,11 @@ Use `ProductCustomIdDefinitionInspector` from `shopify_sdk.common.product` for a
 read-only check of the definition owner, namespace/key, `id` type, and unique-values
 capability before using it as a custom ID.
 
+Deployment tooling may explicitly use `ProductCustomIdDefinitionCreator` to create
+a missing `PRODUCT` definition of type `id`. Always inspect first, never retry the
+mutation blindly, and inspect again after creation. The creator does not update or
+delete incompatible definitions and does not perform any product mutation.
+
 Read named inventory quantity states:
 
 ```python

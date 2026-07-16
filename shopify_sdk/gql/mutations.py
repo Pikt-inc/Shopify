@@ -5,6 +5,9 @@ productUnpublish = VersionedGraphQLSymbol("mutations", "productUnpublish")
 productPublish = VersionedGraphQLSymbol("mutations", "productPublish")
 productCreate = VersionedGraphQLSymbol("mutations", "productCreate")
 productDelete = VersionedGraphQLSymbol("mutations", "productDelete")
+metafieldDefinitionCreate = VersionedGraphQLSymbol(
+    "mutations", "metafieldDefinitionCreate"
+)
 deliveryProfileUpdate = VersionedGraphQLSymbol("mutations", "deliveryProfileUpdate")
 deliveryProfileCreate = VersionedGraphQLSymbol("mutations", "deliveryProfileCreate")
 deliveryProfileRemove = VersionedGraphQLSymbol("mutations", "deliveryProfileRemove")
@@ -42,6 +45,7 @@ __all__ = [
     "productPublish",
     "productCreate",
     "productDelete",
+    "metafieldDefinitionCreate",
     "deliveryProfileUpdate",
     "deliveryProfileCreate",
     "deliveryProfileRemove",

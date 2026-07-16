@@ -39,6 +39,7 @@ from .objects import (
     MetafieldCapabilityUniqueValues,
     MetafieldCapabilities,
     MetafieldDefinition,
+    MetafieldDefinitionCreateUserError,
     MetafieldDefinitionType,
 )
 from .connections import (
@@ -108,6 +109,7 @@ from .input_objects import (
     ProductSetIdentifiers,
     UniqueMetafieldValueInput,
     MetafieldDefinitionIdentifierInput,
+    MetafieldDefinitionInput,
     MetafieldInput,
     StagedUploadInput,
     WebhookSubscriptionInput,
@@ -239,6 +241,7 @@ __all__ = [
     "ProductSetIdentifiers",
     "UniqueMetafieldValueInput",
     "MetafieldDefinitionIdentifierInput",
+    "MetafieldDefinitionInput",
     "InventoryItem",
     "SelectedOption",
     "MetafieldInput",
@@ -254,6 +257,7 @@ __all__ = [
     "MetafieldCapabilityUniqueValues",
     "MetafieldCapabilities",
     "MetafieldDefinition",
+    "MetafieldDefinitionCreateUserError",
     "MetafieldDefinitionType",
     "MetafieldOwnerType",
     "OptionValueUpdateInput",

@@ -9,6 +9,9 @@ from .publish import (
 from .query import product_details, product_by_sku, variants_by_product
 from .types import ProductActionResponse
 from .custom_ids import (
+    ProductCustomIdDefinitionCreateResult,
+    ProductCustomIdDefinitionCreateUserError,
+    ProductCustomIdDefinitionCreator,
     ProductCustomIdDefinitionInspection,
     ProductCustomIdDefinitionInspector,
 )
@@ -26,4 +29,7 @@ __all__ = [
     "variants_by_product",
     "ProductCustomIdDefinitionInspection",
     "ProductCustomIdDefinitionInspector",
+    "ProductCustomIdDefinitionCreateResult",
+    "ProductCustomIdDefinitionCreateUserError",
+    "ProductCustomIdDefinitionCreator",
 ]
