@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import cast
 from unittest.mock import patch
 
@@ -349,8 +350,9 @@ def test_definition_creator_preserves_structured_user_errors() -> None:
 def test_explicit_client_context_never_reads_legacy_environment_credentials() -> None:
     """Keep selected explicit credentials isolated from legacy SDK defaults."""
 
-    with patch(
-        "shopify_sdk.gql.core.client.os.getenv",
+    with patch.object(
+        os,
+        "getenv",
         side_effect=AssertionError("legacy environment access is forbidden"),
     ):
         with client_context("example.myshopify.com", "token", "2026-07"):
