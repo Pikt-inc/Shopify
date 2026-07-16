@@ -19,8 +19,10 @@ from shopify_sdk.gql.versions.v2025_10.types import ProductCreateInput
 from shopify_sdk.gql.versions.v2025_10.types.objects import PageInfo as PageInfo202510
 from shopify_sdk.gql.versions.v2025_10.types.connections import OrderConnection as OrderConnection202510
 from shopify_sdk.gql.versions.v2025_10.types.objects import Product as Product202510
+from shopify_sdk.gql.versions.v2025_10.types.objects import ProductVariant as ProductVariant202510
 from shopify_sdk.gql.versions.v2026_07.queries import products as Products202607
 from shopify_sdk.gql.versions.v2026_07.types.objects import Product as Product202607
+from shopify_sdk.gql.versions.v2026_07.types.objects import ProductVariant as ProductVariant202607
 
 
 class TestApiVersions(unittest.TestCase):
@@ -63,6 +65,10 @@ class TestApiVersions(unittest.TestCase):
     def test_versioned_product_types_can_diverge(self) -> None:
         self.assertNotIn("bundleConsolidatedOptions", Product202510.model_fields)
         self.assertIn("bundleConsolidatedOptions", Product202607.model_fields)
+
+    def test_versioned_product_variant_shipping_fields_can_diverge(self) -> None:
+        self.assertIn("requiresShipping", ProductVariant202510.model_fields)
+        self.assertNotIn("requiresShipping", ProductVariant202607.model_fields)
 
     def test_versioned_mutation_uses_version_bulk_adapter(self) -> None:
         calls: list[list[object]] = []
