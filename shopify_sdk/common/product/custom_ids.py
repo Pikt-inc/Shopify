@@ -20,6 +20,7 @@ class ProductCustomIdDefinitionInspection(BaseModel):
     """Typed verification result for a product custom-ID metafield definition."""
 
     definition_found: bool
+    definition_id: str | None = None
     expected_namespace: str
     expected_key: str
     owner_type: MetafieldOwnerType | None = None
@@ -64,11 +65,13 @@ class ProductCustomIdDefinitionInspection(BaseModel):
         if definition is None:
             return cls(
                 definition_found=False,
+                definition_id=None,
                 expected_namespace=namespace,
                 expected_key=key,
             )
         return cls(
             definition_found=True,
+            definition_id=definition.id,
             expected_namespace=namespace,
             expected_key=key,
             owner_type=definition.ownerType,
@@ -77,6 +80,14 @@ class ProductCustomIdDefinitionInspection(BaseModel):
             type_name=definition.type.name,
             unique_values_enabled=definition.capabilities.uniqueValues.enabled,
         )
+
+    @model_validator(mode="after")
+    def validate_definition_identity(self) -> Self:
+        """Require found definitions to retain their Shopify GID."""
+
+        if self.definition_found != (self.definition_id is not None):
+            raise ValueError("definition presence must agree with its Shopify GID")
+        return self
 
 
 class ProductCustomIdDefinitionInspector:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import cast
+from unittest.mock import patch
 
 from pydantic import ValidationError
 import pytest
@@ -15,6 +16,7 @@ from shopify_sdk.gql.core.client import (
     RequestRetryMode,
     ShopifyClient,
     client_context,
+    current_api_version,
 )
 from shopify_sdk.gql.versions.v2026_07.mutations import (
     metafieldDefinitionCreate,
@@ -246,6 +248,7 @@ def test_definition_inspection_reports_requirement_mismatches() -> None:
     """Return stable mismatch codes for an invalid custom-ID definition."""
     inspection = ProductCustomIdDefinitionInspection(
         definition_found=True,
+        definition_id="gid://shopify/MetafieldDefinition/1",
         expected_namespace=NAMESPACE,
         expected_key=KEY,
         owner_type=None,
@@ -341,3 +344,14 @@ def test_definition_creator_preserves_structured_user_errors() -> None:
     assert result.user_errors[0].code == "TAKEN"
     assert result.user_errors[0].field == ("definition", "key")
     assert fake_client.retry_mode is RequestRetryMode.NEVER
+
+
+def test_explicit_client_context_never_reads_legacy_environment_credentials() -> None:
+    """Keep selected explicit credentials isolated from legacy SDK defaults."""
+
+    with patch(
+        "shopify_sdk.gql.core.client.os.getenv",
+        side_effect=AssertionError("legacy environment access is forbidden"),
+    ):
+        with client_context("example.myshopify.com", "token", "2026-07"):
+            assert current_api_version() == "2026-07"

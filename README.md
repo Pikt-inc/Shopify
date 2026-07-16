@@ -65,6 +65,11 @@ for product in products.nodes:
     print(product.id, product.handle, product.title)
 ```
 
+The SDK never loads dotenv files at import time. Applications own environment
+loading and should prefer explicit `credentials_context` or `client_context`
+scopes. Legacy unscoped client access resolves its environment credentials only
+when that proxy is first used.
+
 ## API versions
 
 The SDK defaults to Shopify Admin GraphQL API version `2026-07`. Set
