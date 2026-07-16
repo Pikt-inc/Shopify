@@ -255,7 +255,10 @@ class draftProductByIdentifier(productByIdentifier):
         self._field_arguments = {
             "InventoryItem": {
                 "inventoryLevel": {"locationId": location_id},
-            }
+            },
+            "InventoryLevel": {
+                "quantities": {"names": ["available"]},
+            },
         }
 
     @property

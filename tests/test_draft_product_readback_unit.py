@@ -62,4 +62,7 @@ def test_draft_product_readback_owns_safe_typed_projection() -> None:
     assert query.field_arguments["InventoryItem"]["inventoryLevel"] == {
         "locationId": "gid://shopify/Location/1"
     }
+    assert query.field_arguments["InventoryLevel"]["quantities"] == {
+        "names": ["available"]
+    }
     assert "productByIdentifier(identifier: $identifier)" in query.body
