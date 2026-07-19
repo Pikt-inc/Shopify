@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from pydantic import BaseModel
 from shopify_sdk import client
@@ -8,6 +9,17 @@ from shopify_sdk.gql.core.types.connections import MediaConnection
 
 
 class MediaManager(BaseModel):
+    def stage_local_images(self, images: Sequence["LocalProductImage"]) -> "ProductImageStageResult":
+        """Stage local image bytes for immediate use in a product mutation.
+
+        :param images: Ordered local product images.
+        :returns: Ordered staged Shopify resource URLs.
+        """
+
+        from shopify_sdk.common.product.image_upload import ProductImageStager
+
+        return ProductImageStager().stage(images)
+
     def images(
         self,
         product_id: "ID",
@@ -62,3 +74,10 @@ class MediaManager(BaseModel):
                 f"Media deletion failed; missing deleted ids: {missing_list}"
             )
         return True
+
+
+if TYPE_CHECKING:
+    from shopify_sdk.common.product.image_upload import (
+        LocalProductImage,
+        ProductImageStageResult,
+    )

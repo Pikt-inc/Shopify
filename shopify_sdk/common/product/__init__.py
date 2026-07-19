@@ -15,6 +15,14 @@ from .custom_ids import (
     ProductCustomIdDefinitionInspection,
     ProductCustomIdDefinitionInspector,
 )
+from .image_upload import (
+    LocalProductImage,
+    ProductImageStageError,
+    ProductImageStageResult,
+    ProductImageStager,
+    ProductImageUploadTransportConfig,
+    StagedProductImage,
+)
 
 __all__ = [
     "unpublish_product_by_sku",
@@ -32,4 +40,10 @@ __all__ = [
     "ProductCustomIdDefinitionCreateResult",
     "ProductCustomIdDefinitionCreateUserError",
     "ProductCustomIdDefinitionCreator",
+    "LocalProductImage",
+    "ProductImageStageError",
+    "ProductImageStageResult",
+    "ProductImageStager",
+    "ProductImageUploadTransportConfig",
+    "StagedProductImage",
 ]
