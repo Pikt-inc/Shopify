@@ -2,6 +2,11 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.14
+
+- Added typed local product-image staging through Shopify signed upload targets.
+- Added explicit single-attempt upload transport timeouts and safe staging errors.
+
 ## 0.3.13
 
 - Corrected Shopify `2026-07` `MetafieldInput.type` to be optional when a metafield definition supplies the type.
