@@ -2,30 +2,38 @@ from __future__ import annotations
 
 import random
 import time
-from collections.abc import Mapping
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import cast
 
 from pydantic import ValidationError
 from requests.exceptions import RequestException
 
-from shopify_sdk.gql.core.client.errors import ShopifyGraphQLError
-from shopify_sdk.gql.core.client.errors import ShopifyHttpError
-from shopify_sdk.gql.core.client.errors import ShopifyNetworkError
-from shopify_sdk.gql.core.client.errors import ShopifyResponseDecodeError
-from shopify_sdk.gql.core.client.errors import ShopifyResponseMetadata
-from shopify_sdk.gql.core.client.errors import ShopifyResponseValidationError
-from shopify_sdk.gql.core.client.errors import ShopifyTransportError
-from shopify_sdk.gql.core.client.transport import RequestsTransport
-from shopify_sdk.gql.core.client.transport import ShopifyHttpResponse
-from shopify_sdk.gql.core.client.transport import ShopifyTransport
-from shopify_sdk.gql.core.client.retry import RequestRetryMode
-from shopify_sdk.gql.core.client.retry import ShopifyRetryDecider
-from shopify_sdk.gql.core.client.retry import ShopifyRetryPolicy
-from shopify_sdk.gql.core.client.types import GQLExtensions
-from shopify_sdk.gql.core.client.types import GQLCost
-from shopify_sdk.gql.core.client.types import GQLRequestParams
-from shopify_sdk.gql.core.client.types import GQLResponse
+from shopify_sdk.gql.core.client.auth import ShopifyTokenProvider
+from shopify_sdk.gql.core.client.errors import (
+    ShopifyGraphQLError,
+    ShopifyHttpError,
+    ShopifyNetworkError,
+    ShopifyResponseDecodeError,
+    ShopifyResponseMetadata,
+    ShopifyResponseValidationError,
+    ShopifyTransportError,
+)
+from shopify_sdk.gql.core.client.retry import (
+    RequestRetryMode,
+    ShopifyRetryDecider,
+    ShopifyRetryPolicy,
+)
+from shopify_sdk.gql.core.client.transport import (
+    RequestsTransport,
+    ShopifyHttpResponse,
+    ShopifyTransport,
+)
+from shopify_sdk.gql.core.client.types import (
+    GQLCost,
+    GQLExtensions,
+    GQLRequestParams,
+    GQLResponse,
+)
 
 
 class RootClient:
@@ -37,10 +45,12 @@ class RootClient:
     def __init__(
         self,
         shop_domain: str,
-        access_token: str,
+        access_token: str | None,
         api_version: str,
         transport: ShopifyTransport | None = None,
         retry_policy: ShopifyRetryPolicy | None = None,
+        *,
+        token_provider: ShopifyTokenProvider | None = None,
         sleep: Callable[[float], None] = time.sleep,
         monotonic_clock: Callable[[], float] = time.monotonic,
         random_value: Callable[[], float] = random.random,
@@ -48,16 +58,22 @@ class RootClient:
         """Initialize a Shopify client for one shop and Admin API version.
 
         :param shop_domain: Shopify shop domain.
-        :param access_token: Shopify Admin API access token.
+        :param access_token: Optional Shopify Admin API access token.
         :param api_version: Shopify Admin GraphQL API version.
         :param transport: Optional HTTP transport used for GraphQL requests.
         :param retry_policy: Optional policy for safe read retries.
+        :param token_provider: Optional provider for expiring access tokens.
         :param sleep: Injectable delay function used for pacing and retries.
         :param monotonic_clock: Injectable monotonic clock used for request pacing.
         :param random_value: Injectable unit-interval source used for retry jitter.
         """
         self._shop_domain = shop_domain
+        if access_token is None and token_provider is None:
+            raise ValueError("A Shopify access token or token provider is required.")
+        if access_token is not None and token_provider is not None:
+            raise ValueError("Provide either an access token or token provider, not both.")
         self._access_token = access_token
+        self._token_provider = token_provider
         self._api_version = api_version
         self._transport = transport or RequestsTransport()
         self._retry_policy = retry_policy or ShopifyRetryPolicy()
@@ -249,12 +265,16 @@ class RootClient:
         """Return Admin GraphQL request headers without exposing mutable state."""
         return {
             "Content-Type": "application/json",
-            "X-Shopify-Access-Token": self._access_token,
+            "X-Shopify-Access-Token": self.access_token,
         }
 
     @property
     def access_token(self) -> str:
-        """Return the configured Shopify Admin API access token."""
+        """Return the current Shopify Admin API access token."""
+        if self._token_provider is not None:
+            return self._token_provider.get_access_token()
+        if self._access_token is None:
+            raise ValueError("A Shopify access token is not configured.")
         return self._access_token
 
     @property

@@ -72,6 +72,30 @@ class TestStoreManager(unittest.TestCase):
 
         self.assertEqual(calls[0]["api_version"], "2023-07")
 
+
+    def test_credentials_context_forwards_client_credentials(self) -> None:
+        calls = []
+
+        @contextmanager
+        def fake_client_context(**kwargs):
+            calls.append(kwargs)
+            yield object()
+
+        manager = StoreManager()
+        with (
+            patch("shopify_sdk.client_context", fake_client_context),
+            manager.credentials_context(
+                shop_domain="example.myshopify.com",
+                client_id="client-id",
+                client_secret="client-secret",
+            ),
+        ):
+            pass
+
+        assert calls[0]["client_id"] == "client-id"
+        assert calls[0]["client_secret"] == "client-secret"
+        assert calls[0]["access_token"] is None
+
     def test_credentials_context_passes_retry_policy(self) -> None:
         """Pass an explicit safe-read retry policy to the active client context."""
         calls = []

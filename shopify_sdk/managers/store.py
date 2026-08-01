@@ -1,5 +1,7 @@
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterator, Optional, cast
+from typing import TYPE_CHECKING, cast
+
 from pydantic import BaseModel, Field
 
 from shopify_sdk.api_versions import resolve_api_version
@@ -10,19 +12,19 @@ from shopify_sdk.gql.core.pagination import (
     is_empty_connection,
 )
 
-from .products import ProductManager
-from .orders import OrderManager
 from .delivery import DeliveryManager
 from .map import MapManager
+from .orders import OrderManager
+from .products import ProductManager
 from .webhooks import WebhookManager
 
 if TYPE_CHECKING:
+    from shopify_sdk.gql.core.client.retry import ShopifyRetryPolicy
+    from shopify_sdk.gql.core.types.base import ID
     from shopify_sdk.gql.core.types.connections import (
         LocationConnection,
         PublicationConnection,
     )
-    from shopify_sdk.gql.core.types.base import ID
-    from shopify_sdk.gql.core.client.retry import ShopifyRetryPolicy
 
 
 class StoreManager(BaseModel):
@@ -39,15 +41,20 @@ class StoreManager(BaseModel):
     def credentials_context(
         self,
         shop_domain: str,
-        access_token: str,
-        api_version: Optional[str] = None,
+        access_token: str | None = None,
+        api_version: str | None = None,
         retry_policy: "ShopifyRetryPolicy | None" = None,
+        *,
+        client_id: str | None = None,
+        client_secret: str | None = None,
     ) -> Iterator["StoreManager"]:
         """Yield the manager with context-scoped credentials and retry policy.
 
         :param shop_domain: Shopify shop domain.
-        :param access_token: Shopify Admin API access token.
+        :param access_token: Existing Shopify Admin API access token.
         :param api_version: Optional Shopify Admin GraphQL API version.
+        :param client_id: Shopify app client ID for client-credentials auth.
+        :param client_secret: Shopify app client secret for client-credentials auth.
         :param retry_policy: Optional policy for safe GraphQL query retries.
         """
         from shopify_sdk import client_context
@@ -57,6 +64,8 @@ class StoreManager(BaseModel):
             shop_domain=shop_domain,
             access_token=access_token,
             api_version=version,
+            client_id=client_id,
+            client_secret=client_secret,
             retry_policy=retry_policy,
         ):
             yield self
@@ -64,7 +73,7 @@ class StoreManager(BaseModel):
     @property
     def locations(self) -> "LocationConnection":
         """Return every location available to the current shop."""
-        pages: list["LocationConnection"] = CursorPager(
+        pages: list[LocationConnection] = CursorPager(
             fetch_page=self._fetch_locations_page,
             get_page_info=connection_page_info,
             is_empty_page=is_empty_connection,
@@ -122,7 +131,7 @@ class StoreManager(BaseModel):
     @property
     def publications(self) -> "PublicationConnection":
         """Return every publication available to the current shop."""
-        pages: list["PublicationConnection"] = CursorPager(
+        pages: list[PublicationConnection] = CursorPager(
             fetch_page=self._fetch_publications_page,
             get_page_info=connection_page_info,
             is_empty_page=is_empty_connection,

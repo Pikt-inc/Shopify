@@ -1,32 +1,41 @@
 import os
+from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Iterator, cast
+from typing import Any, cast
 
-from .wrapper import ShopifyClientWrapper as ShopifyClient
-from .errors import ShopifyGraphQLError
-from .errors import ShopifyHttpError
-from .errors import ShopifyNetworkError
-from .errors import ShopifyResponseDecodeError
-from .errors import ShopifyResponseValidationError
-from .errors import ShopifyTransportError
-from .transport import RequestsTransport
-from .transport import ShopifyHttpResponse
-from .transport import ShopifyTransport
-from .retry import RequestRetryMode
-from .retry import ShopifyRetryPolicy
+from .errors import (
+    ShopifyAuthenticationError,
+    ShopifyGraphQLError,
+    ShopifyHttpError,
+    ShopifyNetworkError,
+    ShopifyResponseDecodeError,
+    ShopifyResponseValidationError,
+    ShopifyTransportError,
+)
+from .retry import RequestRetryMode, ShopifyRetryPolicy
+from .transport import RequestsTransport, ShopifyHttpResponse, ShopifyTransport
 from .types import (
+    GQLCost,
+    GQLExtensions,
     GQLRequestParams,
     GQLResponse,
-    GQLCost,
     GQLThrottleStatus,
-    GQLExtensions,
 )
+from .wrapper import ShopifyClientWrapper as ShopifyClient
+
 
 def _build_env_client() -> ShopifyClient:
+    access_token = os.getenv("SHOPIFY_ACCESS_TOKEN") or None
+    client_id = os.getenv("SHOPIFY_CLIENT_ID") or None
+    client_secret = os.getenv("SHOPIFY_CLIENT_SECRET") or None
+    if access_token is None and client_id is None and client_secret is None:
+        access_token = ""
     return ShopifyClient(
         shop_domain=os.getenv("SHOPIFY_SHOP_DOMAIN") or "",
-        access_token=os.getenv("SHOPIFY_ACCESS_TOKEN") or "",
+        access_token=access_token,
+        client_id=client_id,
+        client_secret=client_secret,
     )
 
 
@@ -82,9 +91,11 @@ class _ClientProxy:
 @contextmanager
 def client_context(
     shop_domain: str,
-    access_token: str,
-    api_version: str,
+    access_token: str | None = None,
+    api_version: str | None = None,
     *,
+    client_id: str | None = None,
+    client_secret: str | None = None,
     transport: ShopifyTransport | None = None,
     retry_policy: ShopifyRetryPolicy | None = None,
 ) -> Iterator[ShopifyClient]:
@@ -96,8 +107,10 @@ def client_context(
     is restored.
 
     :param shop_domain: Shopify shop domain.
-    :param access_token: Shopify Admin API access token.
-    :param api_version: Shopify Admin GraphQL API version.
+    :param access_token: Existing Shopify Admin API access token.
+    :param api_version: Optional Shopify Admin GraphQL API version.
+    :param client_id: Shopify app client ID for client-credentials auth.
+    :param client_secret: Shopify app client secret for client-credentials auth.
     :param transport: Optional HTTP transport for the active client.
     :param retry_policy: Optional policy for safe read retries.
     """
@@ -105,6 +118,8 @@ def client_context(
         shop_domain=shop_domain,
         access_token=access_token,
         api_version=api_version,
+        client_id=client_id,
+        client_secret=client_secret,
         transport=transport,
         retry_policy=retry_policy,
     )
@@ -118,24 +133,25 @@ def client_context(
 client = cast(ShopifyClient, _ClientProxy())
 
 __all__ = [
-    "ShopifyClient",
+    "GQLCost",
+    "GQLExtensions",
     "GQLRequestParams",
     "GQLResponse",
-    "GQLCost",
     "GQLThrottleStatus",
-    "GQLExtensions",
+    "RequestRetryMode",
     "RequestsTransport",
+    "ShopifyAuthenticationError",
+    "ShopifyClient",
     "ShopifyGraphQLError",
     "ShopifyHttpError",
-    "ShopifyNetworkError",
     "ShopifyHttpResponse",
+    "ShopifyNetworkError",
+    "ShopifyResponseDecodeError",
+    "ShopifyResponseValidationError",
+    "ShopifyRetryPolicy",
+    "ShopifyTransport",
+    "ShopifyTransportError",
     "client",
     "client_context",
     "current_api_version",
-    "ShopifyResponseDecodeError",
-    "ShopifyResponseValidationError",
-    "ShopifyTransport",
-    "ShopifyTransportError",
-    "RequestRetryMode",
-    "ShopifyRetryPolicy",
 ]
