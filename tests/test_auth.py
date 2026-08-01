@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -72,7 +72,7 @@ def test_client_credentials_provider_requests_and_caches_token() -> None:
     provider = ShopifyClientCredentialsTokenProvider(
         _credentials(),
         transport=transport,
-        now=lambda: datetime(2026, 1, 1, tzinfo=UTC),
+        now=lambda: datetime(2026, 1, 1, tzinfo=timezone.utc),
     )
 
     assert provider.get_access_token() == "access-token"
@@ -91,13 +91,13 @@ def test_client_credentials_provider_requests_and_caches_token() -> None:
         },
         "timeout": TOKEN_REQUEST_TIMEOUT,
     }
-    assert provider.expires_at == datetime(2026, 1, 1, tzinfo=UTC) + timedelta(
+    assert provider.expires_at == datetime(2026, 1, 1, tzinfo=timezone.utc) + timedelta(
         seconds=3600
     )
 
 
 def test_client_credentials_provider_refreshes_inside_expiry_buffer() -> None:
-    current_time = datetime(2026, 1, 1, tzinfo=UTC)
+    current_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
     transport = FakeTokenTransport(
         [
             FakeResponse(200, {"access_token": "first-token", "expires_in": 1000}),
