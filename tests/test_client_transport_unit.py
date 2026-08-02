@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from collections.abc import Mapping
 from typing import cast
 from unittest.mock import patch
@@ -472,16 +473,16 @@ def test_request_uses_current_token_provider_value() -> None:
 def test_client_context_accepts_client_credentials() -> None:
     transport = FakeTransport([_success_response()])
 
-    with patch(
-        "shopify_sdk.gql.core.client.wrapper.get_cached_client_credentials_provider",
+    with patch.object(
+        importlib.import_module("shopify_sdk.gql.core.client.wrapper"),
+        "get_cached_client_credentials_provider",
         return_value=StaticShopifyTokenProvider("generated-token"),
-    ):
-        with client_context(
-            "example.myshopify.com",
-            client_id="client-id",
-            client_secret="client-secret",
-            transport=transport,
-        ) as wrapper:
-            wrapper.request("query { shop { id } }")
+    ), client_context(
+        "example.myshopify.com",
+        client_id="client-id",
+        client_secret="client-secret",
+        transport=transport,
+    ) as wrapper:
+        wrapper.request("query { shop { id } }")
 
     assert transport.calls[0]["headers"]["X-Shopify-Access-Token"] == "generated-token"
