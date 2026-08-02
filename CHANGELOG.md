@@ -2,6 +2,11 @@
 
 All notable changes to this package are documented here.
 
+## 0.3.15
+
+- Added Shopify client-credentials authentication with cached token refresh.
+- Preserved supported Python 3.10 client authentication behavior.
+
 ## 0.3.14
 
 - Added typed local product-image staging through Shopify signed upload targets.
