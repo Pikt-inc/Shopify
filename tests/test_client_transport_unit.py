@@ -1,24 +1,27 @@
 from __future__ import annotations
 
+import importlib
 from collections.abc import Mapping
 from typing import cast
+from unittest.mock import patch
 
 import pytest
 from pydantic import BaseModel
-from requests.exceptions import ConnectTimeout
-from requests.exceptions import ReadTimeout
+from requests.exceptions import ConnectTimeout, ReadTimeout
 
-from shopify_sdk.gql.core.client import ShopifyGraphQLError
-from shopify_sdk.gql.core.client import GQLResponse
-from shopify_sdk.gql.core.client import ShopifyHttpError
-from shopify_sdk.gql.core.client import ShopifyNetworkError
-from shopify_sdk.gql.core.client import ShopifyResponseDecodeError
-from shopify_sdk.gql.core.client import ShopifyResponseValidationError
-from shopify_sdk.gql.core.client import ShopifyTransportError
-from shopify_sdk.gql.core.client import client_context
+from shopify_sdk.gql.core.client import (
+    GQLResponse,
+    ShopifyGraphQLError,
+    ShopifyHttpError,
+    ShopifyNetworkError,
+    ShopifyResponseDecodeError,
+    ShopifyResponseValidationError,
+    ShopifyTransportError,
+    client_context,
+)
+from shopify_sdk.gql.core.client.auth import StaticShopifyTokenProvider
+from shopify_sdk.gql.core.client.retry import RequestRetryMode, ShopifyRetryPolicy
 from shopify_sdk.gql.core.client.root import RootClient
-from shopify_sdk.gql.core.client.retry import RequestRetryMode
-from shopify_sdk.gql.core.client.retry import ShopifyRetryPolicy
 from shopify_sdk.gql.core.client.transport import ShopifyHttpResponse
 from shopify_sdk.gql.core.client.wrapper import ShopifyClientWrapper
 from shopify_sdk.gql.core.mutation import Mutation
@@ -450,3 +453,36 @@ def test_client_context_accepts_injected_transport() -> None:
         wrapper.request("query { shop { id } }")
 
     assert len(transport.calls) == 1
+
+
+def test_request_uses_current_token_provider_value() -> None:
+    transport = FakeTransport([_success_response({"shop": {"id": "shop-1"}})])
+    client = RootClient(
+        shop_domain="example.myshopify.com",
+        access_token=None,
+        api_version="2026-07",
+        transport=transport,
+        token_provider=StaticShopifyTokenProvider("provider-token"),
+    )
+
+    client.request("query Shop { shop { id } }")
+
+    assert transport.calls[0]["headers"]["X-Shopify-Access-Token"] == "provider-token"
+
+
+def test_client_context_accepts_client_credentials() -> None:
+    transport = FakeTransport([_success_response()])
+
+    with patch.object(
+        importlib.import_module("shopify_sdk.gql.core.client.wrapper"),
+        "get_cached_client_credentials_provider",
+        return_value=StaticShopifyTokenProvider("generated-token"),
+    ), client_context(
+        "example.myshopify.com",
+        client_id="client-id",
+        client_secret="client-secret",
+        transport=transport,
+    ) as wrapper:
+        wrapper.request("query { shop { id } }")
+
+    assert transport.calls[0]["headers"]["X-Shopify-Access-Token"] == "generated-token"

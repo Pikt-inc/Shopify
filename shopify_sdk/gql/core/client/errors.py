@@ -42,6 +42,10 @@ class ShopifyNetworkError(ShopifyTransportError):
     """Raised when no Shopify HTTP response was received from the transport."""
 
 
+class ShopifyAuthenticationError(ShopifyTransportError):
+    """Raised when Shopify access-token acquisition fails."""
+
+
 class ShopifyHttpError(ShopifyTransportError):
     """Raised for non-successful Shopify HTTP responses."""
 
