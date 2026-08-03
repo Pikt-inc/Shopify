@@ -4,7 +4,7 @@ import hmac
 import threading
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Protocol, cast
 from urllib.parse import urlsplit
 
@@ -123,7 +123,7 @@ class ShopifyClientCredentialsTokenProvider:
             raise ValueError("Token expiry skew must not be negative.")
         self._credentials = credentials
         self._transport: ShopifyTokenTransport = transport or RequestsTokenTransport()
-        self._now = now or (lambda: datetime.now(UTC))
+        self._now = now or (lambda: datetime.now(timezone.utc))  # noqa: UP017
         self._expiry_skew_seconds = expiry_skew_seconds
         self._access_token: str | None = None
         self._expires_at: datetime | None = None
