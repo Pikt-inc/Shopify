@@ -4,7 +4,9 @@ from shopify_sdk.api_versions import resolve_api_version
 
 from .auth import (
     ShopifyClientCredentials,
+    ShopifyClientCredentialsTokenProvider,
     ShopifyTokenProvider,
+    ShopifyTokenTransport,
     get_cached_client_credentials_provider,
 )
 from .retry import RequestRetryMode, ShopifyRetryPolicy
@@ -27,6 +29,8 @@ class ShopifyClientWrapper:
         transport: ShopifyTransport | None = None,
         retry_policy: ShopifyRetryPolicy | None = None,
         token_provider: ShopifyTokenProvider | None = None,
+        token_transport: ShopifyTokenTransport | None = None,
+        allow_unconfigured: bool = False,
     ) -> None:
         """Initialize a context-scoped client wrapper.
 
@@ -48,6 +52,8 @@ class ShopifyClientWrapper:
             client_id=client_id,
             client_secret=client_secret,
             token_provider=token_provider,
+            token_transport=token_transport,
+            allow_unconfigured=allow_unconfigured,
         )
         self._api_version = resolve_api_version(api_version)
         self._transport = transport
@@ -93,6 +99,8 @@ class ShopifyClientWrapper:
         client_id: str | None,
         client_secret: str | None,
         token_provider: ShopifyTokenProvider | None,
+        token_transport: ShopifyTokenTransport | None,
+        allow_unconfigured: bool,
     ) -> ShopifyTokenProvider | None:
         """Resolve one supported credential mode into a token provider."""
         has_client_id = client_id is not None
@@ -107,8 +115,12 @@ class ShopifyClientWrapper:
         if token_provider is not None:
             return token_provider
         if access_token is not None:
+            if not access_token.strip():
+                raise ValueError("Shopify access token must not be blank.")
             return None
         if client_id is None or client_secret is None:
+            if allow_unconfigured and access_token is None:
+                return None
             raise ValueError(
                 "Provide access_token or both client_id and client_secret."
             )
@@ -117,6 +129,11 @@ class ShopifyClientWrapper:
             client_id=client_id,
             client_secret=client_secret,
         )
+        if token_transport is not None:
+            return ShopifyClientCredentialsTokenProvider(
+                credentials,
+                transport=token_transport,
+            )
         return get_cached_client_credentials_provider(credentials)
 
     def _generate_client(self) -> RootClient:

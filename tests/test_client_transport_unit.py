@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import importlib
 from collections.abc import Mapping
 from typing import cast
-from unittest.mock import patch
 
 import pytest
 from pydantic import BaseModel
@@ -48,6 +46,34 @@ class FakeResponse:
         if self._json_error is not None:
             raise self._json_error
         return cast(Mapping[str, object], self._payload)
+
+
+class FakeTokenTransport:
+    """Return one deterministic client-credentials token response."""
+
+    def __init__(self) -> None:
+        self.calls: list[dict[str, object]] = []
+
+    def post(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str],
+        data: Mapping[str, str],
+        timeout: tuple[float, float],
+    ) -> ShopifyHttpResponse:
+        self.calls.append(
+            {
+                "url": url,
+                "headers": dict(headers),
+                "data": dict(data),
+                "timeout": timeout,
+            }
+        )
+        return cast(
+            ShopifyHttpResponse,
+            FakeResponse(payload={"access_token": "generated-token", "expires_in": 3600}),
+        )
 
 
 class FakeTransport:
@@ -467,22 +493,25 @@ def test_request_uses_current_token_provider_value() -> None:
 
     client.request("query Shop { shop { id } }")
 
-    assert transport.calls[0]["headers"]["X-Shopify-Access-Token"] == "provider-token"
+    headers = cast(dict[str, str], transport.calls[0]["headers"])
+    assert headers["X-Shopify-Access-Token"] == "provider-token"
 
 
 def test_client_context_accepts_client_credentials() -> None:
     transport = FakeTransport([_success_response()])
+    token_transport = FakeTokenTransport()
 
-    with patch.object(
-        importlib.import_module("shopify_sdk.gql.core.client.wrapper"),
-        "get_cached_client_credentials_provider",
-        return_value=StaticShopifyTokenProvider("generated-token"),
-    ), client_context(
+    with client_context(
         "example.myshopify.com",
         client_id="client-id",
         client_secret="client-secret",
+        token_transport=token_transport,
         transport=transport,
     ) as wrapper:
         wrapper.request("query { shop { id } }")
 
-    assert transport.calls[0]["headers"]["X-Shopify-Access-Token"] == "generated-token"
+    headers = cast(dict[str, str], transport.calls[0]["headers"])
+    assert headers["X-Shopify-Access-Token"] == "generated-token"
+    assert token_transport.calls[0]["url"] == (
+        "https://example.myshopify.com/admin/oauth/access_token"
+    )

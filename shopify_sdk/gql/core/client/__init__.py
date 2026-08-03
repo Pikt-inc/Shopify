@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, cast
 
+from .auth import ShopifyTokenTransport
 from .errors import (
     ShopifyAuthenticationError,
     ShopifyGraphQLError,
@@ -29,13 +30,12 @@ def _build_env_client() -> ShopifyClient:
     access_token = os.getenv("SHOPIFY_ACCESS_TOKEN") or None
     client_id = os.getenv("SHOPIFY_CLIENT_ID") or None
     client_secret = os.getenv("SHOPIFY_CLIENT_SECRET") or None
-    if access_token is None and client_id is None and client_secret is None:
-        access_token = ""
     return ShopifyClient(
         shop_domain=os.getenv("SHOPIFY_SHOP_DOMAIN") or "",
         access_token=access_token,
         client_id=client_id,
         client_secret=client_secret,
+        allow_unconfigured=True,
     )
 
 
@@ -96,6 +96,7 @@ def client_context(
     *,
     client_id: str | None = None,
     client_secret: str | None = None,
+    token_transport: ShopifyTokenTransport | None = None,
     transport: ShopifyTransport | None = None,
     retry_policy: ShopifyRetryPolicy | None = None,
 ) -> Iterator[ShopifyClient]:
@@ -120,6 +121,7 @@ def client_context(
         api_version=api_version,
         client_id=client_id,
         client_secret=client_secret,
+        token_transport=token_transport,
         transport=transport,
         retry_policy=retry_policy,
     )

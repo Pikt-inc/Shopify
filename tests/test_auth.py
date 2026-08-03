@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -9,9 +9,9 @@ from shopify_sdk.gql.core.client.auth import (
     TOKEN_REQUEST_TIMEOUT,
     ShopifyClientCredentials,
     ShopifyClientCredentialsTokenProvider,
+    StaticShopifyTokenProvider,
     clear_cached_client_credentials_providers,
     get_cached_client_credentials_provider,
-    StaticShopifyTokenProvider,
 )
 from shopify_sdk.gql.core.client.errors import ShopifyAuthenticationError
 
@@ -72,7 +72,7 @@ def test_client_credentials_provider_requests_and_caches_token() -> None:
     provider = ShopifyClientCredentialsTokenProvider(
         _credentials(),
         transport=transport,
-        now=lambda: datetime(2026, 1, 1, tzinfo=timezone.utc),
+        now=lambda: datetime(2026, 1, 1, tzinfo=UTC),
     )
 
     assert provider.get_access_token() == "access-token"
@@ -91,13 +91,13 @@ def test_client_credentials_provider_requests_and_caches_token() -> None:
         },
         "timeout": TOKEN_REQUEST_TIMEOUT,
     }
-    assert provider.expires_at == datetime(2026, 1, 1, tzinfo=timezone.utc) + timedelta(
+    assert provider.expires_at == datetime(2026, 1, 1, tzinfo=UTC) + timedelta(
         seconds=3600
     )
 
 
 def test_client_credentials_provider_refreshes_inside_expiry_buffer() -> None:
-    current_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    current_time = datetime(2026, 1, 1, tzinfo=UTC)
     transport = FakeTokenTransport(
         [
             FakeResponse(200, {"access_token": "first-token", "expires_in": 1000}),

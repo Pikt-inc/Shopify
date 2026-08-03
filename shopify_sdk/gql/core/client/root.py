@@ -8,7 +8,7 @@ from typing import cast
 from pydantic import ValidationError
 from requests.exceptions import RequestException
 
-from shopify_sdk.gql.core.client.auth import ShopifyTokenProvider
+from shopify_sdk.gql.core.client.auth import ShopifyTokenProvider, normalize_shop_domain
 from shopify_sdk.gql.core.client.errors import (
     ShopifyGraphQLError,
     ShopifyHttpError,
@@ -49,11 +49,11 @@ class RootClient:
         api_version: str,
         transport: ShopifyTransport | None = None,
         retry_policy: ShopifyRetryPolicy | None = None,
-        *,
-        token_provider: ShopifyTokenProvider | None = None,
         sleep: Callable[[float], None] = time.sleep,
         monotonic_clock: Callable[[], float] = time.monotonic,
         random_value: Callable[[], float] = random.random,
+        *,
+        token_provider: ShopifyTokenProvider | None = None,
     ) -> None:
         """Initialize a Shopify client for one shop and Admin API version.
 
@@ -67,7 +67,7 @@ class RootClient:
         :param monotonic_clock: Injectable monotonic clock used for request pacing.
         :param random_value: Injectable unit-interval source used for retry jitter.
         """
-        self._shop_domain = shop_domain
+        self._shop_domain = normalize_shop_domain(shop_domain)
         if access_token is None and token_provider is None:
             raise ValueError("A Shopify access token or token provider is required.")
         if access_token is not None and token_provider is not None:

@@ -4,8 +4,9 @@ import hmac
 import threading
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Protocol, cast
+from urllib.parse import urlsplit
 
 import requests
 from requests import Session
@@ -80,6 +81,7 @@ class RequestsTokenTransport:
                 headers=dict(headers),
                 data=dict(data),
                 timeout=timeout,
+                allow_redirects=False,
             ),
         )
 
@@ -89,9 +91,10 @@ class StaticShopifyTokenProvider:
 
     def __init__(self, access_token: str) -> None:
         """Initialize the provider with an existing access token."""
-        if not access_token:
+        normalized_token = access_token.strip()
+        if not normalized_token:
             raise ValueError("Shopify access token must not be blank.")
-        self._access_token = access_token
+        self._access_token = normalized_token
 
     def get_access_token(self) -> str:
         """Return the configured access token."""
@@ -120,7 +123,7 @@ class ShopifyClientCredentialsTokenProvider:
             raise ValueError("Token expiry skew must not be negative.")
         self._credentials = credentials
         self._transport: ShopifyTokenTransport = transport or RequestsTokenTransport()
-        self._now = now or (lambda: datetime.now(timezone.utc))
+        self._now = now or (lambda: datetime.now(UTC))
         self._expiry_skew_seconds = expiry_skew_seconds
         self._access_token: str | None = None
         self._expires_at: datetime | None = None
@@ -229,16 +232,16 @@ class ShopifyTokenResponse:
         expires_in = payload.get("expires_in")
         if (
             not isinstance(access_token, str)
-            or not access_token
+            or not access_token.strip()
             or isinstance(expires_in, bool)
-            or not isinstance(expires_in, (int, float))
+            or not isinstance(expires_in, int)
             or expires_in <= 0
         ):
             raise ShopifyAuthenticationError(
                 "Shopify returned an incomplete access-token response.",
                 metadata=metadata,
             )
-        return cls(access_token=access_token, expires_in=int(expires_in))
+        return cls(access_token=access_token.strip(), expires_in=expires_in)
 
 
 _provider_cache: dict[tuple[str, str], ShopifyClientCredentialsTokenProvider] = {}
@@ -265,5 +268,24 @@ def clear_cached_client_credentials_providers() -> None:
 
 
 def normalize_shop_domain(shop_domain: str) -> str:
-    """Normalize a Shopify domain for token endpoint URL construction."""
-    return shop_domain.strip().removeprefix("https://").removeprefix("http://").rstrip("/")
+    """Validate and normalize a Shopify Admin host without accepting URL injection."""
+
+    raw = shop_domain.strip()
+    parsed = urlsplit(raw if "://" in raw else f"//{raw}")
+    if parsed.scheme and parsed.scheme not in {"http", "https"}:
+        raise ValueError("Shopify shop domain must use http or https")
+    if parsed.username or parsed.password or parsed.query or parsed.fragment:
+        raise ValueError("Shopify shop domain must contain only a host")
+    if parsed.path not in {"", "/"}:
+        raise ValueError("Shopify shop domain must contain only a host")
+    try:
+        hostname = parsed.hostname
+        port = parsed.port
+    except ValueError as exc:
+        raise ValueError("Shopify shop domain must contain a valid host") from exc
+    if port is not None or hostname is None:
+        raise ValueError("Shopify shop domain must contain a valid host")
+    normalized = hostname.rstrip(".").lower()
+    if not normalized.endswith(".myshopify.com") or normalized == "myshopify.com":
+        raise ValueError("Shopify shop domain must be a myshopify.com host")
+    return normalized
